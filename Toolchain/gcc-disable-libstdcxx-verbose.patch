@@ -1,0 +1,26 @@
+--- libstdc++-v3/libsupc++/eh_term_handler.cc.old	2013-04-03 14:35:38.313653218 +0200
++++ libstdc++-v3/libsupc++/eh_term_handler.cc	2013-04-03 14:35:59.145652530 +0200
+@@ -32,15 +32,17 @@
+    to "std::abort", and rebuilding the library.  In a freestanding mode, we
+    default to this latter approach.  */
+ 
+-#if ! _GLIBCXX_HOSTED
++// PATCHED BY TOOLCHAIN BUILD SCRIPT IN ORDER TO EMULATE GCC 4.8.0's NEW FLAG --disable-libstdcxx-verbose IN THIS 4.7.2 VERSION.
++
++// #if ! _GLIBCXX_HOSTED
+ # include <cstdlib>
+-#endif
++// #endif
+ 
+ /* The current installed user handler.  */
+ std::terminate_handler __cxxabiv1::__terminate_handler =
+-#if _GLIBCXX_HOSTED
+-	__gnu_cxx::__verbose_terminate_handler;
+-#else
++// #if _GLIBCXX_HOSTED
++//	__gnu_cxx::__verbose_terminate_handler;
++// #else
+ 	std::abort;
+-#endif
++// #endif
+ 
