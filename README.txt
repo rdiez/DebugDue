@@ -1,6 +1,4 @@
 
---- WARNING: This repository is not complete yet ---
-
 JtagDue Project
 ===============
 
@@ -144,7 +142,7 @@ Installation instructions
 Changelog
 =========
 
-- Version 1.0.0, released on 11 may 2013. First public version.
+- Version 1.0.0, released on 18 may 2013. First public version.
 
 
 Feedback
