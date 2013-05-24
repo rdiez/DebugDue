@@ -74,13 +74,39 @@ static void UsbConnectionLost ( void )
 
   BusPirateConnection_Terminate();
   ResetBuffers();
+
+  // Note that at this point there may still be outgoing data in the USB buffer inside the Atmel Software Framework
+  // (or may be that is directly the chip's USB hardware buffer). If the USB cable was not removed, this data
+  // will not be lost. I have tested that data written here with udi_cdc_write_buf() gets received twice
+  // by the next program that connects to the CDC serial port, which seems strange. I guess the host side (Linux)
+  // will buffer up any received data and then deliver it to the next client that connects to CDC the serial port,
+  // as long as the USB cable remains put. I could not find any ASF API near udi_cdc_write_buf() in order
+  // to discard any outgoing data from the ASF buffer.
+  //
+  // For the reasons above, I guess that any serial port client on the host side (Linux) should read and
+  // discard all stale data upon connect. After all, the Bus Pirate protocol is of the master/slave type,
+  // so the client should have nothing to say until the master sends the first command.
+
+  if ( false )
+    udi_cdc_write_buf( "test-data", 9 );
 }
 
 
-// If you connect to the USB port with a tool like socat, and the pull the cable,
+// If you connect to the USB port with a Linux tool like socat, and the pull the cable,
 // the next time you connect the cable and start socat again, you'll get one or two brief
-// connections before the final one is stable. Therefore, I have placed a short delay here,
-// so that connections are only considered stable after the delay.
+// connections before the final one is stable. Therefore, I have implemented a delay,
+// so that connections are only considered stable after a short time.
+// A delay of 50 milliseconds is usually fine.
+//
+// Under Windows Vista I am getting a spurious connection with a simular scenario: Connect to
+// the virtual serial port with Putty, disconnect the USB cable and connect it again.
+// A delay of even 150 milliseconds is not enough to suppress it, and I don't want to implement
+// a longer delay, so I decided to live with it. After all, it's not a big deal.
+//
+// On Windows Vista there is some system error that prevents you from connecting to the serial port
+// if you reconnect the USB cable while the previous Putty session is still open.
+// You need to close Putty before reconnecting the cable again.
+
 static const uint32_t USB_CONNECTION_STABLE_DELAY = 50;  // In milliseconds.
 static uint64_t s_lastReferenceTimeForUsbOpen = 0;
 
@@ -106,6 +132,12 @@ static bool SendData ( void )
     if ( writtenCount == 0 )
     {
       break;
+    }
+
+    if ( false )
+    {
+      DbgconPrintStr( "Data sent:" EOL );
+      DbgconHexDump( readPtr, writtenCount, EOL );
     }
 
     s_usbTxBuffer.ConsumeReadElements( writtenCount );
@@ -146,6 +178,12 @@ static bool ReceiveData ( void )
     {
       assert( false );
       break;
+    }
+
+    if ( false )
+    {
+      DbgconPrintStr( "Data received:" EOL );
+      DbgconHexDump( writePtr, readCount, EOL );
     }
 
     s_usbRxBuffer.CommitWrittenElements( readCount );
@@ -208,14 +246,20 @@ void ServiceUsbConnection ( const uint64_t currentTime )
       {
         s_lastReferenceTimeForUsbOpen = currentTime;
         s_connectionStatus = csInitialDelay;
+        if ( false )
+          DbgconPrintStr( "Connection detected, starting the delay timer." EOL );
       }
       break;
 
     case csInitialDelay:
-      if ( HasUptimeElapsedMs( currentTime, s_lastReferenceTimeForUsbOpen, USB_CONNECTION_STABLE_DELAY ) )
+      if ( !IsUsbConnectionOpen() )
       {
-        s_connectionStatus = csStable;
-        UsbConnectionEstablished();
+        s_connectionStatus = csNoConnection;
+      }
+      else if ( HasUptimeElapsedMs( currentTime, s_lastReferenceTimeForUsbOpen, USB_CONNECTION_STABLE_DELAY ) )
+      {
+          s_connectionStatus = csStable;
+          UsbConnectionEstablished();
       }
       break;
 
