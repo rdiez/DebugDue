@@ -29,6 +29,11 @@
 #include "Globals.h"
 
 
+#define OPEN_OCD_CMD_CODE_LEN         1
+#define TAP_SHIFT_CMD_HEADER_LEN      ( uint32_t( OPEN_OCD_CMD_CODE_LEN + 2 ) )
+#define MAX_JTAG_TAP_SHIFT_BIT_COUNT  ( uint32_t( ( USB_RX_BUFFER_SIZE - TAP_SHIFT_CMD_HEADER_LEN ) / 2 * 8  ) )
+
+
 #ifndef NDEBUG
   static bool s_wasInitialised = false;
 #endif
@@ -441,6 +446,12 @@ static bool ShiftSingleBit ( const bool tdiBit, const bool tmsBit )
   // All these measurements were rather inaccurate.
   // The main limiting factor will probably be the short time between the TCK's falling edge and
   // the reading of TDO.
+  //
+  // Unfortunately, the SPI interface on Atmel's ATSAM3X8 is not flexible enough to help
+  // drive the JTAG signals (we would need an extra line CPU -> JTAG slave). The USART interfaces
+  // don't have enough flexibility and speed either, so we have to toggle the pins manually
+  // for maximum performance.
+
 
   assert( GetOutputDataDrivenOnPin( JTAG_TCK_PIO, JTAG_TCK_PIN ) );
   SetOutputDataDrivenOnPinToLow( JTAG_TCK_PIO, JTAG_TCK_PIN );

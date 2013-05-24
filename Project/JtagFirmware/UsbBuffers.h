@@ -43,18 +43,24 @@
 //
 // Routine BusPirateConnection_ProcessData() gets also called a periodic intervals, so that it can
 // time-out a command whenever necessary.
-
-#define OPEN_OCD_CMD_CODE_LEN  1
-
-#define MAX_JTAG_TAP_SHIFT_BIT_COUNT  (uint32_t(8192))  // This depends on the original Bus Pirate implementation,
-                                                        // and it is the value hard-coded in OpenOCD.
-#define MAX_JTAG_TAP_SHIFT_BYTE_COUNT (uint32_t( (MAX_JTAG_TAP_SHIFT_BIT_COUNT + 7) / 8 ) )
-#define TAP_SHIFT_CMD_HEADER_LEN      (uint32_t( OPEN_OCD_CMD_CODE_LEN + 2 ))
+//
+// The current circular buffer is a generic implementation that should work on other platforms
+// or environments where data is transmitted perhaps over different interfaces.
+// The Atmel Software Framework library uses its own buffers, probably the same USB hardware buffers
+// that the ATSAM3X8 has. It may be possible to optimise the code to use these hardware buffers directly
+// so that it does not need the extra circular buffers any more. However, such an
+// optimised implementation would probably be tied to the USB buffer architecture of that
+// particular Atmel chip's. I do not have enough experience to tell whether that architecture
+// is also popular across the USB chip industry.
 
 // These buffers can hold the biggest possible command and its reponse, although commands are normally
 // much smaller than the maximum size.
-#define USB_TX_BUFFER_SIZE uint32_t( TAP_SHIFT_CMD_HEADER_LEN + MAX_JTAG_TAP_SHIFT_BYTE_COUNT )
-#define USB_RX_BUFFER_SIZE uint32_t( TAP_SHIFT_CMD_HEADER_LEN + MAX_JTAG_TAP_SHIFT_BYTE_COUNT * 2 )
+#define USB_RX_BUFFER_SIZE 4096  // This size matches the buffer size used in OpenOCD's routine buspirate_tap_execute(),
+                                 // but it is probably never used to its maximum capacity.
+#define USB_TX_BUFFER_SIZE 4096  // The Tx Buffer must accomodate the largest possible command reply.
+                                 // The biggest OpenOCD command is CMD_TAP_SHIFT, which needs twice as much
+                                 // Rx Buffer as Tx Buffer. Another source of large data in a single block
+                                 // is the text of the 'help' console command.
 
 typedef CCircularBuffer< uint8_t, uint32_t, USB_TX_BUFFER_SIZE > CUsbTxBuffer;
 typedef CCircularBuffer< uint8_t, uint32_t, USB_RX_BUFFER_SIZE > CUsbRxBuffer;
