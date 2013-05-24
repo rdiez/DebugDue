@@ -29,6 +29,8 @@
 
 #include "ConfigFilesForLibsam/my_usb_callbacks.h"
 
+#include "Globals.h"
+
 
 void InitUsb ( void )
 {
@@ -129,6 +131,12 @@ void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
 {
   // DbgconPrintStr("MyUsbCallback_cdc_rx_notify()" EOL);
+
+  // Print the received packet size (not quite reliable), for performance research purposes only:
+  if ( false )
+  {
+    DbgconPrint( "%u" EOL, unsigned( udi_cdc_get_nb_received_data() ) );
+  }
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
