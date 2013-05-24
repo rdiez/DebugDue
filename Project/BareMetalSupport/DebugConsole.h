@@ -13,6 +13,8 @@ void DbgconSyncWriteUint32Hex ( uint32_t val );
 // This routine may become asynchronous in the future.
 void DbgconPrintStr ( const char * msg );
 
+// Beware that this routine consumes quite a lot of stack space,
+// so use with care while in interrupt context.
 #define MAX_DBGCON_PRINT_LEN 256
 void DbgconPrint ( const char * formatStr, ... ) __attribute__ ((format(printf, 1, 2)));
 

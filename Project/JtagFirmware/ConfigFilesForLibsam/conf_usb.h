@@ -99,7 +99,7 @@
  * @{
  */
 
-//! Define two USB communication ports
+// We just have 1 CDC interface on the USB connection.
 #define  UDI_CDC_PORT_NB 1
 
 //! Interface callback definition
