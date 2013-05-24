@@ -132,8 +132,23 @@ EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 # when I defined this flag:
 #   EXTRA_CPP_FLAGS+=" -DUDD_NO_SLEEP_MGR"
 
-# This is for the 'native' USB port.
-EXTRA_CPP_FLAGS+=" -DUSB_PID=0x003e -DUSB_VID=0x2341"
+# USB Vendor and Device ID definitions for the 'native' USB port.
+#
+# The standard Arduino firmware uses ID 0x003e in a composite device
+# configuration, which means that the Windows .INF driver uses the following string:
+#   USB\VID_2341&PID_003E&MI_00
+# Note the "MI_00" at the end that denotes the interface number on the composite device.
+#
+# Linux needs no drivers, all CDC interfaces are automatically recognised.
+# I have heard that composite devices are not supported on Mac OS, but I don't really know.
+#
+# The JtagDue Firmware does not use a composite device, but defines a single CDC device,
+# so that the standard Arduino Due INF driver does not work even if you use the same PID.
+#
+# Therefore, I have chosen a different PID of 0x1234. You can choose your own,
+# but then you will need to modify the .INF driver file and reinstall it on Windows.
+
+EXTRA_CPP_FLAGS+=" -DUSB_VID=0x2341 -DUSB_PID=0x1234"
 
 
 # Assorted extra warnings.
