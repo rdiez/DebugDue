@@ -37,12 +37,13 @@ void InitUsb ( void )
   udc_start();
 }
 
+static const bool TRACE_USB_CONNECTION_NOTIFICATIONS = false;
 
 static const uint8_t USB_CALLBACK_PORT_NUMBER = 0;
 
 
 static volatile bool s_isUsbCableConnected   = false;
-static volatile bool s_isCdcInterfaceEnabled = false; // Note that this interface remains enabled even if the cable is pulled.
+static volatile bool s_isCdcInterfaceEnabled = false;  // Note that this interface remains enabled even if the cable is pulled.
 static volatile bool s_isChannelOpen         = false;
 
 
@@ -50,7 +51,9 @@ void MyUsbCallback_udc_resume ( void )
 {
   // Sometimes, when you connect the cable, you get a first resume/suspend notification pair,
   // and then a second, stable resume notification.
-  // DbgconPrintStr("MyUsbCallback_udc_resume()" EOL);
+
+  if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
+    DbgconPrintStr( "MyUsbCallback_udc_resume()" EOL );
 
   assert( !s_isUsbCableConnected );
   s_isUsbCableConnected = true;
@@ -59,7 +62,8 @@ void MyUsbCallback_udc_resume ( void )
 
 void MyUsbCallback_udc_suspend ( void )
 {
-  // DbgconPrintStr("MyUsbCallback_udc_suspend()" EOL);
+  if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
+    DbgconPrintStr( "MyUsbCallback_udc_suspend()" EOL );
 
   // This routine is always called once at the beginning, therefore we cannot assert this here:
   //   ASSERT( s_isUsbCableConnected );
@@ -71,11 +75,11 @@ void MyUsbCallback_udc_suspend ( void )
 
 // The USB Host has enabled the CDC interface. Note that the interface remains logically enabled
 // even if the user pulls the USB cable.
-// Return true to indicate success.
 
 bool MyUsbCallback_cdc_enable ( const uint8_t port )
 {
-  // DbgconPrintStr("MyUsbCallback_cdc_enable()" EOL);
+  if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
+    DbgconPrintStr( "MyUsbCallback_cdc_enable()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -85,12 +89,13 @@ bool MyUsbCallback_cdc_enable ( const uint8_t port )
 
   s_isCdcInterfaceEnabled = true;
 
-  return true;
+  return true;  // Indicate success.
 }
 
 void MyUsbCallback_cdc_disable ( const uint8_t port )
 {
-  // DbgconPrintStr("MyUsbCallback_cdc_disable()" EOL);
+  if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
+    DbgconPrintStr( "MyUsbCallback_cdc_disable()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -105,10 +110,11 @@ void MyUsbCallback_cdc_disable ( const uint8_t port )
 
 void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 {
-  // if ( enable )
-  //   DbgconPrintStr( "MyUsbCallback_cdc_set_dtr(true)" EOL );
-  // else
-  //   DbgconPrintStr( "MyUsbCallback_cdc_set_dtr(false)" EOL );
+  if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
+  {
+    DbgconPrint( "MyUsbCallback_cdc_set_dtr( %s )" EOL,
+                 enable ? "enable" : "disable" );
+  }
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -130,7 +136,8 @@ void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 
 void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
 {
-  // DbgconPrintStr("MyUsbCallback_cdc_rx_notify()" EOL);
+  if ( false )
+    DbgconPrintStr( "MyUsbCallback_cdc_rx_notify()" EOL );
 
   // Print the received packet size (not quite reliable), for performance research purposes only:
   if ( false )
@@ -150,7 +157,8 @@ void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
 
 void MyUsbCallback_cdc_tx_empty_notify ( const uint8_t port )
 {
-  // DbgconPrintStr("MyUsbCallback_cdc_tx_empty_notify()" EOL);
+  if ( false )
+    DbgconPrintStr( "MyUsbCallback_cdc_tx_empty_notify()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -164,7 +172,8 @@ void MyUsbCallback_cdc_tx_empty_notify ( const uint8_t port )
 
 void MyUsbCallback_cdc_set_coding ( const uint8_t port, usb_cdc_line_coding_t * const cfg )
 {
-  // DbgconPrintStr("MyUsbCallback_cdc_set_coding()" EOL);
+  if ( false )
+    DbgconPrintStr( "MyUsbCallback_cdc_set_coding()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
