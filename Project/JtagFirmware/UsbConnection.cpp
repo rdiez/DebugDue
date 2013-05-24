@@ -61,7 +61,7 @@ static void UsbConnectionEstablished ( void )
 {
   DbgconPrintStr( "Connection opened on the native USB port." EOL );
 
-  // DbgconPrint( "Rx buffer size: %u, Tx buffer size: %u" EOL, USB_RX_BUFFER_SIZE, USB_TX_BUFFER_SIZE );
+  // DbgconPrint( "Rx buffer size: %u, Tx buffer size: %u" EOL, unsigned(USB_RX_BUFFER_SIZE), unsigned(USB_TX_BUFFER_SIZE) );
 
   ResetBuffers();
   BusPirateConnection_Init( &s_usbTxBuffer );
@@ -244,11 +244,17 @@ void ServiceUsbConnection ( const uint64_t currentTime )
     DbgconPrintStr( "Error servicing the USB connection: " );
     DbgconPrintStr( e.what() );
     DbgconPrintStr( EOL );
+
+    // We need to consume the data in the Rx buffer, otherwise we may enter an infinite loop.
+    s_usbRxBuffer.Reset();
   }
   catch ( ... )
   {
     DbgconPrintStr( "Error servicing the USB connection: " );
     DbgconPrintStr( "<unexpected C++ exception>" );
     DbgconPrintStr( EOL );
+
+    // We need to consume the data in the Rx buffer, otherwise we may enter an infinite loop.
+    s_usbRxBuffer.Reset();
   }
 }
