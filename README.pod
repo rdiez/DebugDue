@@ -201,7 +201,7 @@ The only LED on the Arduino Due is used as a heartbeat indicator at the moment.
 
 =over
 
-=item * Version 1.0.0, released on 11 may 2013. First public version.
+=item * Version 1.0.0, released on 11 may 2013, git tag "v1.0.0". First public version.
 
 =back
 
