@@ -38,7 +38,7 @@ private:
   enum { BUF_LEN = 1024 };
   enum { MAX_SINGLE_CMD_LEN = 256 };  // Not including the NULL character terminator.
 
-  // Maximum number of tx bytes that a single operation may generate, approximately
+  // Maximum number of tx bytes that a single user edit operation may generate, approximately.
   enum { MAX_TX_BUFFER_SIZE_NEEDED = MAX_SINGLE_CMD_LEN + 40 };
 
   enum StateEnum
