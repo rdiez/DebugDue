@@ -362,9 +362,10 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
   {
   case FEATURE_LED:
     // We use the Arduino Due's LED as a kind of visual heartbeat.
-    // OpenOCD never sends this command, so ignore it.
-    assert( false );
-    // SetLed( action == ACTION_ENABLE );
+    // OpenOCD never sends this command by default, so ignore it.
+    // The user can manually send this command though, so maybe in the future
+    // we want to support it.
+    //   SetLed( action == ACTION_ENABLE );
     break;
 
   case FEATURE_VREG:
@@ -860,10 +861,17 @@ static bool ShiftCommand ( CUsbRxBuffer * const rxBuffer,
 
   const uint16_t dataBitCount = (len1 << 8) | len2;
 
+  // A command with more data bits than MAX_JTAG_TAP_SHIFT_BIT_COUNT will never fit
+  // in the Rx Buffer, so we would be waiting forever for the command to be complete.
+
   if ( dataBitCount > MAX_JTAG_TAP_SHIFT_BIT_COUNT )
   {
+    // The Bus Pirate firmware has a hard-coded limit of 0x2000.
+    STATIC_ASSERT( MAX_JTAG_TAP_SHIFT_BIT_COUNT >= 0x2000, "We should support at least the Bus Pirate's maximum limit." );
+
     throw std::runtime_error( "CMD_TAP_SHIFT data len too big." );
   }
+
 
   const unsigned dataByteCount = ( dataBitCount + 7 ) / 8;
   const uint32_t cmdLen   = TAP_SHIFT_CMD_HEADER_LEN + dataByteCount * 2;
