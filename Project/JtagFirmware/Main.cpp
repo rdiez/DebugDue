@@ -250,10 +250,8 @@ void StartOfUserCode ( void )
         assert( CheckStackCanary( MIN_UNUSED_STACK_SIZE ) );
       }
 
-      // Routine cpu_irq_is_enabled() in the Atmel Software Framework uses global variable g_interrupt_enabled,
-      // and I am worried that it could become out of sync with the CPU. This ASSERT
-      // is an attempt to detect such a discrepancy.
-      assert( cpu_irq_is_enabled() );
+      // If somebody forgets to re-enable the interrupts after disabling them, detect it as soon as possible.
+      assert( AreInterruptsEnabled() );
 
       UpdateCpuLoadStats();
 
