@@ -234,6 +234,6 @@ BARE_METAL_SUPPORT_DIR="$(readlink -f "$srcdir/BareMetalSupport")"
 AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
 # If you update this line, please update SUBDIRS in Makefile.am too.
-AC_CONFIG_FILES([Makefile BareMetalSupport/Makefile JtagFirmware/Makefile])
+AC_CONFIG_FILES([Makefile BareMetalSupport/Makefile JtagFirmware/Makefile EmptyFirmware/Makefile])
 
 AC_OUTPUT
