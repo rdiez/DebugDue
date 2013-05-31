@@ -18,6 +18,7 @@
 #include <assert.h>
 
 #include <BareMetalSupport/Miscellaneous.h>
+#include <BareMetalSupport/BusyWait.h>
 #include <BareMetalSupport/BoardInit.h>
 #include <BareMetalSupport/StackCheck.h>
 #include <BareMetalSupport/Uptime.h>

@@ -19,12 +19,9 @@
 #define BMS_MISCELLANEOUS_H_INCLUDED
 
 #include <stdint.h>
-
-#include <interrupt.h>
-
 #include <assert.h>
 
-#include "SysTickUtils.h"
+#include <interrupt.h>
 
 
 #define LF "\n"  // Line Feed, 0x0A.
@@ -42,38 +39,6 @@ IntegerType MaxFrom ( const IntegerType a, const IntegerType b )
   return a > b ? a : b;
 }
 
-
-// Please do not use this function directly, use the C wrapper BusyWaitLoop().
-extern "C" void BusyWaitAsmLoop ( uint32_t iterationCount );
-
-inline void BusyWaitLoop ( const uint32_t iterationCount )
-{
-    assert( iterationCount > 0 );
-
-    // If you need very large numbers you run the risk of overflowing at some
-    // point in time. This assert tries to warn you ahead of time.
-    assert( iterationCount < UINT32_MAX / 1000 );
-
-    BusyWaitAsmLoop( iterationCount );
-}
-
-
-inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
-{
-  assert( timeInUs > 0 );
-
-  const uint32_t BUSY_WAIT_LOOP_ITER_PER_CLK_TICK = 3;
-
-  const uint32_t res = UsToSysTickCount( timeInUs ) / BUSY_WAIT_LOOP_ITER_PER_CLK_TICK;
-
-  assert( res > 0 );
-
-  return res;
-}
-
-
-
-void AssertBusyWaitAsmLoopAlignment ( void );
 
 void ForeverHang ( void )  __attribute__ ((__noreturn__));
 

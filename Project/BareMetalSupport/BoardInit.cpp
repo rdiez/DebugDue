@@ -20,7 +20,7 @@
 
 #include <sam3xa.h>
 
-#include "Miscellaneous.h"
+#include "BusyWait.h"
 #include "IoUtils.h"
 #include "AssertionUtils.h"
 

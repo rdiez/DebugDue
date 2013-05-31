@@ -17,6 +17,7 @@
 #include "BusPirateConnection.h"  // The include file for this module should come first.
 
 #include <BareMetalSupport/Uptime.h>
+#include <BareMetalSupport/BusyWait.h>
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/DebugConsole.h>

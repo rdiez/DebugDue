@@ -20,6 +20,7 @@ libbare_metal_support_a_SOURCES = \
     StackCheck.cpp \
     Uptime.cpp \
     SysTickUtils.cpp \
+    BusyWait.cpp \
     TriggerMainLoopIteration.cpp
 
 
