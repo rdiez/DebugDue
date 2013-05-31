@@ -42,10 +42,6 @@
   static const size_t MIN_UNUSED_STACK_SIZE = MaxFrom( MaxFrom( ASSERT_MSG_BUFSIZE, MAX_DBGCON_PRINT_LEN ), MAX_USB_PRINT_LEN ) + 200;
 #endif
 
-// The watchdog triggers while stopped at a GDB breakpoint, but it should not.
-// If you know how to change this, please drop me a line.
-static const bool ENABLE_WDT = false;
-
 
 static uint32_t GetWdtPeriod ( const uint32_t dwMs )
 {
