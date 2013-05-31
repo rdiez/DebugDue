@@ -60,16 +60,28 @@ inline bool AreInterruptsEnabled ( void )
   // Routine cpu_irq_is_enabled() in the Atmel Software Framework uses global variable g_interrupt_enabled,
   // so and I am worried that it could become out of sync with the CPU flag.
   #ifndef NDEBUG
-    int primaskValue;
+  {
+    uint32_t primaskValue;
 
-    asm volatile( "mrs %[primaskValue], primask"
-                  // output operand list
-                  : [primaskValue] "=&r" (primaskValue)
-                );
+    if ( true )
+    {
+      primaskValue = __get_PRIMASK();
+    }
+    else
+    {
+      // Alternative implementation with inline assembly.
+
+      asm volatile( "mrs %[primaskValue], primask"
+                    // output operand list
+                    : [primaskValue] "=&r" (primaskValue)
+                  );
+    }
 
     const bool areEnabledAccordingToPrimask = ( 0 == primaskValue );
 
     assert( areEnabledAccordingToPrimask == areEnabledAccordingToAtmelSoftwareFramework );
+  }
+
   #endif
 
   return areEnabledAccordingToAtmelSoftwareFramework;
