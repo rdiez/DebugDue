@@ -126,9 +126,9 @@ static void ProcessUsbSpeedTestCmd ( const char * const cmdEnd,
 {
   // Examples about how to automate the speed test from the bash command line:
   //   Tests where the Arduino Due is sending:
-  //     echo "UsbSpeedTest TxFastLoopRawUsb" | socat - /dev/ttyACM1,b115200,raw,echo=0,crnl | pv -pertb >/dev/null
+  //     echo "UsbSpeedTest TxFastLoopRawUsb" | socat - /dev/jtagdue1,b115200,raw,echo=0,crnl | pv -pertb >/dev/null
   //   Tests where the Arduino Due is receiving:
-  //     (echo "UsbSpeedTest RxWithCircularBuffer" && yes ".") | pv -pertb - | socat - /dev/ttyACM1,b115200,raw,echo=0,crnl >/dev/null
+  //     (echo "UsbSpeedTest RxWithCircularBuffer" && yes ".") | pv -pertb - | socat - /dev/jtagdue1,b115200,raw,echo=0,crnl >/dev/null
 
   const uint32_t TEST_TIME_IN_MS = 5000;  // We could make a user parameter out of this value.
 
