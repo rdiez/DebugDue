@@ -115,6 +115,10 @@ For example, this Linux client allows you to conveniently quit the client-side t
 
   socat READLINE,echo=0 /dev/ttyACM0,b115200,raw,echo=0,crnl
 
+On Windows, you can use Putty like this:
+
+  putty -serial COM8
+
 The JtagDue firmware does not implement the usual command-line editing comfort features yet, like
 command history and all the standard cursor key movements, but you can use the Readline library
 on the client side instead as follows:
