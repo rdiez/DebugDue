@@ -18,10 +18,34 @@
 #ifndef BMS_TRIGGER_MAIN_LOOP_ITERATION_H_INCLUDED
 #define BMS_TRIGGER_MAIN_LOOP_ITERATION_H_INCLUDED
 
+#include <stdint.h>
 
-void TriggerMainLoopIteration ( void );
+
+#define ENABLE_CPU_SLEEP  false
+
+
+void TriggerMainLoopIteration   ( void );
 
 void MainLoopSleep ( void );
 
+
+// Note that CPU load statistics are only available if CPU sleep support is disabled, see ENABLE_CPU_SLEEP.
+// An alternative implementation using a timer would not have this limitation.
+
+void SetCpuLoadStatsUpdateFlag ( void );
+
+void UpdateCpuLoadStats ( void );
+
+#define CPU_LOAD_MINUTE_SLOT_COUNT 60  // Consumes one byte per slot.
+
+// A value of 10 here means that the main loop will run once every 100 ms.
+// You need to call UpdateCpuLoadStats() in approximately 100 ms intervals then,
+// or the CPU load statistics will be inaccurate.
+#define CPU_LOAD_SECOND_SLOT_COUNT 10
+
+void GetCpuLoadStats ( const uint8_t ** lastMinute,
+                             uint8_t  * lastMinuteIndex,
+                       const uint8_t ** lastSecond,
+                             uint8_t  * lastSecondIndex );
 
 #endif  // Include this header file only once.

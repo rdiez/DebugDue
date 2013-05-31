@@ -160,10 +160,10 @@ static void Configure ( void )
 
   //  pmc_enable_all_periph_clk();  // This does not work, it hangs forever. It probably tries to enable too many peripherals.
 
-  pmc_enable_periph_clk( ID_PIOA );
-  pmc_enable_periph_clk( ID_PIOB );
-  pmc_enable_periph_clk( ID_PIOC );
-  pmc_enable_periph_clk( ID_PIOD );
+  VERIFY( 0 == pmc_enable_periph_clk( ID_PIOA ) );
+  VERIFY( 0 == pmc_enable_periph_clk( ID_PIOB ) );
+  VERIFY( 0 == pmc_enable_periph_clk( ID_PIOC ) );
+  VERIFY( 0 == pmc_enable_periph_clk( ID_PIOD ) );
 
   if ( false )
   {
@@ -254,6 +254,8 @@ void StartOfUserCode ( void )
       // is an attempt to detect such a discrepancy.
       assert( cpu_irq_is_enabled() );
 
+      UpdateCpuLoadStats();
+
       MainLoopSleep();
     }
 }
@@ -269,7 +271,8 @@ void HardFault_Handler ( void )
 }
 
 
-static uint32_t s_mainLoopWakeUpCounter = 0;
+static uint32_t s_mainLoopWakeUpCounterTimeouts = 0;
+static uint32_t s_mainLoopWakeUpCounterCpuLoad  = 0;
 
 void SysTick_Handler ( void )
 {
@@ -278,13 +281,32 @@ void SysTick_Handler ( void )
 
   // Wake the main loop up at regular intervals, in case the user code wants to trigger actions based on time-outs.
 
-  const uint32_t MAINLOOP_WAKE_UP_FACTOR = 64;  // In milliseconds.
+  const uint32_t MAINLOOP_WAKE_UP_TIMEOUTS_MS = 250;
 
-  ++s_mainLoopWakeUpCounter;
+  assert( s_mainLoopWakeUpCounterTimeouts < MAINLOOP_WAKE_UP_TIMEOUTS_MS );
+  ++s_mainLoopWakeUpCounterTimeouts;
 
-  if ( 0 == ( s_mainLoopWakeUpCounter % MAINLOOP_WAKE_UP_FACTOR ) )
+  if ( s_mainLoopWakeUpCounterTimeouts == MAINLOOP_WAKE_UP_TIMEOUTS_MS )
   {
-    s_mainLoopWakeUpCounter = 0;
+    s_mainLoopWakeUpCounterTimeouts = 0;
     TriggerMainLoopIteration();
+  }
+
+
+  // Wake the main loop up at regular intervals for the purposes of CPU load calculations.
+  if ( !ENABLE_CPU_SLEEP )
+  {
+    const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_MS = 1000 / CPU_LOAD_SECOND_SLOT_COUNT;  // In milliseconds.
+    STATIC_ASSERT( 0 == ( 1000 % CPU_LOAD_SECOND_SLOT_COUNT ), "Cannot accurately calculate CPU load." );
+
+    assert( s_mainLoopWakeUpCounterCpuLoad < MAINLOOP_WAKE_UP_CPU_LOAD_MS );
+    ++s_mainLoopWakeUpCounterCpuLoad;
+
+    if ( s_mainLoopWakeUpCounterCpuLoad == MAINLOOP_WAKE_UP_CPU_LOAD_MS )
+    {
+      s_mainLoopWakeUpCounterCpuLoad = 0;
+      SetCpuLoadStatsUpdateFlag();
+      TriggerMainLoopIteration();
+    }
   }
 }
