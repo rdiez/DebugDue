@@ -125,8 +125,9 @@ void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 
   // If the user pulls the USB cable, we don't get this notification. When the USB cable
   // is connected again, we'll get a first notification here that the channel is closed.
-  if ( enable )
-    assert( s_isChannelOpen == false );
+  //
+  // Under Windows, if you connect with Cygwin socat, you get several notifications in a row
+  // that the channel is open.
 
   s_isChannelOpen = enable;
 
