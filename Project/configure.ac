@@ -198,6 +198,8 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_
 
 EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/pmc"
 EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/pio"
+EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/rstc"
+EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/wdt"
 EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/utils"
 EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/utils/header_files"
 EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/utils/preprocessor"

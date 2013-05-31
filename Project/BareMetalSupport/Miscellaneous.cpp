@@ -16,6 +16,9 @@
 
 #include "Miscellaneous.h"  // Include file for this module comes first.
 
+#include <rstc.h>
+#include <wdt.h>
+
 
 // I find this routine useful during debugging.
 
@@ -55,4 +58,21 @@ void AssertBusyWaitAsmLoopAlignment ( void )
 
       assert( 0 == ( fnAddr % INSTRUCTION_LOAD_ALIGNMENT ) );
     #endif
+}
+
+
+void ResetBoard ( const bool triggerWatchdogDuringWait )
+{
+  __disable_irq();
+
+  rstc_start_software_reset( RSTC );
+
+  while ( true )
+  {
+    // If we do not keep the watchdog happy and it times out during this wait,
+    // the reset reason will be wrong when the board starts the next time around.
+
+    if ( triggerWatchdogDuringWait )
+      wdt_restart( WDT );
+  }
 }

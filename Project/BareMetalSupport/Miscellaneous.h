@@ -89,5 +89,6 @@ inline bool AreInterruptsEnabled ( void )
 
 void BreakpointPlaceholder ( void );
 
+void ResetBoard ( bool triggerWatchdogDuringWait )  __attribute__ ((__noreturn__));
 
 #endif  // Include this header file only once.

@@ -45,7 +45,6 @@ libcmsis_a_SOURCES = \
 # ----- libsam comes from Atmel and has a very liberal license.
 
 LIBSAM_PMC_DIR   := $(ASF_BASEDIR)/sam/drivers/pmc
-LIBSAM_WDT_DIR   := $(ASF_BASEDIR)/sam/drivers/wdt
 LIBSAM_PIO_DIR   := $(ASF_BASEDIR)/sam/drivers/pio
 LIBSAM_USART_DIR := $(ASF_BASEDIR)/sam/drivers/usart
 
@@ -58,7 +57,8 @@ libsam_a_SOURCES = \
      $(LIBSAM_PMC_DIR)/pmc.c \
      $(LIBSAM_PMC_DIR)/sleep.c \
      $(LIBSAM_PIO_DIR)/pio.c \
-     $(LIBSAM_WDT_DIR)/wdt.c \
+     $(ASF_BASEDIR)/sam/drivers/wdt/wdt.c \
+     $(ASF_BASEDIR)/sam/drivers/rstc/rstc.c \
      $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc.c \
      $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc_desc.c \
      $(LIBSAM_USB_UDC_DIR)/udc.c \
@@ -78,7 +78,6 @@ AM_CPPFLAGS := $(AM_CPPFLAGS)
 # POSSIBLE IMPROVEMENT: We probably do not need these include paths when compiling each component.
 
 AM_CPPFLAGS += -I$(ASF_BASEDIR)/common/services/sleepmgr
-AM_CPPFLAGS += -I$(LIBSAM_WDT_DIR)
 AM_CPPFLAGS += -I$(LIBSAM_USART_DIR)
 AM_CPPFLAGS += -I$(LIBSAM_USB_UDI_CDC_DIR)
 AM_CPPFLAGS += -I$(LIBSAM_USB_UDI_CDC_DEVICE_DIR)
