@@ -54,8 +54,12 @@ static uint8_t s_lastSecondIndex;
 static uint64_t s_sleepLoopCount;
 
 // The value below was calibrated by hand, see ENABLE_CALIBRATION_MODE.
-// If you leave the "Native" USB interface unconnected, there is less CPU load.
-static const uint64_t CALIBRATED_MAX_LOOP_COUNT = 1048759;
+// Tips for calibrating this value are:
+// - Leave the "Native" USB interface unconnected for a short time, as there is less CPU load then.
+// - Turn off the main loop wake-ups for time-out purposes.
+// - Compile with optimisation.
+//
+static const uint64_t CALIBRATED_MAX_LOOP_COUNT = 1049937;
 
 
 static bool ENABLE_CALIBRATION_MODE = false;
@@ -89,7 +93,9 @@ void UpdateCpuLoadStats ( void )
   if ( s_sleepLoopCount > CALIBRATED_MAX_LOOP_COUNT )
   {
     // If the manual callibration has been done correctly, this should never happen.
-    assert( false );
+    if ( !ENABLE_CALIBRATION_MODE )
+      assert( false );
+
     cpuLoad = 0;
   }
   else
@@ -129,11 +135,15 @@ void UpdateCpuLoadStats ( void )
 // This routine must be in assembly so that the number of iterations can be calibrated once
 // and does not change depending on compiler flags and version.
 
-static void AsmLoop ( volatile bool * wasMainLoopEventTriggered,
-                      uint64_t * sleepLoopCount ) __attribute__ ((naked));
+// Note that there is a similar constant in the include file for assembly modules,
+// see that other definition for information about why alignment matters here too.
+#define INSTRUCTION_LOAD_ALIGNMENT 16
 
-static void AsmLoop ( volatile bool * const /* wasMainLoopEventTriggered */,
-                      uint64_t * const /* sleepLoopCount */ )
+static void CpuLoadAsmLoop ( volatile bool * wasMainLoopEventTriggered,
+                             uint64_t * sleepLoopCount ) __attribute__ (( naked ));
+
+static void CpuLoadAsmLoop ( volatile bool * const /* wasMainLoopEventTriggered */,
+                           uint64_t * const /* sleepLoopCount */ )
 {
   /* This is the equivalent code in C++:
   for ( ; ; )
@@ -161,6 +171,14 @@ static void AsmLoop ( volatile bool * const /* wasMainLoopEventTriggered */,
      "movs    r5, #0"  "\n"
      "ldrd    r2, r3, [r1]"  "\n"
 
+     // The whole loop fits exactly in the 16-byte alignment and runs much faster.
+     // Speed is actually not so important here, but the runtime should not depend
+     // on some compilation randomness, therefore we must align here.
+     //
+     // I have not managed yet to use a named constant like INSTRUCTION_LOAD_ALIGNMENT
+     // instead of the hard-coded 16 below, the %[inst_align] syntax does not work.
+
+     ".balignw 16, 0xBF00"  "\n"  // A thumb 'nop' instruction has opcode 0xBF00.
    "AsmLoopLoopLabel:"  "\n"
 
       "ldrb    r6, [r0, #0]"  "\n"
@@ -174,6 +192,15 @@ static void AsmLoop ( volatile bool * const /* wasMainLoopEventTriggered */,
 
         "pop {r4, r5, r6}"  "\n"
         "bx lr"  "\n"
+
+     // Output operand list
+     :
+
+     // Input operand list
+     : [inst_align] "I" ( INSTRUCTION_LOAD_ALIGNMENT )
+
+     // Clobber list
+     :
   );
 }
 
@@ -196,7 +223,7 @@ void MainLoopSleep ( void )
   }
   else
   {
-    AsmLoop( &s_wasMainLoopEventTriggered, &s_sleepLoopCount );
+    CpuLoadAsmLoop( &s_wasMainLoopEventTriggered, &s_sleepLoopCount );
 
     s_wasMainLoopEventTriggered = false;
   }
