@@ -14,4 +14,6 @@
 // If you know how to change this behaviour, please drop me a line.
 static const bool ENABLE_WDT = false;
 
+#define SYSTEM_TICK_PERIOD_MS  50
+
 #endif  // Include this header file only once.

@@ -28,6 +28,12 @@
     // Absolute speed is not important in this routine, but a loop iteration
     // must always take the same time across compilations, so set a big alignment
     // below in order to make sure that performance stays constant.
+    //
+    // The current implementation needs 3 clock cycles per iteration count
+    // (after the first time, when the instruction prefetch buffer is loaded).
+    // If that changes, make sure to adjust constant BUSY_WAIT_LOOP_ITER_PER_CLK_TICK
+    // in the C++ counterpart.
+
     .balign INSTRUCTION_LOAD_ALIGNMENT
 
     GLOBAL_THUMB_FUNCTION BusyWaitAsmLoop

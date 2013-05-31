@@ -42,8 +42,6 @@
   static const size_t MIN_UNUSED_STACK_SIZE = MaxFrom( MaxFrom( ASSERT_MSG_BUFSIZE, MAX_DBGCON_PRINT_LEN ), MAX_USB_PRINT_LEN ) + 200;
 #endif
 
-const uint32_t SYSTEM_TICK_PERIOD_MS = 50;
-
 
 static uint32_t GetWdtPeriod ( const uint32_t dwMs )
 {

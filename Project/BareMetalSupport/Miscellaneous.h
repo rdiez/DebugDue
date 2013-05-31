@@ -24,6 +24,8 @@
 
 #include <assert.h>
 
+#include "SysTickUtils.h"
+
 
 #define LF "\n"  // Line Feed, 0x0A.
 #define CRLF "\r\n"  // Carriage Return, 0x0D, followed by a Line Feed, 0x0A.
@@ -48,8 +50,28 @@ inline void BusyWaitLoop ( const uint32_t iterationCount )
 {
     assert( iterationCount > 0 );
 
+    // If you need very large numbers you run the risk of overflowing at some
+    // point in time. This assert tries to warn you ahead of time.
+    assert( iterationCount < UINT32_MAX / 1000 );
+
     BusyWaitAsmLoop( iterationCount );
 }
+
+
+inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
+{
+  assert( timeInUs > 0 );
+
+  const uint32_t BUSY_WAIT_LOOP_ITER_PER_CLK_TICK = 3;
+
+  const uint32_t res = UsToSysTickCount( timeInUs ) / BUSY_WAIT_LOOP_ITER_PER_CLK_TICK;
+
+  assert( res > 0 );
+
+  return res;
+}
+
+
 
 void AssertBusyWaitAsmLoopAlignment ( void );
 
@@ -90,5 +112,6 @@ inline bool AreInterruptsEnabled ( void )
 void BreakpointPlaceholder ( void );
 
 void ResetBoard ( bool triggerWatchdogDuringWait )  __attribute__ ((__noreturn__));
+
 
 #endif  // Include this header file only once.
