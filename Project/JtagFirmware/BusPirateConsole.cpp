@@ -29,7 +29,8 @@
 #include <string.h>
 #include <ctype.h>
 
-#include "udi_cdc.h"
+#include <udi_cdc.h>
+#include <rstc.h>
 
 #include "Globals.h"
 #include "BusPirateBinaryMode.h"
@@ -186,6 +187,112 @@ static void ProcessUsbSpeedTestCmd ( const char * const cmdEnd,
 }
 
 
+static void DisplayResetCause ( CUsbTxBuffer * const txBuffer )
+{
+  UsbPrint( txBuffer, "Reset cause: " );
+
+  const uint32_t resetCause = rstc_get_reset_cause( RSTC );
+
+  switch ( resetCause )
+  {
+  case RSTC_GENERAL_RESET:
+    UsbPrint( txBuffer, "General" );
+    break;
+
+  case RSTC_BACKUP_RESET:
+    UsbPrint( txBuffer, "Backup" );
+    break;
+
+  case RSTC_WATCHDOG_RESET:
+    UsbPrint( txBuffer, "Watchdog" );
+    break;
+
+  case RSTC_SOFTWARE_RESET:
+    UsbPrint( txBuffer, "Software" );
+    break;
+
+  case RSTC_USER_RESET:
+    UsbPrint( txBuffer, "User" );
+    break;
+
+  default:
+    UsbPrint( txBuffer, "<unknown>" );
+    assert( false );
+    break;
+  }
+
+  UsbPrint( txBuffer, EOL );
+}
+
+
+static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
+{
+  const uint8_t * lastMinute;
+        uint8_t   lastMinuteIndex;
+
+  const uint8_t * lastSecond;
+        uint8_t   lastSecondIndex;
+
+  GetCpuLoadStats( &lastMinute, &lastMinuteIndex,
+                   &lastSecond, &lastSecondIndex );
+
+  uint32_t minuteAverage = 0;
+
+  for ( unsigned j = 0; j < CPU_LOAD_MINUTE_SLOT_COUNT; ++j )
+  {
+    const unsigned index = ( lastMinuteIndex + j ) % CPU_LOAD_MINUTE_SLOT_COUNT;
+
+    minuteAverage += lastMinute[ index ];
+  }
+
+  minuteAverage = minuteAverage * 100 / ( CPU_LOAD_MINUTE_SLOT_COUNT * 255 );
+  assert( minuteAverage <= 100 );
+
+  UsbPrint( txBuffer, "CPU load in the last 60 seconds (1 second intervals, oldest to newest):" EOL );
+
+  for ( unsigned j = 0; j < CPU_LOAD_MINUTE_SLOT_COUNT; ++j )
+  {
+    const unsigned index = ( lastMinuteIndex + j ) % CPU_LOAD_MINUTE_SLOT_COUNT;
+
+    const uint32_t val = lastMinute[ index ] * 100 / 255;
+
+    assert( val <= 100 );
+
+    UsbPrint( txBuffer, "%2u %%" EOL, unsigned( val ) );
+  }
+
+
+  uint32_t secondAverage = 0;
+
+  for ( unsigned j = 0; j < CPU_LOAD_SECOND_SLOT_COUNT; ++j )
+  {
+    const unsigned index = ( lastSecondIndex + j ) % CPU_LOAD_SECOND_SLOT_COUNT;
+
+    secondAverage += lastSecond[ index ];
+  }
+
+  secondAverage = secondAverage * 100 / ( CPU_LOAD_SECOND_SLOT_COUNT * 255 );
+  assert( secondAverage <= 100 );
+
+
+  UsbPrint( txBuffer, "EOL CPU load in the last second (50 ms intervals, oldest to newest):" EOL );
+
+  for ( unsigned j = 0; j < CPU_LOAD_SECOND_SLOT_COUNT; ++j )
+  {
+    const unsigned index = ( lastSecondIndex + j ) % CPU_LOAD_SECOND_SLOT_COUNT;
+
+    const uint32_t val = lastSecond[ index ] * 100 / 255;
+
+    assert( val <= 100 );
+
+    UsbPrint( txBuffer, "%2u %%" EOL, unsigned( val ) );
+  }
+
+  UsbPrint( txBuffer, "Average CPU load in the last 60 seconds: %2u %%" EOL, unsigned( minuteAverage ) );
+  UsbPrint( txBuffer, "Average CPU load in the last    second : %2u %%" EOL, unsigned( secondAverage ) );
+}
+
+
 static const char * const CMDNAME_QUESTION_MARK = "?";
 static const char * const CMDNAME_HELP = "help";
 static const char * const CMDNAME_I = "i";
@@ -196,6 +303,9 @@ static const char * const CMDNAME_MALLOCTEST = "MallocTest";
 static const char * const CMDNAME_CPP_EXCEPTION_TEST = "ExceptionTest";
 static const char * const CMDNAME_MEMORY_USAGE = "MemoryUsage";
 static const char * const CMDNAME_TEST_RX_ERROR_HANDLING = "DebugTestRxErrorHandling";
+static const char * const CMDNAME_RESET = "Reset";
+static const char * const CMDNAME_CPU_LOAD = "CpuLoad";
+static const char * const CMDNAME_RESET_CAUSE = "ResetCause";
 
 
 static void ProcessCommand ( const char * const cmdBegin,
@@ -223,6 +333,9 @@ static void ProcessCommand ( const char * const cmdBegin,
     UsbPrint( txBuffer, "  %s: Exercises malloc()." EOL, CMDNAME_MALLOCTEST );
     UsbPrint( txBuffer, "  %s: Exercises C++ exceptions." EOL, CMDNAME_CPP_EXCEPTION_TEST );
     UsbPrint( txBuffer, "  %s: Shows memory usage." EOL, CMDNAME_MEMORY_USAGE );
+    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET );
+    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_CPU_LOAD );
+    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
     UsbPrint( txBuffer, "Other debug commands are available, see the source code." EOL );
     return;
   }
@@ -230,6 +343,36 @@ static void ProcessCommand ( const char * const cmdBegin,
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_I, true, false, &extraParamsFound ) )
   {
     UsbPrint( txBuffer, "JtagDue %s" EOL, PACKAGE_VERSION );
+    return;
+  }
+
+
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_RESET, false, false, &extraParamsFound ) )
+  {
+    // This message does not reach the other side, we would need to add some delay.
+    //   UsbPrint( txBuffer, "Resetting the board..." EOL );
+    __disable_irq();
+    DbgconPrintStr( "Resetting the board..." EOL );
+    DbgconWaitForDataSent();
+    ResetBoard( ENABLE_WDT );
+    assert( false );  // We should never reach this point.
+    return;
+  }
+
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_CPU_LOAD, false, false, &extraParamsFound ) )
+  {
+    if ( ENABLE_CPU_SLEEP )
+      DbgconPrintStr( "CPU load statistics not available." EOL );
+    else
+      DisplayCpuLoad( txBuffer );
+
+    return;
+  }
+
+
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_RESET_CAUSE, false, false, &extraParamsFound ) )
+  {
+    DisplayResetCause( txBuffer );
     return;
   }
 
