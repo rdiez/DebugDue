@@ -242,6 +242,7 @@ void SetCpuLoadStatsUpdateFlag ( void )
   {
     // If this flag was already set, the main loop is not calling the update routine
     // frequently enough, so the CPU load statistics will be inaccurate.
+    // This probably means that some action takes too long and should be split up.
     assert( !s_wasCpuLoadUpdateTriggered );
 
     s_wasCpuLoadUpdateTriggered = true;
