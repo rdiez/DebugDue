@@ -26,7 +26,7 @@
 #include <BareMetalSupport/Uptime.h>
 #include <BareMetalSupport/DebugConsole.h>
 #include <BareMetalSupport/AssertionUtils.h>
-#include <BareMetalSupport/TriggerMainLoopIteration.h>
+#include <BareMetalSupport/MainLoopSleep.h>
 
 #include "UsbSupport.h"
 #include "Globals.h"
@@ -219,7 +219,7 @@ static void ServiceUsbConnectionData ( const uint64_t currentTime )
     s_usbTxBuffer.Reset();
 
     // Continue reading until the end of data, when we will declare the connection as lost.
-    TriggerMainLoopIteration();
+    WakeFromMainLoopSleep();
   }
   else
   {
@@ -230,7 +230,7 @@ static void ServiceUsbConnectionData ( const uint64_t currentTime )
     // straight away, for its reply would fit now in the tx buffer.
 
     if ( atLeastOneByteSent )
-      TriggerMainLoopIteration();
+      WakeFromMainLoopSleep();
   }
 }
 

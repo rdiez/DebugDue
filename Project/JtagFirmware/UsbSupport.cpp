@@ -24,7 +24,7 @@
 #include <udi_cdc.h>
 
 #include <BareMetalSupport/AssertionUtils.h>
-#include <BareMetalSupport/TriggerMainLoopIteration.h>
+#include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/DebugConsole.h>
 
 #include "ConfigFilesForLibsam/my_usb_callbacks.h"
@@ -69,7 +69,7 @@ void MyUsbCallback_udc_suspend ( void )
   //   ASSERT( s_isUsbCableConnected );
 
   s_isUsbCableConnected = false;
-  TriggerMainLoopIteration();  // Notify the main loop if we loose the USB connection.
+  WakeFromMainLoopSleep();  // Notify the main loop if we loose the USB connection.
 }
 
 
@@ -104,7 +104,7 @@ void MyUsbCallback_cdc_disable ( const uint8_t port )
   assert( s_isCdcInterfaceEnabled );
   s_isCdcInterfaceEnabled = false;
 
-  TriggerMainLoopIteration();  // Notify the main loop if we loose the USB connection.
+  WakeFromMainLoopSleep();  // Notify the main loop if we loose the USB connection.
 }
 
 
@@ -131,7 +131,7 @@ void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 
   s_isChannelOpen = enable;
 
-  TriggerMainLoopIteration();
+  WakeFromMainLoopSleep();
 }
 
 
@@ -152,7 +152,7 @@ void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
   // This can trigger if the caller closes the connection quickly.
   //   ASSERT( IsUsbConnectionOpen() );
 
-  TriggerMainLoopIteration();
+  WakeFromMainLoopSleep();
 }
 
 
@@ -167,7 +167,7 @@ void MyUsbCallback_cdc_tx_empty_notify ( const uint8_t port )
   // This can trigger if the caller closes the connection quickly.
   //   ASSERT( IsUsbConnectionOpen() );
 
-  TriggerMainLoopIteration();
+  WakeFromMainLoopSleep();
 }
 
 

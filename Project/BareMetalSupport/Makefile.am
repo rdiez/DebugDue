@@ -21,7 +21,7 @@ libbare_metal_support_a_SOURCES = \
     Uptime.cpp \
     SysTickUtils.cpp \
     BusyWait.cpp \
-    TriggerMainLoopIteration.cpp
+    MainLoopSleep.cpp
 
 
 # About file NewlibSyscalls.cpp :

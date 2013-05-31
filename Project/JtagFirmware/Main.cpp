@@ -24,7 +24,7 @@
 #include <BareMetalSupport/Uptime.h>
 #include <BareMetalSupport/IoUtils.h>
 #include <BareMetalSupport/DebugConsole.h>
-#include <BareMetalSupport/TriggerMainLoopIteration.h>
+#include <BareMetalSupport/MainLoopSleep.h>
 
 #include "Globals.h"
 #include "UsbConnection.h"
@@ -296,7 +296,7 @@ void SysTick_Handler ( void )
     if ( s_mainLoopWakeUpCounterTimeouts == MAINLOOP_WAKE_UP_TIMEOUTS_TICK_COUNT )
     {
       s_mainLoopWakeUpCounterTimeouts = 0;
-      TriggerMainLoopIteration();
+      WakeFromMainLoopSleep();
     }
   }
 
@@ -317,7 +317,7 @@ void SysTick_Handler ( void )
     {
       s_mainLoopWakeUpCounterCpuLoad = 0;
       SetCpuLoadStatsUpdateFlag();
-      TriggerMainLoopIteration();
+      WakeFromMainLoopSleep();
     }
   }
 }

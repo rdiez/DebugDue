@@ -21,7 +21,7 @@
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/DebugConsole.h>
-#include <BareMetalSupport/TriggerMainLoopIteration.h>
+#include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/StackCheck.h>
 
 #include <stdexcept>
@@ -176,7 +176,7 @@ static void ProcessUsbSpeedTestCmd ( const char * const cmdEnd,
     // This message may not make it to the console, depending on the test type.
     txBuffer->WriteString( "Starting USB speed test..." EOL );
 
-    TriggerMainLoopIteration();
+    WakeFromMainLoopSleep();
 
     return;
   }
@@ -620,7 +620,7 @@ static void SpeedTest ( CUsbRxBuffer * const rxBuffer,
     }
 
     // If we do not trigger the main loop iteration manually, we will have idle time between transfers.
-    TriggerMainLoopIteration();
+    WakeFromMainLoopSleep();
     break;
 
   case stRxWithCircularBuffer:

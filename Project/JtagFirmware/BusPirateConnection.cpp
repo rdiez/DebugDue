@@ -16,7 +16,7 @@
 
 #include "BusPirateConnection.h"  // The include file for this module should come first.
 
-#include <BareMetalSupport/TriggerMainLoopIteration.h>
+#include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/DebugConsole.h>
 
 #include "BusPirateConsole.h"
@@ -112,7 +112,7 @@ void ChangeBusPirateMode ( const BusPirateModeEnum newMode,
 
 
   // After changing the mode, we should call the ProcessData() function once again.
-  TriggerMainLoopIteration();
+  WakeFromMainLoopSleep();
 }
 
 

@@ -14,7 +14,7 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "TriggerMainLoopIteration.h"  // The include file for this module should come first.
+#include "MainLoopSleep.h"  // The include file for this module should come first.
 
 #include <assert.h>
 
@@ -30,7 +30,7 @@ static volatile bool s_wasCpuLoadUpdateTriggered = false;
 
 // This routine can be called from within interrupt context.
 
-void TriggerMainLoopIteration ( void )
+void WakeFromMainLoopSleep ( void )
 {
   if ( ENABLE_CPU_SLEEP )
   {
@@ -58,7 +58,7 @@ static uint64_t s_sleepLoopCount;
 // - Leave the "Native" USB interface unconnected for a short time, as there is less CPU load then.
 // - Turn off the main loop wake-ups for time-out purposes.
 // - Compile with optimisation.
-//
+// 
 static const uint64_t CALIBRATED_MAX_LOOP_COUNT = 1049937;
 
 
@@ -170,14 +170,14 @@ static void CpuLoadAsmLoop ( volatile bool * const /* wasMainLoopEventTriggered 
      "movs    r4, #1"  "\n"
      "movs    r5, #0"  "\n"
      "ldrd    r2, r3, [r1]"  "\n"
-
+     
      // The whole loop fits exactly in the 16-byte alignment and runs much faster.
      // Speed is actually not so important here, but the runtime should not depend
      // on some compilation randomness, therefore we must align here.
      //
      // I have not managed yet to use a named constant like INSTRUCTION_LOAD_ALIGNMENT
      // instead of the hard-coded 16 below, the %[inst_align] syntax does not work.
-
+     
      ".balignw 16, 0xBF00"  "\n"  // A thumb 'nop' instruction has opcode 0xBF00.
    "AsmLoopLoopLabel:"  "\n"
 

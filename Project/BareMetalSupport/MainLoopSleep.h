@@ -15,8 +15,8 @@
 
 
 // Include this header file only once.
-#ifndef BMS_TRIGGER_MAIN_LOOP_ITERATION_H_INCLUDED
-#define BMS_TRIGGER_MAIN_LOOP_ITERATION_H_INCLUDED
+#ifndef BMS_MAIN_LOOP_SLEEP_H_INCLUDED
+#define BMS_MAIN_LOOP_SLEEP_H_INCLUDED
 
 #include <stdint.h>
 
@@ -24,7 +24,7 @@
 #define ENABLE_CPU_SLEEP  false
 
 
-void TriggerMainLoopIteration   ( void );
+void WakeFromMainLoopSleep   ( void );
 
 void MainLoopSleep ( void );
 
