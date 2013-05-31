@@ -123,9 +123,9 @@ static void Configure ( void )
 
   // ------- Perform some assorted checks -------
 
-  AssertBusyWaitAsmLoopAlignment();
+  assert( IsBusyWaitAsmLoopAligned() );
 
-  AssertJtagTdoPullUpIsActive();
+  assert( IsJtagTdoPullUpActive() );
 
   // Check that the brown-out detector is active.
   #ifndef NDEBUG

@@ -53,7 +53,7 @@ inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
 }
 
 
-void AssertBusyWaitAsmLoopAlignment ( void );
+bool IsBusyWaitAsmLoopAligned ( void );
 
 
 #endif  // Include this header file only once.

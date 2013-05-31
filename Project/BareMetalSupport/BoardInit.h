@@ -4,6 +4,6 @@
 
 void StartOfUserCode ( void );
 
-void AssertJtagTdoPullUpIsActive ( void );
+bool IsJtagTdoPullUpActive ( void );
   
 #endif  // Include this header file only once.

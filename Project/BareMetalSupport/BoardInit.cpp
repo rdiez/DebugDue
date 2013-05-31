@@ -380,22 +380,19 @@ static const DeviceVectors ExceptionTable =
 //  "TDO pin is set in input mode when the Cortex-M3 Core is not in debug mode. Thus the internal
 //   pull-up corresponding to this PIO line must be enabled to avoid current consumption due to floating input."
 // Pin TDO/TRACESWO = PB30 = Pin number 30 (in the 144-ball LFBGA pinout).
-// Upon reset, the pull-up should be active, and this routine just asserts on it.
+// Upon reset, the pull-up should be active, and this routine should be called in order to assert
+// that it returns true.
 
-void AssertJtagTdoPullUpIsActive ( void )
+bool IsJtagTdoPullUpActive ( void )
 {
-  #ifndef NDEBUG
-
-    Pio * const pioPtr = PIOB;
+  Pio * const pioPtr = PIOB;
     
-    const uint8_t PIN_NUMBER = 30;
+  const uint8_t PIN_NUMBER = 30;
 
-    // This pin is used for JTAG purposes and must not be controlled by the PIO Controller.
-    assert( !IsPinControlledByPio( pioPtr, PIN_NUMBER ) );
+  // This pin is used for JTAG purposes and must not be controlled by the PIO Controller.
+  assert( !IsPinControlledByPio( pioPtr, PIN_NUMBER ) );
 
-    // The pull-ups can be enabled or disabled regardless of the pin configuration.
-    // The pull-up should be active.
-    IsPullUpEnabled( pioPtr, PIN_NUMBER );
-
-  #endif  // #ifndef NDEBUG
+  // The pull-ups can be enabled or disabled regardless of the pin configuration.
+  // The pull-up should be active.
+  return IsPullUpEnabled( pioPtr, PIN_NUMBER );
 }

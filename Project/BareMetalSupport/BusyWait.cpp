@@ -18,23 +18,21 @@
 
 
 
-// Check that the assembly alignment directive is working properly for routine BusyWaitAsmLoop.
+// Checks that the assembly alignment directive is working properly for routine BusyWaitAsmLoop.
 
-void AssertBusyWaitAsmLoopAlignment ( void )
+bool IsBusyWaitAsmLoopAligned ( void )
 {
-    #ifndef NDEBUG
-      // See the same symbol in assembly for more information.
-      const uint8_t INSTRUCTION_LOAD_ALIGNMENT = 16;
+  // See the same symbol in assembly for more information.
+  const uint8_t INSTRUCTION_LOAD_ALIGNMENT = 16;
 
-      // Depending on the GCC optimisation level (-O0 vs -O1), the function address
-      // has sometimes the extra 1 added or not.
-      const uintptr_t THUMB_DISPLACEMENT = 1;
+  // Depending on the GCC optimisation level (-O0 vs -O1), the function address
+  // has sometimes the extra 1 added or not.
+  const uintptr_t THUMB_DISPLACEMENT = 1;
 
-      uintptr_t fnAddr = uintptr_t( &BusyWaitAsmLoop );
+  uintptr_t fnAddr = uintptr_t( &BusyWaitAsmLoop );
 
-      if ( 0 != ( fnAddr % 2 ) )
-        fnAddr -= THUMB_DISPLACEMENT;
+  if ( 0 != ( fnAddr % 2 ) )
+    fnAddr -= THUMB_DISPLACEMENT;
 
-      assert( 0 == ( fnAddr % INSTRUCTION_LOAD_ALIGNMENT ) );
-    #endif
+  return 0 == ( fnAddr % INSTRUCTION_LOAD_ALIGNMENT );
 }
