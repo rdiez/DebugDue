@@ -47,7 +47,8 @@ void ForeverHang ( void )  __attribute__ ((__noreturn__));
 // global variable g_interrupt_enabled. Use the functions in the Atmel Software Framework instead:
 //   cpu_irq_enable(), cpu_irq_disable().
 //
-// In order to save and disable interrupts, and then restore them:
+// In order to save and disable interrupts, it's best top use class CAutoDisableInterrupts.
+// Alternatively, write code like this:
 //   const irqflags_t flags = cpu_irq_save();
 //     ...
 //   cpu_irq_restore( flags );
@@ -55,7 +56,7 @@ void ForeverHang ( void )  __attribute__ ((__noreturn__));
 inline bool AreInterruptsEnabled ( void )
 {
   const bool areEnabledAccordingToAtmelSoftwareFramework = cpu_irq_is_enabled();
-    
+
   // Routine cpu_irq_is_enabled() in the Atmel Software Framework uses global variable g_interrupt_enabled,
   // so and I am worried that it could become out of sync with the CPU flag.
   #ifndef NDEBUG
@@ -73,6 +74,24 @@ inline bool AreInterruptsEnabled ( void )
 
   return areEnabledAccordingToAtmelSoftwareFramework;
 }
+
+
+class CAutoDisableInterrupts
+{
+  const irqflags_t m_flags;
+public:
+
+  CAutoDisableInterrupts()
+    : m_flags( cpu_irq_save() )
+  {
+  }
+
+  ~CAutoDisableInterrupts()
+  {
+    cpu_irq_restore( m_flags );
+  }
+};
+
 
 void BreakpointPlaceholder ( void );
 

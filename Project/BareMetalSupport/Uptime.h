@@ -30,13 +30,9 @@ extern volatile uint64_t g_updateCounter_internalUseOnly;
 
 inline uint64_t GetUptime ( void )
 {
-  const irqflags_t flags = cpu_irq_save();
-    
-  const uint64_t result = g_updateCounter_internalUseOnly;
+  CAutoDisableInterrupts autoDisableInterrupts;
 
-  cpu_irq_restore( flags );
-
-  return result;
+  return g_updateCounter_internalUseOnly;
 }
 
 
