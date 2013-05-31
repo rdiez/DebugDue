@@ -62,12 +62,12 @@ inline bool HasUptimeElapsed ( const uint64_t currentUptime,
 }
 
 
-inline void IncrementUptime ( void )
+inline void IncrementUptime ( const uint32_t deltaInMs )
 {
     assert( AreInterruptsEnabled() );
     cpu_irq_disable();
     
-    ++g_updateCounter_internalUseOnly;
+    g_updateCounter_internalUseOnly += deltaInMs;
 
     cpu_irq_enable();
 }

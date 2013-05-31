@@ -42,6 +42,8 @@
   static const size_t MIN_UNUSED_STACK_SIZE = MaxFrom( MaxFrom( ASSERT_MSG_BUFSIZE, MAX_DBGCON_PRINT_LEN ), MAX_USB_PRINT_LEN ) + 200;
 #endif
 
+const uint32_t SYSTEM_TICK_PERIOD_MS = 50;
+
 
 static uint32_t GetWdtPeriod ( const uint32_t dwMs )
 {
@@ -93,8 +95,7 @@ static void Configure ( void )
 
   // ------- Configure the Systick -------
 
-  // Set Systick to 1ms interval.
-  if ( 0 != SysTick_Config( SystemCoreClock / 1000 ) )
+  if ( 0 != SysTick_Config( SystemCoreClock * SYSTEM_TICK_PERIOD_MS / 1000 ) )
     Panic( "SysTick error." );
 
 
@@ -209,6 +210,7 @@ extern uint32_t _ebss;
 extern uint32_t _srelocate;
 extern uint32_t _erelocate;
 
+
 void StartOfUserCode ( void )
 {
     Configure();
@@ -276,33 +278,45 @@ static uint32_t s_mainLoopWakeUpCounterCpuLoad  = 0;
 
 void SysTick_Handler ( void )
 {
-  IncrementUptime();
+  if ( false )
+    DbgconSyncWriteStr( "." );
+
+
+  IncrementUptime( SYSTEM_TICK_PERIOD_MS );
 
 
   // Wake the main loop up at regular intervals, in case the user code wants to trigger actions based on time-outs.
 
-  const uint32_t MAINLOOP_WAKE_UP_TIMEOUTS_MS = 250;
-
-  assert( s_mainLoopWakeUpCounterTimeouts < MAINLOOP_WAKE_UP_TIMEOUTS_MS );
-  ++s_mainLoopWakeUpCounterTimeouts;
-
-  if ( s_mainLoopWakeUpCounterTimeouts == MAINLOOP_WAKE_UP_TIMEOUTS_MS )
+  if ( true ) // Sometimes it is desirable for test or CPU load calibration purposes to disable this wake-up logic.
   {
-    s_mainLoopWakeUpCounterTimeouts = 0;
-    TriggerMainLoopIteration();
+    const uint32_t MAINLOOP_WAKE_UP_TIMEOUTS_MS = 250;
+    const uint32_t MAINLOOP_WAKE_UP_TIMEOUTS_TICK_COUNT = MAINLOOP_WAKE_UP_TIMEOUTS_MS / SYSTEM_TICK_PERIOD_MS;
+    STATIC_ASSERT( 0 == ( MAINLOOP_WAKE_UP_TIMEOUTS_MS % SYSTEM_TICK_PERIOD_MS ), "The wake-up frequency will jitter." );
+
+    assert( s_mainLoopWakeUpCounterTimeouts < MAINLOOP_WAKE_UP_TIMEOUTS_TICK_COUNT );
+    ++s_mainLoopWakeUpCounterTimeouts;
+
+    if ( s_mainLoopWakeUpCounterTimeouts == MAINLOOP_WAKE_UP_TIMEOUTS_TICK_COUNT )
+    {
+      s_mainLoopWakeUpCounterTimeouts = 0;
+      TriggerMainLoopIteration();
+    }
   }
 
 
   // Wake the main loop up at regular intervals for the purposes of CPU load calculations.
+
   if ( !ENABLE_CPU_SLEEP )
   {
-    const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_MS = 1000 / CPU_LOAD_SECOND_SLOT_COUNT;  // In milliseconds.
+    const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_MS = 1000 / CPU_LOAD_SECOND_SLOT_COUNT;
     STATIC_ASSERT( 0 == ( 1000 % CPU_LOAD_SECOND_SLOT_COUNT ), "Cannot accurately calculate CPU load." );
+    const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_TICK_COUNT = MAINLOOP_WAKE_UP_CPU_LOAD_MS / SYSTEM_TICK_PERIOD_MS;
+    STATIC_ASSERT( 0 == ( MAINLOOP_WAKE_UP_CPU_LOAD_MS % SYSTEM_TICK_PERIOD_MS ), "The CPU load statistics will jitter." );
 
-    assert( s_mainLoopWakeUpCounterCpuLoad < MAINLOOP_WAKE_UP_CPU_LOAD_MS );
+    assert( s_mainLoopWakeUpCounterCpuLoad < MAINLOOP_WAKE_UP_CPU_LOAD_TICK_COUNT );
     ++s_mainLoopWakeUpCounterCpuLoad;
 
-    if ( s_mainLoopWakeUpCounterCpuLoad == MAINLOOP_WAKE_UP_CPU_LOAD_MS )
+    if ( s_mainLoopWakeUpCounterCpuLoad == MAINLOOP_WAKE_UP_CPU_LOAD_TICK_COUNT )
     {
       s_mainLoopWakeUpCounterCpuLoad = 0;
       SetCpuLoadStatsUpdateFlag();
