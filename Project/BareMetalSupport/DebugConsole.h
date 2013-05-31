@@ -9,6 +9,7 @@ void InitDebugConsole ( void );
 
 void DbgconSyncWriteStr ( const char * msg );
 void DbgconSyncWriteUint32Hex ( uint32_t val );
+void DbgconWaitForDataSent ( void );
 
 // This routine may become asynchronous in the future.
 void DbgconPrintStr ( const char * msg );

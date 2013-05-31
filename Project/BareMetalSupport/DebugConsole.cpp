@@ -22,6 +22,7 @@
 
 #include "Miscellaneous.h"
 #include "IntegerPrintUtils.h"
+#include "AssertionUtils.h"
 
 #include <sam3xa.h>
 #include <pmc.h>
@@ -35,7 +36,7 @@ void InitDebugConsole ( void )
   assert( !s_isSerialPortInitialised );
   s_isSerialPortInitialised = true;
 
-  pmc_enable_periph_clk( ID_UART ) ;
+  VERIFY( 0 == pmc_enable_periph_clk( ID_UART ) );
 
   // Disable PDC channel
   UART->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
@@ -62,14 +63,27 @@ void InitDebugConsole ( void )
 }
 
 
+static void WaitForTxReady ( void )
+{
+  while ( (UART->UART_SR & UART_SR_TXRDY) != UART_SR_TXRDY )
+  {
+  }
+}
+
+
+void DbgconWaitForDataSent ( void )
+{
+  while ( (UART->UART_SR & UART_SR_TXEMPTY) != UART_SR_TXEMPTY )
+  {
+  }
+}
+
+
 static void WriteSerialPortCharSync ( const uint8_t uc_data )
 {
   assert( s_isSerialPortInitialised );
 
-  // Busy wait until the transmitter is ready.
-  while ( (UART->UART_SR & UART_SR_TXRDY) != UART_SR_TXRDY )
-  {
-  }
+  WaitForTxReady();
 
   UART->UART_THR = uc_data;
 }
