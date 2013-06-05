@@ -86,9 +86,21 @@ static void UsbConnectionLost ( void )
   // For the reasons above, I guess that any serial port client on the host side (Linux) should read and
   // discard all stale data upon connect. After all, the Bus Pirate protocol is of the master/slave type,
   // so the client should have nothing to say until the master sends the first command.
+  //
+  // Enabling the condition below will generate stale data for test purposes, but I am not sure
+  // whether this is an ASF bug. After all, any data written after getting the connection lost notification
+  // should be automatically discarded.
+  //
+  // Another way to generate stale data is with this bash command:
+  //     printf "help\r">/dev/jtagdue1
+  // The next time you connect to /dev/jtagdue1 you will get the help text,
+  // you can test it with this bash command:
+  //     cat /dev/jtagdue1
 
   if ( false )
-    udi_cdc_write_buf( "test-data", 9 );
+  {
+    udi_cdc_write_buf( "stale-test-data", 15 );
+  }
 }
 
 
