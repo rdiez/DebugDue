@@ -25,6 +25,7 @@
 #include <BareMetalSupport/StackCheck.h>
 
 #include <stdexcept>
+#include <errno.h>
 #include <malloc.h>
 #include <stdarg.h>
 #include <string.h>
@@ -121,7 +122,108 @@ static bool IsCmd ( const char * const cmdStart,
 }
 
 
-static void ProcessUsbSpeedTestCmd ( const char * const cmdEnd,
+
+// This routine could be improved in many ways:
+// - Make it faster by building a complete line and sending it at once.
+// - Provide memory addresses and/or offsets on the left.
+// - Provide an ASCII dump on the right.
+// - Use different data sizes (8 bits, 16 bits, 32 bits).
+//
+//  There is a similar routine in this project called DbgconHexDump().
+
+static void HexDump ( const void * const ptr,
+                      const size_t byteCount,
+                      const char * const endOfLineChars,
+                      CUsbTxBuffer * const txBuffer )
+{
+  assert( byteCount > 0 );
+
+  const unsigned LINE_BYTE_COUNT = 32;
+  const size_t eolLen = strlen( endOfLineChars );
+  const size_t lineCount = ( byteCount + LINE_BYTE_COUNT - 1 ) / LINE_BYTE_COUNT;
+  const size_t expectedOutputLen = byteCount * 3 + lineCount * eolLen;
+
+  if ( expectedOutputLen > txBuffer->GetFreeCount() )
+    throw std::runtime_error( "Not enough room in the Tx buffer for the hex dump." );
+
+  const uint8_t * const bytePtr = static_cast< const uint8_t * >( ptr );
+
+  unsigned lineElemCount = 0;
+  size_t actualOutputLen = 0;
+
+  for ( size_t i = 0; i < byteCount; ++i )
+  {
+    if ( lineElemCount == LINE_BYTE_COUNT )
+    {
+      lineElemCount = 0;
+      UsbPrint( txBuffer, "%s", endOfLineChars );
+      actualOutputLen += eolLen;
+    }
+    const uint8_t b = bytePtr[ i ];
+
+    UsbPrint( txBuffer, "%02X ", b );
+    actualOutputLen += 3;
+
+    ++lineElemCount;
+  }
+
+  UsbPrint( txBuffer, "%s", endOfLineChars );
+  actualOutputLen += eolLen;
+
+  assert( actualOutputLen == expectedOutputLen );
+}
+
+
+// TODO: Parse hex numbers with a "0x" prefix.
+
+static unsigned int ParseUnsignedIntArg ( const char * const begin )
+{
+  const char ERR_MSG[] = "Invalid unsigned integer value.";
+
+  // strtoul() interprets the '-', but we always want an unsigned positive value.
+  if ( *begin == '-' )
+    throw std::runtime_error( ERR_MSG );
+
+  char * end2;
+  errno = 0;
+  const unsigned long val = strtoul( begin, &end2, 10 );
+
+  if ( errno != 0 || ( *end2 != 0 && !IsCharInSet( *end2, SPACE_AND_TAB ) ) )
+  {
+    throw std::runtime_error( ERR_MSG );
+  }
+
+  STATIC_ASSERT( sizeof(unsigned int) == sizeof(unsigned long), "You may want to rethink this routine's data types." );
+  return (unsigned int) val;
+}
+
+
+static void PrintMemory ( const char * const paramBegin,
+                          CUsbTxBuffer * const txBuffer )
+{
+  const char * const addrEnd       = SkipCharsNotInSet( paramBegin, SPACE_AND_TAB );
+  const char * const countBegin    = SkipCharsInSet   ( addrEnd,    SPACE_AND_TAB );
+  const char * const countEnd      = SkipCharsNotInSet( countBegin, SPACE_AND_TAB );
+  const char * const extraArgBegin = SkipCharsInSet   ( countEnd,   SPACE_AND_TAB );
+
+  if ( *paramBegin == 0 || *countBegin == 0 || *extraArgBegin != 0 )
+  {
+    txBuffer->WriteString( "Invalid arguments." EOL );
+    return;
+  }
+
+  assert( countBegin > paramBegin );
+
+  const unsigned addr  = ParseUnsignedIntArg( paramBegin );
+  const unsigned count = ParseUnsignedIntArg( countBegin );
+
+  // DbgconPrint( "Addr : %u" EOL, unsigned(addr ) );
+  // DbgconPrint( "Count: %u" EOL, unsigned(count) );
+
+  HexDump( (const void *) addr, size_t( count ), EOL, txBuffer );
+}
+
+static void ProcessUsbSpeedTestCmd ( const char * const paramBegin,
                                      CUsbTxBuffer * const txBuffer,
                                      const uint64_t currentTime )
 {
@@ -132,8 +234,6 @@ static void ProcessUsbSpeedTestCmd ( const char * const cmdEnd,
   //     (echo "UsbSpeedTest RxWithCircularBuffer" && yes ".") | pv -pertb - | socat - /dev/jtagdue1,b115200,raw,echo=0,crnl >/dev/null
 
   const uint32_t TEST_TIME_IN_MS = 5000;  // We could make a user parameter out of this value.
-
-  const char * const paramBegin = SkipCharsInSet( cmdEnd, SPACE_AND_TAB );
 
   if ( *paramBegin == 0 )
   {
@@ -307,6 +407,7 @@ static const char * const CMDNAME_TEST_RX_ERROR_HANDLING = "DebugTestRxErrorHand
 static const char * const CMDNAME_RESET = "Reset";
 static const char * const CMDNAME_CPU_LOAD = "CpuLoad";
 static const char * const CMDNAME_RESET_CAUSE = "ResetCause";
+static const char * const CMDNAME_PRINT_MEMORY = "PrintMemory";
 
 
 static void ProcessCommand ( const char * const cmdBegin,
@@ -316,6 +417,8 @@ static void ProcessCommand ( const char * const cmdBegin,
 {
   const char * const cmdEnd = SkipCharsNotInSet( cmdBegin, SPACE_AND_TAB );
   assert( cmdBegin != cmdEnd );
+
+  const char * const paramBegin = SkipCharsInSet( cmdEnd, SPACE_AND_TAB );
 
   bool extraParamsFound = false;
 
@@ -337,6 +440,7 @@ static void ProcessCommand ( const char * const cmdBegin,
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET );
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_CPU_LOAD );
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
+    UsbPrint( txBuffer, "  %s <addr> <byte count>" EOL, CMDNAME_PRINT_MEMORY );
     UsbPrint( txBuffer, "Other debug commands are available, see the source code." EOL );
     return;
   }
@@ -378,9 +482,16 @@ static void ProcessCommand ( const char * const cmdBegin,
   }
 
 
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_PRINT_MEMORY, false, true, &extraParamsFound ) )
+  {
+    PrintMemory( paramBegin, txBuffer );
+    return;
+  }
+
+
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_USBSPEEDTEST, false, true, &extraParamsFound ) )
   {
-    ProcessUsbSpeedTestCmd( cmdEnd, txBuffer, currentTime );
+    ProcessUsbSpeedTestCmd( paramBegin, txBuffer, currentTime );
     return;
   }
 
@@ -543,8 +654,6 @@ static void ParseCommand ( const char * const cmdStr,
   {
     ProcessCommand( s, rxBuffer, txBuffer, currentTime );
   }
-
-  WritePrompt( txBuffer );
 }
 
 
@@ -698,7 +807,17 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
       if ( cmd != NULL )
       {
         txBuffer->WriteString( EOL );
-        ParseCommand( cmd, rxBuffer, txBuffer, currentTime );
+        try
+        {
+          ParseCommand( cmd, rxBuffer, txBuffer, currentTime );
+        }
+        catch ( const std::exception & e )
+        {
+          UsbPrint( txBuffer, "Error processing command: %s" EOL, e.what() );
+        }
+
+        WritePrompt( txBuffer );
+
         endLoop = true;
       }
     }
