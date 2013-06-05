@@ -18,6 +18,7 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdexcept>
 
 #include "Globals.h"
 
@@ -29,6 +30,16 @@ static const char TRUNCATION_SUFFIX[] = "[...]" EOL;
 static void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va_list argList )
 {
   const size_t TRUNCATION_SUFFIX_LEN = sizeof( TRUNCATION_SUFFIX ) - 1;
+
+  const CUsbTxBuffer::SizeType bufferFreeCount = txBuffer->GetFreeCount();
+
+  if ( bufferFreeCount < MAX_USB_PRINT_LEN + TRUNCATION_SUFFIX_LEN )
+  {
+    // The caller should always make sure that there is enough space in the Tx Buffer. Otherwise,
+    // the user may get no hint whatsoever about what happened.
+    assert( false );
+    throw std::runtime_error( "Not enough room in the Tx buffer in UsbPrintV()." );
+  }
 
   char buffer[ MAX_USB_PRINT_LEN + TRUNCATION_SUFFIX_LEN + 1 ];
 
