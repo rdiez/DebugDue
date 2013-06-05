@@ -220,8 +220,46 @@ static void PrintMemory ( const char * const paramBegin,
   // DbgconPrint( "Addr : %u" EOL, unsigned(addr ) );
   // DbgconPrint( "Count: %u" EOL, unsigned(count) );
 
+  if ( count == 0 )
+  {
+    txBuffer->WriteString( "Invalid arguments." EOL );
+    return;
+  }
+
   HexDump( (const void *) addr, size_t( count ), EOL, txBuffer );
 }
+
+
+static void BusyWait ( const char * const paramBegin,
+                       CUsbTxBuffer * const txBuffer )
+{
+  const char * const delayEnd      = SkipCharsNotInSet( paramBegin, SPACE_AND_TAB );
+  const char * const extraArgBegin = SkipCharsInSet   ( delayEnd,   SPACE_AND_TAB );
+
+  if ( *paramBegin == 0 || *extraArgBegin != 0 )
+  {
+    txBuffer->WriteString( "Invalid arguments." EOL );
+    return;
+  }
+
+  const unsigned delayMs = ParseUnsignedIntArg( paramBegin );
+
+  // DbgconPrint( "Delay ms: %u" EOL, unsigned(delayMs) );
+
+  if ( delayMs == 0 || delayMs > 60 * 1000 )
+  {
+    txBuffer->WriteString( "Invalid arguments." EOL );
+    return;
+  }
+
+  const uint32_t oneMsIterationCount = GetBusyWaitLoopIterationCountFromUs( 1000 );
+
+  for ( uint32_t i = 0; i < delayMs; ++i )
+  {
+    BusyWaitLoop( oneMsIterationCount );
+  }
+}
+
 
 static void ProcessUsbSpeedTestCmd ( const char * const paramBegin,
                                      CUsbTxBuffer * const txBuffer,
@@ -359,7 +397,7 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
 
     assert( val <= 100 );
 
-    UsbPrint( txBuffer, "%2u %%" EOL, unsigned( val ) );
+    UsbPrint( txBuffer, "%3u %%" EOL, unsigned( val ) );
   }
 
 
@@ -376,7 +414,7 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
   assert( secondAverage <= 100 );
 
 
-  UsbPrint( txBuffer, "EOL CPU load in the last second (50 ms intervals, oldest to newest):" EOL );
+  UsbPrint( txBuffer, "CPU load in the last second (50 ms intervals, oldest to newest):" EOL );
 
   for ( unsigned j = 0; j < CPU_LOAD_SECOND_SLOT_COUNT; ++j )
   {
@@ -408,6 +446,7 @@ static const char * const CMDNAME_RESET = "Reset";
 static const char * const CMDNAME_CPU_LOAD = "CpuLoad";
 static const char * const CMDNAME_RESET_CAUSE = "ResetCause";
 static const char * const CMDNAME_PRINT_MEMORY = "PrintMemory";
+static const char * const CMDNAME_BUSY_WAIT = "BusyWait";
 
 
 static void ProcessCommand ( const char * const cmdBegin,
@@ -441,6 +480,7 @@ static void ProcessCommand ( const char * const cmdBegin,
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_CPU_LOAD );
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
     UsbPrint( txBuffer, "  %s <addr> <byte count>" EOL, CMDNAME_PRINT_MEMORY );
+    UsbPrint( txBuffer, "  %s <milliseconds>" EOL, CMDNAME_BUSY_WAIT );
     UsbPrint( txBuffer, "Other debug commands are available, see the source code." EOL );
     return;
   }
@@ -464,6 +504,7 @@ static void ProcessCommand ( const char * const cmdBegin,
     return;
   }
 
+
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_CPU_LOAD, false, false, &extraParamsFound ) )
   {
     if ( ENABLE_CPU_SLEEP )
@@ -485,6 +526,13 @@ static void ProcessCommand ( const char * const cmdBegin,
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_PRINT_MEMORY, false, true, &extraParamsFound ) )
   {
     PrintMemory( paramBegin, txBuffer );
+    return;
+  }
+
+
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_BUSY_WAIT, false, true, &extraParamsFound ) )
+  {
+    BusyWait( paramBegin, txBuffer );
     return;
   }
 
