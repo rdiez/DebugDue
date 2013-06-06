@@ -451,12 +451,13 @@ static const char * const CMDNAME_JTAGSHIFTSPEEDTEST = "JtagShiftSpeedTest";
 static const char * const CMDNAME_MALLOCTEST = "MallocTest";
 static const char * const CMDNAME_CPP_EXCEPTION_TEST = "ExceptionTest";
 static const char * const CMDNAME_MEMORY_USAGE = "MemoryUsage";
-static const char * const CMDNAME_TEST_RX_ERROR_HANDLING = "DebugTestRxErrorHandling";
+static const char * const CMDNAME_SIMULATE_ERROR = "SimulateError";
 static const char * const CMDNAME_RESET = "Reset";
 static const char * const CMDNAME_CPU_LOAD = "CpuLoad";
 static const char * const CMDNAME_RESET_CAUSE = "ResetCause";
 static const char * const CMDNAME_PRINT_MEMORY = "PrintMemory";
 static const char * const CMDNAME_BUSY_WAIT = "BusyWait";
+static const char * const CMDNAME_UPTIME = "Uptime";
 
 
 static void ProcessCommand ( const char * const cmdBegin,
@@ -486,12 +487,14 @@ static void ProcessCommand ( const char * const cmdBegin,
     UsbPrint( txBuffer, "  %s: Exercises malloc()." EOL, CMDNAME_MALLOCTEST );
     UsbPrint( txBuffer, "  %s: Exercises C++ exceptions." EOL, CMDNAME_CPP_EXCEPTION_TEST );
     UsbPrint( txBuffer, "  %s: Shows memory usage." EOL, CMDNAME_MEMORY_USAGE );
-    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET );
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_CPU_LOAD );
+    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_UPTIME );
+    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET );
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
     UsbPrint( txBuffer, "  %s <addr> <byte count>" EOL, CMDNAME_PRINT_MEMORY );
     UsbPrint( txBuffer, "  %s <milliseconds>" EOL, CMDNAME_BUSY_WAIT );
-    UsbPrint( txBuffer, "Other debug commands are available, see the source code." EOL );
+    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_SIMULATE_ERROR );
+
     return;
   }
 
@@ -531,6 +534,13 @@ static void ProcessCommand ( const char * const cmdBegin,
     else
       DisplayCpuLoad( txBuffer );
 
+    return;
+  }
+
+
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_UPTIME, false, false, &extraParamsFound ) )
+  {
+    UsbPrint( txBuffer, "Uptime: %llu seconds." EOL, (long long)(GetUptime() / 1000) );
     return;
   }
 
@@ -671,9 +681,9 @@ static void ProcessCommand ( const char * const cmdBegin,
   }
 
 
-  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_TEST_RX_ERROR_HANDLING, false, false, &extraParamsFound ) )
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_SIMULATE_ERROR, false, false, &extraParamsFound ) )
   {
-    throw std::runtime_error( CMDNAME_TEST_RX_ERROR_HANDLING );
+    throw std::runtime_error( "Simulated error." );
   }
 
 
