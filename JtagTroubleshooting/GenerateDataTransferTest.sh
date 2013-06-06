@@ -91,6 +91,11 @@ add_generated_file_to_scripts ()
   local FILENAME_TO_SEND="$1"
   local FILENAME_TO_RECEIVE="$2"
 
+  # 1) Append to TCL_FILENAME.
+
+  # In order to prevent possible confusion, delete any previously-received file before starting the transfer.
+  printf "exec sh -c \"if \\[ -f '%s' \\]; then rm '%s'; fi\"\n" "$FILENAME_TO_RECEIVE" "$FILENAME_TO_RECEIVE" >>"$TCL_FILENAME";
+
   case "$MEM_TYPE" in
     ram)    printf "load_image %s %s bin %s %s\n" "$FILENAME_TO_SEND" "$START_ADDR" "$START_ADDR" "$BYTE_COUNT" >>"$TCL_FILENAME";;
     flash)  printf "flash write_image erase unlock %s %s bin\n" "$FILENAME_TO_SEND" "$START_ADDR" >>"$TCL_FILENAME";;
@@ -99,12 +104,23 @@ add_generated_file_to_scripts ()
 
   printf "dump_image %s %s %s\n\n" "$FILENAME_TO_RECEIVE" "$START_ADDR" "$BYTE_COUNT" >>"$TCL_FILENAME"
 
-  printf "cmp \"%s\" \"%s\"\n" "$FILENAME_TO_SEND" "$FILENAME_TO_RECEIVE" >>"$VERIFY_SCRIPT_FILENAME"
 
+  # 2) Append to GDB.
+
+  # GDB does not stop when a command fails, and there is no error indication either in the exit status.
+  # That means any files received in a previous run may remain there, and the verify script may then succeed
+  # after GDB has actually failed to do anything.
+  # In order to avoid confusion, delete each previously-received file before starting the transfer.
+  printf "shell if [ -f \"%s\" ]; then rm \"%s\"; fi\n" "$FILENAME_TO_RECEIVE" "$FILENAME_TO_RECEIVE" >>"$GDB_FILENAME"
 
   printf "restore %s binary %s 0 %s\n" "$FILENAME_TO_SEND" "$START_ADDR" "$(( $BYTE_COUNT ))" >>"$GDB_FILENAME"
   # Note that bash understands numbers in hex below if the have the '0x' prefix.
   printf "dump binary memory %s %s %s\n\n" "$FILENAME_TO_RECEIVE" "$START_ADDR" "$(( $START_ADDR + $BYTE_COUNT ))" >>"$GDB_FILENAME"
+
+
+  # 3) Append to VERIFY_SCRIPT_FILENAME.
+
+  printf "cmp \"%s\" \"%s\"\n" "$FILENAME_TO_SEND" "$FILENAME_TO_RECEIVE" >>"$VERIFY_SCRIPT_FILENAME"
 }
 
 
