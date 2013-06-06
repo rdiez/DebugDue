@@ -39,6 +39,8 @@
 #include <usart.h>
 
 
+const uint32_t WATCHDOG_PERIOD_MS = 1000;
+
 #ifndef NDEBUG
   static const size_t MIN_UNUSED_STACK_SIZE = MaxFrom( MaxFrom( ASSERT_MSG_BUFSIZE, MAX_DBGCON_PRINT_LEN ), MAX_USB_PRINT_LEN ) + 200;
 #endif
@@ -180,7 +182,8 @@ static void Configure ( void )
 
   if ( ENABLE_WDT )
   {
-    const uint32_t wdp_ms = GetWdtPeriod( 1000 );
+    // This time may be too short, turn PRINT_LONGEST_ITERATION_TIME on below to get an idea about timing.
+    const uint32_t wdp_ms = GetWdtPeriod( WATCHDOG_PERIOD_MS );
     assert( wdp_ms != 0 );
 
     const uint32_t wdp_mode = wdp_ms           |  // Field WDV.
@@ -232,6 +235,8 @@ void StartOfUserCode ( void )
 
     DbgconPrintStr( "Entering the main loop." EOL );
 
+    uint64_t longestIterationTime = 0;
+
     uint64_t lastReferenceTimeForPeriodicAction = 0;
 
     for (;;)
@@ -255,6 +260,24 @@ void StartOfUserCode ( void )
       assert( AreInterruptsEnabled() );
 
       UpdateCpuLoadStats();
+
+
+      const bool PRINT_LONGEST_ITERATION_TIME = false;
+
+      const uint64_t currentIterationTime = GetUptime() - currentTime;
+
+      if ( ENABLE_WDT )
+        assert( currentIterationTime < WATCHDOG_PERIOD_MS / 3 );  // Otherwise you are getting too close to the limit.
+
+      const uint64_t prevLongestInterationTime = longestIterationTime;
+
+      longestIterationTime = MaxFrom( longestIterationTime, currentIterationTime );
+
+      if ( PRINT_LONGEST_ITERATION_TIME &&
+           longestIterationTime != prevLongestInterationTime )
+      {
+          DbgconPrint( "%u" EOL, unsigned( longestIterationTime ) );
+      }
 
       MainLoopSleep();
     }
