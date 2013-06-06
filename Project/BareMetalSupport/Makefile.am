@@ -18,6 +18,7 @@ libbare_metal_support_a_SOURCES = \
     DebugConsole.cpp \
     BoardInit.cpp \
     StackCheck.cpp \
+    TextParsingUtils.cpp \
     Uptime.cpp \
     SysTickUtils.cpp \
     BusyWait.cpp \

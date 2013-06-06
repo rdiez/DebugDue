@@ -20,9 +20,9 @@
 
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/TextParsingUtils.h>
 
 #include "Globals.h"
-#include "TextParsingUtils.h"
 
 
 // Returns (end - begin), but takes into account a possible wrap-around at the end of the circular buffer.

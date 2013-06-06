@@ -23,6 +23,7 @@
 #include <BareMetalSupport/DebugConsole.h>
 #include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/StackCheck.h>
+#include <BareMetalSupport/TextParsingUtils.h>
 
 #include <stdexcept>
 #include <errno.h>
@@ -39,7 +40,6 @@
 #include "BusPirateOpenOcdMode.h"
 #include "UsbConnection.h"
 #include "SerialConsole.h"
-#include "TextParsingUtils.h"
 
 
 static const char SPACE_AND_TAB[] = " \t";
