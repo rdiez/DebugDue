@@ -22,10 +22,12 @@
 
 #include "DebugConsole.h"
 #include "AssertionUtils.h"
+#include "Miscellaneous.h"
 
 
 static volatile bool s_wasMainLoopEventTriggered = false;
-static volatile bool s_wasCpuLoadUpdateTriggered = false;
+
+static volatile uint32_t s_tickCount = 0;  // Access to this variable is protected with an interrupt lock.
 
 
 // This routine can be called from within interrupt context.
@@ -58,7 +60,7 @@ static uint64_t s_sleepLoopCount;
 // - Leave the "Native" USB interface unconnected for a short time, as there is less CPU load then.
 // - Turn off the main loop wake-ups for time-out purposes.
 // - Compile with optimisation.
-// 
+//
 static const uint64_t CALIBRATED_MAX_LOOP_COUNT = 1049937;
 
 
@@ -66,46 +68,8 @@ static bool ENABLE_CALIBRATION_MODE = false;
 static uint64_t s_maximumSleepLoopCount;  // Used only for calibration purposes.
 
 
-// This routine should only be called from the main loop,
-// as there is no concurrency protection.
-
-void UpdateCpuLoadStats ( void )
+static void ShiftSlot ( const uint8_t cpuLoad )
 {
-  STATIC_ASSERT( CPU_LOAD_MINUTE_SLOT_COUNT < 255, "Index too small." );
-  STATIC_ASSERT( CPU_LOAD_SECOND_SLOT_COUNT < 255, "Index too small."  );
-
-  if ( ENABLE_CPU_SLEEP )
-    return;
-
-  if ( !s_wasCpuLoadUpdateTriggered )
-    return;
-
-  s_wasCpuLoadUpdateTriggered = false;
-
-  if ( ENABLE_CALIBRATION_MODE )
-  {
-    if ( s_sleepLoopCount > s_maximumSleepLoopCount )
-      s_maximumSleepLoopCount = s_sleepLoopCount;
-  }
-
-  uint8_t cpuLoad;
-
-  if ( s_sleepLoopCount > CALIBRATED_MAX_LOOP_COUNT )
-  {
-    // If the manual callibration has been done correctly, this should never happen.
-    if ( !ENABLE_CALIBRATION_MODE )
-      assert( false );
-
-    cpuLoad = 0;
-  }
-  else
-  {
-    const uint64_t newVal = ( CALIBRATED_MAX_LOOP_COUNT - s_sleepLoopCount ) * 255 / CALIBRATED_MAX_LOOP_COUNT;
-    assert( newVal <= 255 );
-
-    cpuLoad = uint8_t( newVal );
-  }
-
   s_lastSecond[ s_lastSecondIndex ] = cpuLoad;
 
   ++s_lastSecondIndex;
@@ -127,8 +91,69 @@ void UpdateCpuLoadStats ( void )
 
     s_lastMinuteIndex = ( s_lastMinuteIndex + 1 ) % CPU_LOAD_MINUTE_SLOT_COUNT;
   }
+}
+
+
+// This routine should only be called from the main loop,
+// as there is no concurrency protection.
+
+void UpdateCpuLoadStats ( void )
+{
+  STATIC_ASSERT( CPU_LOAD_MINUTE_SLOT_COUNT < 255, "Index too small." );
+  STATIC_ASSERT( CPU_LOAD_SECOND_SLOT_COUNT < 255, "Index too small."  );
+
+  if ( ENABLE_CPU_SLEEP )
+    return;
+
+  uint32_t capturedTickCount;
+
+  { // Scope for interrupts disabled.
+      CAutoDisableInterrupts autoDisableInterrupts;
+
+      capturedTickCount = s_tickCount;
+      s_tickCount = 0;
+  }
+
+  if ( capturedTickCount == 0 )
+    return;
+
+  if ( ENABLE_CALIBRATION_MODE )
+  {
+    if ( s_sleepLoopCount > s_maximumSleepLoopCount )
+      s_maximumSleepLoopCount = s_sleepLoopCount;
+  }
+
+
+  const uint8_t MAX_CPU_LOAD = 255;
+
+  uint8_t cpuLoad;
+
+  if ( s_sleepLoopCount > CALIBRATED_MAX_LOOP_COUNT )
+  {
+    // If the manual callibration has been done correctly, this should never happen.
+    if ( !ENABLE_CALIBRATION_MODE )
+      assert( false );
+
+    cpuLoad = 0;
+  }
+  else
+  {
+    const uint64_t newVal = ( CALIBRATED_MAX_LOOP_COUNT - s_sleepLoopCount ) * 255 / CALIBRATED_MAX_LOOP_COUNT;
+    assert( newVal <= MAX_CPU_LOAD );
+
+    cpuLoad = uint8_t( newVal );
+  }
 
   s_sleepLoopCount = 0;
+
+  ShiftSlot( cpuLoad );
+
+  capturedTickCount--;
+
+  for ( uint32_t i = 0; i < capturedTickCount; ++i )
+  {
+    ShiftSlot( MAX_CPU_LOAD );
+  }
 }
 
 
@@ -170,14 +195,14 @@ static void CpuLoadAsmLoop ( volatile bool * const /* wasMainLoopEventTriggered 
      "movs    r4, #1"  "\n"
      "movs    r5, #0"  "\n"
      "ldrd    r2, r3, [r1]"  "\n"
-     
+
      // The whole loop fits exactly in the 16-byte alignment and runs much faster.
      // Speed is actually not so important here, but the runtime should not depend
      // on some compilation randomness, therefore we must align here.
      //
      // I have not managed yet to use a named constant like INSTRUCTION_LOAD_ALIGNMENT
      // instead of the hard-coded 16 below, the %[inst_align] syntax does not work.
-     
+
      ".balignw 16, 0xBF00"  "\n"  // A thumb 'nop' instruction has opcode 0xBF00.
    "AsmLoopLoopLabel:"  "\n"
 
@@ -232,7 +257,7 @@ void MainLoopSleep ( void )
 
 // This routine can be called from within interrupt context.
 
-void SetCpuLoadStatsUpdateFlag ( void )
+void CpuLoadStatsTick ( void )
 {
   if ( ENABLE_CPU_SLEEP )
   {
@@ -240,12 +265,9 @@ void SetCpuLoadStatsUpdateFlag ( void )
   }
   else
   {
-    // If this flag was already set, the main loop is not calling the update routine
-    // frequently enough, so the CPU load statistics will be inaccurate.
-    // This probably means that some action takes too long and should be split up.
-    assert( !s_wasCpuLoadUpdateTriggered );
+    CAutoDisableInterrupts autoDisableInterrupts;
 
-    s_wasCpuLoadUpdateTriggered = true;
+    s_tickCount++;
   }
 }
 

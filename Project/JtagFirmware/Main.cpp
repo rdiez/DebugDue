@@ -340,7 +340,7 @@ void SysTick_Handler ( void )
     if ( s_mainLoopWakeUpCounterCpuLoad == MAINLOOP_WAKE_UP_CPU_LOAD_TICK_COUNT )
     {
       s_mainLoopWakeUpCounterCpuLoad = 0;
-      SetCpuLoadStatsUpdateFlag();
+      CpuLoadStatsTick();
       WakeFromMainLoopSleep();
     }
   }

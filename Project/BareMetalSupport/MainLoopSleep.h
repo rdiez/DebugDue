@@ -32,7 +32,7 @@ void MainLoopSleep ( void );
 // Note that CPU load statistics are only available if CPU sleep support is disabled, see ENABLE_CPU_SLEEP.
 // An alternative implementation using a timer would not have this limitation.
 
-void SetCpuLoadStatsUpdateFlag ( void );
+void CpuLoadStatsTick ( void );
 
 void UpdateCpuLoadStats ( void );
 
