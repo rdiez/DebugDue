@@ -174,19 +174,29 @@ static void HexDump ( const void * const ptr,
 }
 
 
-// TODO: Parse hex numbers with a "0x" prefix.
-
 static unsigned int ParseUnsignedIntArg ( const char * const begin )
 {
   const char ERR_MSG[] = "Invalid unsigned integer value.";
 
-  // strtoul() interprets the '-', but we always want an unsigned positive value.
-  if ( *begin == '-' )
+  int base = 10;
+  const char * p = begin;
+
+  // Prefix "0x" means that the number is in hexadecimal.
+
+  if ( *p == '0' && *(p+1) == 'x' )
+  {
+    p += 2;
+    base = 16;
+  }
+
+  // strtoul() interprets a leading '-', but we always want an unsigned positive value
+  // and the user should not be allowed to enter a negative value.
+  if ( *p == '-' )
     throw std::runtime_error( ERR_MSG );
 
   char * end2;
   errno = 0;
-  const unsigned long val = strtoul( begin, &end2, 10 );
+  const unsigned long val = strtoul( p, &end2, base );
 
   if ( errno != 0 || ( *end2 != 0 && !IsCharInSet( *end2, SPACE_AND_TAB ) ) )
   {
@@ -244,8 +254,6 @@ static void BusyWait ( const char * const paramBegin,
 
   const unsigned delayMs = ParseUnsignedIntArg( paramBegin );
 
-  // DbgconPrint( "Delay ms: %u" EOL, unsigned(delayMs) );
-
   if ( delayMs == 0 || delayMs > 60 * 1000 )
   {
     txBuffer->WriteString( "Invalid arguments." EOL );
@@ -258,6 +266,8 @@ static void BusyWait ( const char * const paramBegin,
   {
     BusyWaitLoop( oneMsIterationCount );
   }
+
+  UsbPrint( txBuffer, "Waited %u ms." EOL, unsigned( delayMs ) );
 }
 
 
@@ -487,7 +497,16 @@ static void ProcessCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_I, true, false, &extraParamsFound ) )
   {
+    #ifndef NDEBUG
+      const char buildType[] = "Debug build";
+    #else
+      const char buildType[] = "Release build";
+    #endif
+
     UsbPrint( txBuffer, "JtagDue %s" EOL, PACKAGE_VERSION );
+    UsbPrint( txBuffer, "%s, compiler version %s" EOL, buildType, __VERSION__ );
+    UsbPrint( txBuffer, "Watchdog %s" EOL, ENABLE_WDT ? "enabled" : "disabled" );
+
     return;
   }
 
@@ -508,7 +527,7 @@ static void ProcessCommand ( const char * const cmdBegin,
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_CPU_LOAD, false, false, &extraParamsFound ) )
   {
     if ( ENABLE_CPU_SLEEP )
-      DbgconPrintStr( "CPU load statistics not available." EOL );
+      UsbPrint( txBuffer, "CPU load statistics not available." EOL );
     else
       DisplayCpuLoad( txBuffer );
 
@@ -889,11 +908,16 @@ void BusPirateConsole_Init ( CUsbTxBuffer * const txBufferForWelcomeMsg )
   ResetBusPirateConsole();
 
   // Unfortunately, we cannot print here a welcome banner, because OpenOCD will abort when it sees the "Welcome..." text.
-  //   UsbWriteStr( "Welcome to the Arduino Due's native USB serial port." EOL );
-  //   UsbWriteStr( "Type '?' for help." EOL );
-  // Not even a short prompt is tolerated:
-  //   WritePrompt( txBufferForWelcomeMsg );
-  UNUSED_ALWAYS( txBufferForWelcomeMsg );
+  // This may change in the future though, I am planning to submit a patch that would make OpenOCD discard
+  // all available input right after establishing the connection.
+
+  if ( false )
+  {
+    UsbPrint( txBufferForWelcomeMsg, "Welcome to the Arduino Due's native USB serial port." EOL );
+    UsbPrint( txBufferForWelcomeMsg, "Type '?' for help." EOL );
+    // Not even a short prompt alone is tolerated:
+    WritePrompt( txBufferForWelcomeMsg );
+  }
 }
 
 
