@@ -192,11 +192,23 @@ static bool ReceiveData ( void )
       break;
     }
 
+
+    // Trace the full data received.
+
     if ( false )
     {
       DbgconPrintStr( "Data received:" EOL );
       DbgconHexDump( writePtr, readCount, EOL );
     }
+
+
+    // Trace only the packet length.
+
+    if ( false )
+    {
+      DbgconPrint( "%u" EOL, unsigned( readCount ) );
+    }
+
 
     s_usbRxBuffer.CommitWrittenElements( readCount );
     wasAtLeastOneByteTransferred = true;
