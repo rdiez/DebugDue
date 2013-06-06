@@ -185,7 +185,8 @@ static void Configure ( void )
 
     const uint32_t wdp_mode = wdp_ms           |  // Field WDV.
                               ( wdp_ms << 16 ) |  // Field WDD.
-                              0x2000;             // WDRSTEN: Watchdog Reset Enable.
+                              WDT_MR_WDDBGHLT  |  // Otherwise, debugging over JTAG is impossible.
+                              WDT_MR_WDRSTEN;
     WDT->WDT_MR = wdp_mode;
   }
   else
