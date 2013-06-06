@@ -40,7 +40,7 @@ IntegerType MaxFrom ( const IntegerType a, const IntegerType b )
 }
 
 
-void ForeverHang ( void )  __attribute__ ((__noreturn__));
+void ForeverHang ( bool keepWatchdogHappy ) throw()  __attribute__ ((__noreturn__));
 
 
 // Please do not use __enable_irq() and __disable_irq() directly, as they do not update

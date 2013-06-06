@@ -29,12 +29,14 @@ void BreakpointPlaceholder ( void )
 
 // I find this routine useful during debugging.
 
-void ForeverHang ( void )
+void ForeverHang ( const bool keepWatchdogHappy ) throw()
 {
   __disable_irq();
 
   for ( ; ; )
   {
+    if ( keepWatchdogHappy )
+      wdt_restart( WDT );
   }
 }
 
