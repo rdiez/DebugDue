@@ -513,6 +513,17 @@ static uint8_t ShiftSeveralBits ( const uint8_t tdi8,
   if ( TRACE_JTAG_SHIFTING )
     DbgconPrint( "TDI8: 0x%02X, TMS8: 0x%02X, TDO8: 0x%02X" EOL, tdi8, tms8, tdo8 );
 
+
+  // Note that OpenOCD 0.8.0's Bus Pirate driver does not bother clearing the last buffer
+  // contents before sending a new one, so, if the bit count is not a multiple of 8,
+  // the last TDI and TMS bits may not be zero, they may be rubbish from the data previously sent.
+  // However, I have changed my OpenOCD locally to clear those bits, I intend to submit a patch soon.
+  if ( true )
+  {
+    assert( shiftingTdi8 == 0 );
+    assert( shiftingTms8 == 0 );
+  }
+
   return tdo8;
 }
 
@@ -833,14 +844,6 @@ void ShiftJtagData ( CUsbRxBuffer * const rxBuffer,
     const uint8_t tdo8 = ShiftSeveralBits( tdi8, tms8, restBitCount );
 
     txBuffer->WriteElem( tdo8 );
-
-    /* Note that OpenOCD does not bother clearing the last buffer contents before sending a new one,
-       so, if the bit count is not a multiple of 8, the last TDI and TMS bits may not be zero,
-       they may be rubbish from the data previously sent.
-
-       ASSERT( tdi8 == 0 );
-       ASSERT( tms8 == 0 );
-    */
   }
 
   if ( TRACE_JTAG_SHIFTING )
