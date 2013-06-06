@@ -19,6 +19,7 @@
 #include <stddef.h>  // For NULL.
 
 #include <sam3xa.h>  // For __disable_irq().
+#include <wdt.h>
 
 
 // When the firmware starts, it will probably be too early to print an assertion message to
@@ -57,7 +58,12 @@ void ForeverHangAfterPanic ( void ) throw()
     // Forever hang.
     for ( ; ; )
     {
-      // If the watchdog is active, we should probably trigger it here, otherwise
-      // we will probably reset and the failed assertion information will be lost.
+      // If this is a debug build, assume that we are debugging, and freeze here.
+      // This helps to see the assertion messages and gives you the option
+      // to attach a debugger and see the call stack.
+      // Otherwise, let the watchdog trigger if enabled.
+      #ifndef NDEBUG
+        wdt_restart( WDT );
+      #endif
     }
 }
