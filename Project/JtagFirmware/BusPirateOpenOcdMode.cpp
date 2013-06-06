@@ -1031,10 +1031,13 @@ void BusPirateOpenOcdMode_ProcessData ( CUsbRxBuffer * const rxBuffer, CUsbTxBuf
   assert( s_wasInitialised );
 
   // Speed is important here, and the receive buffer is not so big, so process all we can here.
-  // Note that this loop could then starve the main loop. If that becomes a problem, you will need
-  // to limit the amount of data processed here.
+  // In order to prevent starving the main loop, there is a limit on the number of commands
+  // that can be executed at once.
 
-  for ( ; ; )
+  // We should allow in debug builds at least one main loop iteration every MAINLOOP_WAKE_UP_CPU_LOAD_MS.
+  const unsigned MAX_CMD_COUNT = 20;
+
+  for ( unsigned i = 0; i < MAX_CMD_COUNT; ++i )
   {
     const bool repeatIteration = OpenOcdMode_ProcessData( rxBuffer, txBuffer );
 
