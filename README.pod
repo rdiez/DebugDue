@@ -19,15 +19,42 @@ However, the POD syntax is quite simple and can be edited with a standard text e
 =head1 JtagDue Project
 
 The main goal of this project is to provide an up-to-date, comfortable bare-metal C++
-programming environment for the Arduino Due, with assertions, STL library
-and C++ exception support.
+programming environment for the Arduino Due, with the following features:
+
+=over
+
+=item * Event loop (super loop) architecture.
+
+The developer must manually call every library function and has therefore full control at any point in time.
+
+There are no OS background tasks or threads to worry about.
+
+=item * C++ exceptions.
+
+=item * Newlib with malloc support.
+
+=item * Assertions.
+
+=item * Debug console.
+
+Useful generic commands have been implemented: memory usage, CPU load in the last 60 seconds, compiler version used to build, last reset cause, uptime.
+
+=item * Library of common functions.
+
+Most basic functions you need to get started have been implemted: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, circular buffer, etc.
+
+=item * Start-up delay for easy JTAG debugging right after reset.
+
+=item * Firmware cross-compiled with the standard autotools.
+
+=back
 
 A secondary goal is to convert the Arduino Due into an OpenOCD JTAG adapter
 by emulating a Bus Pirate from Dangerous Prototypes.
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
 
 I made a quick test, and GDB's 'load' command reports a transfer rate of 85 KiB/s with the JtagDue firmware,
-compared to 8 KiB/s with the Bus Pirate. Note that I had to manually patch OpenOCD 0.7.0-dev as of May 2013 in order
+compared to 8 KiB/s with the Bus Pirate. Note that I had to manually patch OpenOCD 0.8.0 as of May 2013 in order
 for setting "buspirate_speed fast" to work, otherwise you have to revert back to "buspirate_speed normal",
 and then you get just 1 KiB/s with the Bus Pirate. If you modify OpenOCD to use bigger USB packets,
 you can reach 100 KiB/s with the JtagDue.
@@ -152,7 +179,7 @@ Now you should be able to connect to the virtual serial port with your favorite 
 For example, this Linux client allows you to conveniently quit the client-side terminal emulator
 (the local 'socat' command) with Ctrl+C:
 
-  socat READLINE,echo=0 /dev/ttyACM0,b115200,raw,echo=0,crnl
+  socat READLINE,echo=0 /dev/ttyACM0,b115200,raw,echo=0
 
 On Windows, you can use Putty like this:
 
@@ -163,7 +190,7 @@ command history and all the standard cursor key movements, but you can use the R
 on the client side instead as follows:
 
   # Without READLINE, but so that Ctrl+C still quits socat:
-  socat -,echo=0,icanon=0 /dev/ttyACM0,b115200,raw,echo=0,crnl
+  socat -,echo=0,icanon=0 /dev/ttyACM0,b115200,raw,echo=0
 
 Due to a protocol limitation, there is no welcome banner. Press the Enter key at least once
 to see the cursor ('>'), or type "help" for a list of available commands.
@@ -201,7 +228,8 @@ with command "JtagPins". This is the kind of output generated:
   TCK   (pin 50): high  |  GND1  (pin 51): low
 
 This is the same pin layout as the 10-pin Altera USB Blaster connector, with some
-Atmel additions from the AVR JTAG header.
+Atmel additions from the AVR JTAG header. Pin 1 on the USB Blaster (TCK) corresponds
+then to pin 50 on the Arduino Due.
 
 With the command above you can also verify that at least the ground signals (GND1 and GND2)
 are low and the VCC signal is high after connecting the JTAG cable.
