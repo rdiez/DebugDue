@@ -51,7 +51,7 @@ static uint32_t GetCircularPosMinusOne ( const uint32_t pos,
                                          const uint32_t bufferSize )
 {
   assert( pos < bufferSize );
-  
+
   if ( pos > 0 )
     return pos - 1;
   else
@@ -98,6 +98,15 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
                                        CUsbTxBuffer * const txBuffer,
                                        uint32_t * const retCmdLen )
 {
+  // Trace the incoming characters.
+  if ( false )
+  {
+    if ( IsPrintableAscii(c) )
+      DbgconPrint( "0x%02X (%3u, %c)" EOL, c, c, c  );
+    else
+      DbgconPrint( "0x%02X (%3u)" EOL, c, c );
+  }
+
   bool isCmdReady = false;
 
   switch ( m_state )
@@ -186,10 +195,9 @@ bool CSerialConsole::ProcessChar ( const uint8_t c,
     m_state = stEscapeReceived;
     break;
 
-  case 0x0A: // LF, \n. Does any terminal only send a CR? Ignore it.
-    break;
-
-  case 0x0D: // Enter pressed (CR, \r).
+    // When you press the ENTER key, most terminal emulators send either a single LF or the (CR, LF) sequence.
+  case 0x0A: // LF, \n
+  case 0x0D: // Enter pressed (CR, \r)
     isCmdReady = true;
     break;
 
@@ -236,7 +244,7 @@ void CSerialConsole::Backspace ( CUsbTxBuffer * const txBuffer )
 
 
   // NOTE: If the following logic changes much, remeber to update MAX_TX_BUFFER_SIZE_NEEDED.
-  
+
   // Move the cursor left one position.
   m_cursorPos = GetCircularPosMinusOne( m_cursorPos, BUF_LEN );
   txBuffer->WriteString( "\x1B[D" );
