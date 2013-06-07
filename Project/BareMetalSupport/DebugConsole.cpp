@@ -17,7 +17,6 @@
 #include "DebugConsole.h"  // The include file for this module should come first.
 
 #include <assert.h>
-#include <stdarg.h>
 #include <string.h>
 
 #include "Miscellaneous.h"
@@ -114,7 +113,7 @@ void DbgconPrintStr ( const char * const msg )
 // As a (cheap) work-around, insert always an LF.
 static const char TRUNCATION_SUFFIX[] = "[...]" LF;
 
-static void DbgconPrintV ( const char * const formatStr, va_list argList )
+void DbgconPrintV ( const char * const formatStr, va_list argList )
 {
   const size_t TRUNCATION_SUFFIX_LEN = sizeof( TRUNCATION_SUFFIX ) - 1;
 
