@@ -16,7 +16,6 @@
 
 #include "UsbBuffers.h"  // The include file for this module should come first.
 
-#include <stdarg.h>
 #include <stdio.h>
 #include <stdexcept>
 
@@ -60,7 +59,7 @@ static void SendData ( CUsbTxBuffer * const txBuffer, const uint8_t * data, cons
 static const char TRUNCATION_SUFFIX[] = "[...]" EOL;
 static const size_t TRUNCATION_SUFFIX_LEN = sizeof( TRUNCATION_SUFFIX ) - 1;
 
-static void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va_list argList )
+void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va_list argList )
 {
   // POSSIBLE OPTIMISATION: It may be worth trying to print directly to the Tx Buffer
   // and only resort to the stack-based buffer if there is not enough contiguous space
