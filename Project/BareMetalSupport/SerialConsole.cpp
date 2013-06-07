@@ -18,11 +18,11 @@
 
 #include <algorithm>
 
-#include <BareMetalSupport/AssertionUtils.h>
-#include <BareMetalSupport/DebugConsole.h>
-#include <BareMetalSupport/TextParsingUtils.h>
+#include "AssertionUtils.h"
+#include "DebugConsole.h"
+#include "TextParsingUtils.h"
 
-#include "Globals.h"
+#define DBG_EOL "\r\n"  // Carriage Return, 0x0D, followed by a Line Feed, 0x0A.
 
 
 // Returns (end - begin), but takes into account a possible wrap-around at the end of the circular buffer.
@@ -76,9 +76,9 @@ void CSerialConsole::Reset ( void )
 }
 
 
-void CSerialConsole::Bell ( CUsbTxBuffer * const txBuffer )
+void CSerialConsole::Bell ( void )
 {
-  UsbPrintChar( txBuffer, 0x07 );
+  PrintChar( 0x07 );
 }
 
 
@@ -95,16 +95,15 @@ void CSerialConsole::Bell ( CUsbTxBuffer * const txBuffer )
 // may then wonder why some commands take much longer than others to process.
 
 const char * CSerialConsole::AddChar ( const uint8_t c,
-                                       CUsbTxBuffer * const txBuffer,
                                        uint32_t * const retCmdLen )
 {
   // Trace the incoming characters.
   if ( false )
   {
     if ( IsPrintableAscii(c) )
-      DbgconPrint( "0x%02X (%3u, %c)" EOL, c, c, c  );
+      DbgconPrint( "0x%02X (%3u, %c)" DBG_EOL, c, c, c  );
     else
-      DbgconPrint( "0x%02X (%3u)" EOL, c, c );
+      DbgconPrint( "0x%02X (%3u)" DBG_EOL, c, c );
   }
 
   bool isCmdReady = false;
@@ -112,7 +111,7 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
   switch ( m_state )
   {
   case stIdle:
-    isCmdReady = ProcessChar( c, txBuffer );
+    isCmdReady = ProcessChar( c );
     break;
 
   case stEscapeReceived:
@@ -122,13 +121,13 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
     }
     else
     {
-      Bell( txBuffer );
+      Bell();
       m_state = stIdle;
     }
     break;
 
   case stEscapeBracketReceived:
-    ProcessCharAfterEscapeBracket( c, txBuffer );
+    ProcessCharAfterEscapeBracket( c );
     break;
 
   default:
@@ -138,7 +137,7 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
 
   if ( false )
   {
-    DbgconPrint( "Char: 0x%02X, cmd begin: %u, end: %u, len: %u, pos: %u" EOL,
+    DbgconPrint( "Char: 0x%02X, cmd begin: %u, end: %u, len: %u, pos: %u" DBG_EOL,
                  c,
                  unsigned( m_cmdBeginPos ),
                  unsigned( m_cmdEndPos ),
@@ -166,7 +165,7 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
     m_cmdEndPos   = cmdLen;
     m_cursorPos   = cmdLen;
 
-    // DbgconPrint( "Command ready." EOL );
+    // DbgconPrint( "Command ready." DBG_EOL );
 
     assert( strlen( m_buffer ) == cmdLen );
 
@@ -181,8 +180,7 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
 }
 
 
-bool CSerialConsole::ProcessChar ( const uint8_t c,
-                                   CUsbTxBuffer * const txBuffer )
+bool CSerialConsole::ProcessChar ( const uint8_t c )
 {
   // When the user inserts characters at the command's beginning,
   // a number of bytes are sent to the terminal, depending on the command length.
@@ -202,20 +200,20 @@ bool CSerialConsole::ProcessChar ( const uint8_t c,
     break;
 
   case 0x02: // ^B (left arrow)
-    LeftArrow( txBuffer );
+    LeftArrow();
     break;
 
   case 0x06: // ^F (right arrow)
-    RightArrow( txBuffer );
+    RightArrow();
     break;
 
   case 0x08: // Backspace (^H).
   case 0x7F: // For me, that's the backspace key.
-    Backspace( txBuffer );
+    Backspace();
     break;
 
   default:
-    InsertChar( c, txBuffer );
+    InsertChar( c );
     break;
   }
 
@@ -223,12 +221,12 @@ bool CSerialConsole::ProcessChar ( const uint8_t c,
 }
 
 
-void CSerialConsole::Backspace ( CUsbTxBuffer * const txBuffer )
+void CSerialConsole::Backspace ( void )
 {
   // If at the beginning, or if the command is empty...
   if ( m_cursorPos == m_cmdBeginPos )
   {
-    Bell( txBuffer );
+    Bell();
     return;
   }
 
@@ -236,7 +234,7 @@ void CSerialConsole::Backspace ( CUsbTxBuffer * const txBuffer )
   if ( m_cursorPos == m_cmdEndPos )
   {
     m_buffer[ m_cmdEndPos ] = 0;
-    UsbPrintStr( txBuffer, "\x08 \x08" ); // Go left one character, space (deletes the character), go left one character again.
+    PrintStr( "\x08 \x08" ); // Go left one character, space (deletes the character), go left one character again.
     m_cmdEndPos = GetCircularPosMinusOne( m_cmdEndPos, BUF_LEN  );
     m_cursorPos = m_cmdEndPos;
     return;
@@ -247,34 +245,33 @@ void CSerialConsole::Backspace ( CUsbTxBuffer * const txBuffer )
 
   // Move the cursor left one position.
   m_cursorPos = GetCircularPosMinusOne( m_cursorPos, BUF_LEN );
-  UsbPrintStr( txBuffer, "\x1B[D" );
+  PrintStr( "\x1B[D" );
 
   // Shift characters downwards one position, and print each one.
   for ( uint32_t i = m_cursorPos; i != GetCircularPosMinusOne( m_cmdEndPos, BUF_LEN ); i = ( i + 1 ) % BUF_LEN )
   {
     m_buffer[ i ] = m_buffer[ (i + 1) % BUF_LEN ];
-    UsbPrintChar( txBuffer, m_buffer[ i ] );
+    PrintChar( m_buffer[ i ] );
   }
 
   // Delete the last character by writing a space.
-  UsbPrintChar( txBuffer, ' ' );
+  PrintChar( ' ' );
 
   // Move the terminal cursor left to match our current cursor position.
   const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
   if ( distanceToEnd > 0 )
-    UsbPrint( txBuffer, "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
+    Printf( "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
 
   m_cmdEndPos = GetCircularPosMinusOne( m_cmdEndPos, BUF_LEN );
 }
 
 
-void CSerialConsole::InsertChar ( const uint8_t c,
-                                  CUsbTxBuffer * const txBuffer )
+void CSerialConsole::InsertChar ( const uint8_t c )
 {
   // If not printable...
   if ( !IsPrintableAscii( c ) )
   {
-    Bell( txBuffer );
+    Bell();
     return;
   }
 
@@ -283,7 +280,7 @@ void CSerialConsole::InsertChar ( const uint8_t c,
   // If command full...
   if ( GetCircularDistance( m_cmdBeginPos, nextEndPos, BUF_LEN ) > MAX_SINGLE_CMD_LEN )
   {
-    Bell( txBuffer );
+    Bell();
     return;
   }
 
@@ -292,7 +289,7 @@ void CSerialConsole::InsertChar ( const uint8_t c,
   {
     m_buffer[ m_cmdEndPos ] = c;
 
-    UsbPrintChar( txBuffer, c );
+    PrintChar( c );
 
     m_cursorPos = nextEndPos;
     m_cmdEndPos = nextEndPos;
@@ -312,28 +309,27 @@ void CSerialConsole::InsertChar ( const uint8_t c,
 
   // Print all characters.
   for ( uint32_t i = m_cursorPos; i != nextEndPos; i = ( i + 1 ) % BUF_LEN )
-    UsbPrintChar( txBuffer, m_buffer[ i ] );
+    PrintChar( m_buffer[ i ] );
 
   // Move the terminal cursor left to match our current cursor position.
   const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
   assert( distanceToEnd > 0 );
-  UsbPrint( txBuffer, "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
+  Printf( "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
 
   m_cursorPos = (m_cursorPos + 1) % BUF_LEN;
   m_cmdEndPos = nextEndPos;
 }
 
 
-bool CSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c,
-                                                     CUsbTxBuffer * const txBuffer )
+bool CSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c )
 {
   switch (c)
   {
-  case 'D':  LeftArrow ( txBuffer );  break;
-  case 'C':  RightArrow( txBuffer );  break;
+  case 'D':  LeftArrow ();  break;
+  case 'C':  RightArrow();  break;
 
   default:
-    Bell( txBuffer );
+    Bell();
     break;
   }
 
@@ -343,29 +339,40 @@ bool CSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c,
 }
 
 
-void CSerialConsole::LeftArrow ( CUsbTxBuffer * const txBuffer )
+void CSerialConsole::LeftArrow ( void )
 {
   if ( m_cursorPos == m_cmdBeginPos )
   {
-    Bell( txBuffer );
+    Bell();
     return;
   }
 
   m_cursorPos = GetCircularPosMinusOne( m_cursorPos, BUF_LEN );
 
-  UsbPrintStr( txBuffer, "\x1B[D" );  // Move left.
+  PrintStr( "\x1B[D" );  // Move left.
 }
 
 
-void CSerialConsole::RightArrow ( CUsbTxBuffer * const txBuffer )
+void CSerialConsole::RightArrow ( void )
 {
   if ( m_cursorPos == m_cmdEndPos )
   {
-    Bell( txBuffer );
+    Bell();
     return;
   }
 
   m_cursorPos = ( m_cursorPos + 1 ) % BUF_LEN;
 
-  UsbPrintStr( txBuffer, "\x1B[C" );  // Move right.
+  PrintStr( "\x1B[C" );  // Move right.
+}
+
+
+void CSerialConsole::PrintStr ( const char * const str )
+{
+  Printf( "%s", str );
+}
+
+void CSerialConsole::PrintChar ( const char c )
+{
+  Printf( "%c", c );
 }

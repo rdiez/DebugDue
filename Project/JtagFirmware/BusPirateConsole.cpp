@@ -24,6 +24,7 @@
 #include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/StackCheck.h>
 #include <BareMetalSupport/TextParsingUtils.h>
+#include <BareMetalSupport/SerialConsole.h>
 
 #include <stdexcept>
 #include <errno.h>
@@ -39,7 +40,6 @@
 #include "BusPirateBinaryMode.h"
 #include "BusPirateOpenOcdMode.h"
 #include "UsbConnection.h"
-#include "SerialConsole.h"
 
 
 static const char SPACE_AND_TAB[] = " \t";
@@ -65,7 +65,66 @@ static UsbSpeedTestEnum s_usbSpeedTestType;
 // These symbols are defined in the linker script file.
 extern uint32_t _end;
 
-static CSerialConsole s_console;
+
+class CUsbSerialConsole : public CSerialConsole
+{
+private:
+  CUsbTxBuffer * m_txBuffer;
+
+  virtual void Printf ( const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
+
+public:
+
+  CUsbSerialConsole ( void )
+    : m_txBuffer( NULL )
+  {
+    STATIC_ASSERT( MAX_TX_BUFFER_SIZE_NEEDED < USB_TX_BUFFER_SIZE, "Otherwise, there may not be enough space in the tx buffer to complete an operation like backspace." );
+  }
+
+  const char * AddSerialChar ( uint8_t c,
+                               CUsbTxBuffer * txBuffer,
+                               uint32_t * cmdLen );
+};
+
+
+void CUsbSerialConsole::Printf ( const char * formatStr, ... )
+{
+  assert( m_txBuffer != NULL );
+
+  va_list argList;
+  va_start( argList, formatStr );
+
+  UsbPrintV( m_txBuffer, formatStr, argList );
+
+  va_end( argList );
+}
+
+
+const char * CUsbSerialConsole::AddSerialChar ( const uint8_t c,
+                                                CUsbTxBuffer * const txBuffer,
+                                                uint32_t * const cmdLen )
+{
+  const char * ret;
+
+  m_txBuffer = txBuffer;
+
+  try
+  {
+    ret = AddChar( c, cmdLen );
+  }
+  catch ( ... )
+  {
+    m_txBuffer = NULL;
+    throw;
+  }
+
+  m_txBuffer = NULL;
+
+  return ret;
+}
+
+
+static CUsbSerialConsole s_console;
 
 
 static void WritePrompt ( CUsbTxBuffer * const txBuffer )
@@ -927,7 +986,7 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
       s_binaryModeCount = 0;
 
       uint32_t cmdLen;
-      const char * const cmd = s_console.AddChar( byte, txBuffer, &cmdLen );
+      const char * const cmd = s_console.AddSerialChar( byte, txBuffer, &cmdLen );
 
       if ( cmd != NULL )
       {

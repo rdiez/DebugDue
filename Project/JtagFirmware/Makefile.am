@@ -102,7 +102,6 @@ jtagdue_elf_SOURCES += \
     Led.cpp \
     UsbConnection.cpp \
     UsbBuffers.cpp \
-    SerialConsole.cpp \
     BusPirateConnection.cpp \
     BusPirateConsole.cpp \
     BusPirateBinaryMode.cpp \
