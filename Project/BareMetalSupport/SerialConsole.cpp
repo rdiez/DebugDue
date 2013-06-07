@@ -328,6 +328,13 @@ bool CSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c )
   case 'D':  LeftArrow ();  break;
   case 'C':  RightArrow();  break;
 
+  // In order to implement the 'delete' key here, we need to process here sequence "ESC [ 3 ~",
+  // which is made of these bytes:
+  // 27  - ESC
+  // 91  - [
+  // 51  - 3
+  // 126 - ~
+
   default:
     Bell();
     break;
