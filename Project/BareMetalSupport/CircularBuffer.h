@@ -231,6 +231,7 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
 
   // This routine boldly assumes that the element type can hold a string character.
   // The null terminator is not placed in the buffer.
+  // Make sure to check in advance whether there is enough place in the circular buffer.
 
   void WriteString ( const char * const str )
   {
