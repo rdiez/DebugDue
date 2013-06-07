@@ -259,6 +259,32 @@ static void ServiceUsbConnectionData ( const uint64_t currentTime )
 }
 
 
+static void HandleError ( const char * const errMsg )
+{
+  // This kind of error should never happen, because the user will not get
+  // a proper error indication on the communication channel that he was using.
+
+  // Here we could close and reopen the USB connection (the virtual serial port),
+  // but I do not know yet how to do that from this side.
+
+  DbgconPrintStr( "Error servicing the USB connection: " );
+  DbgconPrintStr( errMsg );
+  DbgconPrintStr( EOL );
+
+  // We need to consume the data in the Rx buffer, otherwise we may enter an infinite loop.
+  s_usbRxBuffer.Reset();
+
+  // There may be little or no place left in the Tx Buffer, but discarding the Tx Buffer
+  // at this point does not seem wise.
+
+  // Leave the current mode and enter the console mode. This makes sure
+  // that the current mode's termination routine is always called, cleaning up
+  // anything that may have been left in a wrong state when the error occurred.
+  ChangeBusPirateMode( bpInvalid, NULL );
+  ChangeBusPirateMode( bpConsoleMode, &s_usbTxBuffer );
+}
+
+
 void ServiceUsbConnection ( const uint64_t currentTime )
 {
   try
@@ -306,23 +332,10 @@ void ServiceUsbConnection ( const uint64_t currentTime )
   }
   catch ( const std::exception & e )
   {
-    // Here we could close and reopen the USB connection (the virtual serial port),
-    // but I do not know yet how to do that from this side.
-
-    DbgconPrintStr( "Error servicing the USB connection: " );
-    DbgconPrintStr( e.what() );
-    DbgconPrintStr( EOL );
-
-    // We need to consume the data in the Rx buffer, otherwise we may enter an infinite loop.
-    s_usbRxBuffer.Reset();
+    HandleError( e.what() );
   }
   catch ( ... )
   {
-    DbgconPrintStr( "Error servicing the USB connection: " );
-    DbgconPrintStr( "<unexpected C++ exception>" );
-    DbgconPrintStr( EOL );
-
-    // We need to consume the data in the Rx buffer, otherwise we may enter an infinite loop.
-    s_usbRxBuffer.Reset();
+    HandleError( "Unexpected C++ exception." );
   }
 }

@@ -424,7 +424,7 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
 
 static void SendOpenOcdModeWelcome ( CUsbTxBuffer * const txBuffer )
 {
-  txBuffer->WriteString( "OCD1" );
+  UsbPrint( txBuffer, "OCD1");
 }
 
 
@@ -901,8 +901,8 @@ static bool ShiftCommand ( CUsbRxBuffer * const rxBuffer,
 }
 
 
-static bool OpenOcdMode_ProcessData ( CUsbRxBuffer * const rxBuffer,
-                                      CUsbTxBuffer * const txBuffer )
+static bool ProcessReceivedData ( CUsbRxBuffer * const rxBuffer,
+                                  CUsbTxBuffer * const txBuffer )
 {
   if ( rxBuffer->IsEmpty() )
     return false;
@@ -1039,7 +1039,7 @@ void BusPirateOpenOcdMode_ProcessData ( CUsbRxBuffer * const rxBuffer, CUsbTxBuf
 
   for ( unsigned i = 0; i < MAX_CMD_COUNT; ++i )
   {
-    const bool repeatIteration = OpenOcdMode_ProcessData( rxBuffer, txBuffer );
+    const bool repeatIteration = ProcessReceivedData( rxBuffer, txBuffer );
 
     if ( !repeatIteration )
       break;
@@ -1057,7 +1057,7 @@ void BusPirateOpenOcdMode_Init ( CUsbTxBuffer * const txBuffer )
 
   // Note that routine InitJtagPins() has already been called at start-up time.
 
-  assert( txBuffer->IsEmpty() );
+  // There is an error-handling path that might get us here with a non-empty Tx Buffer.
   SendOpenOcdModeWelcome( txBuffer );
 }
 

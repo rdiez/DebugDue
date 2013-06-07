@@ -34,7 +34,7 @@
 
 static void SendBinaryModeWelcome ( CUsbTxBuffer * const txBuffer )
 {
-  txBuffer->WriteString( "BBIO1" );
+  UsbPrint( txBuffer, "BBIO1" );
 }
 
 
@@ -81,7 +81,7 @@ void BusPirateBinaryMode_Init ( CUsbTxBuffer * const txBuffer )
     s_wasInitialised = true;
   #endif
 
-  assert( txBuffer->IsEmpty() );
+  // Note that there is an error path that might land here with a non-empty Tx Buffer.
   SendBinaryModeWelcome( txBuffer );
 }
 

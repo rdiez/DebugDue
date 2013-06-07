@@ -56,13 +56,23 @@ void ChangeBusPirateMode ( const BusPirateModeEnum newMode,
   assert( s_busPirateMode != bpInvalid ||
           newMode         != bpInvalid );
 
-  // Because mode switching speed is not important, all callers wait until the tx buffer is empty
-  // before changing modes. That is the simplest way to make sure that there is enough space
-  // in the tx buffer to hold the mode welcome message.
+
+  // Because mode switching speed is not important, all callers normally wait until
+  // the Tx Buffer is empty before changing modes. That is the simplest way to make sure
+  // that there is enough space in the Tx Buffer to hold the mode welcome message (if any).
+  // However, if a communication error happens (which is rare), there is a code path that
+  // does not discard the Tx Buffer before changing modes.
+
   if ( newMode == bpInvalid )
+  {
     assert( txBufferForWelcomeMsg == NULL );
+  }
   else
+  {
+    // This assert triggers in the error path discussed above, even though that is OK.
+    // I have left the assert in place because it is rare and helps find bugs.
     assert( txBufferForWelcomeMsg->IsEmpty() );
+  }
 
 
   const bool TRACE_MODE_CHANGES = false;

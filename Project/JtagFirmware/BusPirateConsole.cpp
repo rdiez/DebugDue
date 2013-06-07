@@ -68,7 +68,7 @@ static CSerialConsole s_console;
 
 static void WritePrompt ( CUsbTxBuffer * const txBuffer )
 {
-  txBuffer->WriteString( ">" );
+  UsbPrint( txBuffer, ">" );
 }
 
 
