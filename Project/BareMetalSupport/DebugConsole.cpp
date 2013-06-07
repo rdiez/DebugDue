@@ -25,12 +25,13 @@
 
 #include <sam3xa.h>
 #include <pmc.h>
+#include <uart.h>
 
 
 static bool s_isSerialPortInitialised = false;
 
 
-void InitDebugConsole ( void )
+void InitDebugConsole ( const bool enableRxInterrupt )
 {
   assert( !s_isSerialPortInitialised );
   s_isSerialPortInitialised = true;
@@ -49,16 +50,16 @@ void InitDebugConsole ( void )
   // Configure baudrate (asynchronous, no oversampling)
   UART->UART_BRGR = (SystemCoreClock / 115200) >> 4;
 
-  // Configure interrupts.
-  // We don't need these interrupts at the moment:
-  //   UART->UART_IDR = 0xFFFFFFFF;
-  //   UART->UART_IER = UART_IER_RXRDY | UART_IER_OVRE | UART_IER_FRAME;
-  //
-  // Enable UART interrupt in NVIC
-  // NVIC_EnableIRQ( UART_IRQn );
+  if ( enableRxInterrupt )
+  {
+    uart_disable_interrupt( UART, 0xFFFFFFFF );  // Disable all interrupts, we will enable only selected ones below.
+    uart_enable_interrupt( UART, UART_IER_RXRDY | UART_IER_OVRE | UART_IER_FRAME );
+    NVIC_EnableIRQ( UART_IRQn );
+  }
 
-  // Enable receiver and transmitter
-  UART->UART_CR = UART_CR_RXEN | UART_CR_TXEN ;
+  // Enable receiver and transmitter.
+  uart_enable_tx( UART );
+  uart_enable_rx( UART );
 }
 
 

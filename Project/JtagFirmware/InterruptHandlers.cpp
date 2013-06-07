@@ -71,7 +71,5 @@ void WDT_Handler        (void) __attribute__ ((weak, alias("__halt")));
 void CAN0_Handler       (void) __attribute__ ((weak, alias("__halt")));
 void CAN1_Handler       (void) __attribute__ ((weak, alias("__halt")));
 
-void UART_Handler       (void) __attribute__ ((weak, alias("__halt")));
-
 void SVC_Handler        (void) __attribute__ ((weak, alias("__halt")));
 void PendSV_Handler     (void) __attribute__ ((weak, alias("__halt")));

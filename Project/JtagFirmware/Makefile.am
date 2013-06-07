@@ -60,6 +60,7 @@ libsam_a_SOURCES = \
      $(ASF_BASEDIR)/sam/drivers/wdt/wdt.c \
      $(ASF_BASEDIR)/sam/drivers/adc/adc.c \
      $(ASF_BASEDIR)/sam/drivers/rstc/rstc.c \
+     $(ASF_BASEDIR)/sam/drivers/uart/uart.c \
      $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc.c \
      $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc_desc.c \
      $(LIBSAM_USB_UDC_DIR)/udc.c \
@@ -106,6 +107,7 @@ jtagdue_elf_SOURCES += \
     BusPirateConsole.cpp \
     BusPirateBinaryMode.cpp \
     BusPirateOpenOcdMode.cpp \
+    SerialPort.cpp \
     InterruptHandlers.cpp
     # Note that there are other files below.
 

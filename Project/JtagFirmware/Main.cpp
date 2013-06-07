@@ -30,6 +30,7 @@
 #include "UsbConnection.h"
 #include "UsbSupport.h"
 #include "Led.h"
+#include "SerialPort.h"
 #include "BusPirateOpenOcdMode.h"
 
 #include <sam3xa.h>  // All interrupt handlers must probably be extern "C", so include their declarations here.
@@ -81,7 +82,7 @@ static void Configure ( void )
   // Enable the pull-up resistor for RX0.
   pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
 
-  InitDebugConsole();
+  InitDebugConsole( true );
   // Print this msg only on serial port, and not on USB port:
   DbgconPrint( "--- JtagDue %s ---" EOL, PACKAGE_VERSION );
   DbgconPrintStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
@@ -247,6 +248,8 @@ void StartOfUserCode ( void )
       const uint64_t currentTime = GetUptime();
 
       ServiceUsbConnection( currentTime );
+
+      ServiceSerialPort();
 
       if ( HasUptimeElapsedMs( currentTime, lastReferenceTimeForPeriodicAction, 500 ) )
       {

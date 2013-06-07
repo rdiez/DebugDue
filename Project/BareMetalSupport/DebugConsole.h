@@ -6,7 +6,8 @@
 #include <stddef.h>  // For size_t.
 #include <stdarg.h>
 
-void InitDebugConsole ( void );
+
+void InitDebugConsole ( bool enableRxInterrupt );
 
 void DbgconSyncWriteStr ( const char * msg );
 void DbgconSyncWriteUint32Hex ( uint32_t val );

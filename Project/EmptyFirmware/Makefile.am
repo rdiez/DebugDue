@@ -59,6 +59,7 @@ libsam_a_SOURCES = \
      $(LIBSAM_PIO_DIR)/pio.c \
      $(ASF_BASEDIR)/sam/drivers/wdt/wdt.c \
      $(ASF_BASEDIR)/sam/drivers/rstc/rstc.c \
+     $(ASF_BASEDIR)/sam/drivers/uart/uart.c \
      $(ASF_BASEDIR)/common/utils/interrupt/interrupt_sam_nvic.c \
      $(ASF_BASEDIR)/common/services/clock/sam3x/sysclk.c
 

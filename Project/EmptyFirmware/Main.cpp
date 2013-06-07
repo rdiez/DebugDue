@@ -63,7 +63,7 @@ static void Configure ( void )
     // Enable the pull-up resistor for RX0.
     pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
 
-    InitDebugConsole();
+    InitDebugConsole( false );
 
     DbgconSyncWriteStr( "--- EmptyDue " PACKAGE_VERSION " ---" EOL );
     DbgconSyncWriteStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
