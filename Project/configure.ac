@@ -1,7 +1,7 @@
 
 # Copyright (C) 2012 R. Diez - see the JtagDue project for licensing information.
 
-AC_INIT([arduino-due-native-usb-speed-test],[1.0.0])
+AC_INIT([arduino-due-native-usb-speed-test],[1.0.1])
 AC_PREREQ([2.65])  # Tested mainly with version 2.68.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
