@@ -232,7 +232,7 @@ static void PrintMemory ( const char * const paramBegin,
 
   if ( *paramBegin == 0 || *countBegin == 0 || *extraArgBegin != 0 )
   {
-    txBuffer->WriteString( "Invalid arguments." EOL );
+    UsbPrintStr( txBuffer, "Invalid arguments." EOL );
     return;
   }
 
@@ -246,7 +246,7 @@ static void PrintMemory ( const char * const paramBegin,
 
   if ( count == 0 )
   {
-    txBuffer->WriteString( "Invalid arguments." EOL );
+    UsbPrintStr( txBuffer, "Invalid arguments." EOL );
     return;
   }
 
@@ -262,7 +262,7 @@ static void BusyWait ( const char * const paramBegin,
 
   if ( *paramBegin == 0 || *extraArgBegin != 0 )
   {
-    txBuffer->WriteString( "Invalid arguments." EOL );
+    UsbPrintStr( txBuffer, "Invalid arguments." EOL );
     return;
   }
 
@@ -270,7 +270,7 @@ static void BusyWait ( const char * const paramBegin,
 
   if ( delayMs == 0 || delayMs > 60 * 1000 )
   {
-    txBuffer->WriteString( "Invalid arguments." EOL );
+    UsbPrintStr( txBuffer, "Invalid arguments." EOL );
     return;
   }
 
@@ -299,12 +299,12 @@ static void ProcessUsbSpeedTestCmd ( const char * const paramBegin,
 
   if ( *paramBegin == 0 )
   {
-    txBuffer->WriteString( "Please specify the test type as an argument:" EOL );
-    txBuffer->WriteString( "  TxSimpleWithTimestamps" EOL );
-    txBuffer->WriteString( "  TxSimpleLoop" EOL );
-    txBuffer->WriteString( "  TxFastLoopCircularBuffer" EOL );
-    txBuffer->WriteString( "  TxFastLoopRawUsb" EOL );
-    txBuffer->WriteString( "  RxWithCircularBuffer" EOL );
+    UsbPrintStr( txBuffer, "Please specify the test type as an argument:" EOL );
+    UsbPrintStr( txBuffer, "  TxSimpleWithTimestamps" EOL );
+    UsbPrintStr( txBuffer, "  TxSimpleLoop" EOL );
+    UsbPrintStr( txBuffer, "  TxFastLoopCircularBuffer" EOL );
+    UsbPrintStr( txBuffer, "  TxFastLoopRawUsb" EOL );
+    UsbPrintStr( txBuffer, "  RxWithCircularBuffer" EOL );
 
     return;
   }
@@ -336,7 +336,7 @@ static void ProcessUsbSpeedTestCmd ( const char * const paramBegin,
     s_usbSpeedTestType = testType;
 
     // This message may not make it to the console, depending on the test type.
-    txBuffer->WriteString( "Starting USB speed test..." EOL );
+    UsbPrintStr( txBuffer, "Starting USB speed test..." EOL );
 
     WakeFromMainLoopSleep();
 
@@ -461,7 +461,7 @@ static void SimulateError ( const char * const paramBegin,
 {
   if ( *paramBegin == 0 )
   {
-    txBuffer->WriteString( "Please specify the error type as an argument: 'command' or 'protocol'" EOL );
+    UsbPrintStr( txBuffer, "Please specify the error type as an argument: 'command' or 'protocol'" EOL );
     return;
   }
 
@@ -470,7 +470,7 @@ static void SimulateError ( const char * const paramBegin,
 
   if ( *extraArgBegin != 0 )
   {
-    txBuffer->WriteString( "Invalid arguments." EOL );
+    UsbPrintStr( txBuffer, "Invalid arguments." EOL );
     return;
   }
 
@@ -522,9 +522,9 @@ static void ProcessCommand ( const char * const cmdBegin,
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_QUESTION_MARK, true, false, &extraParamsFound ) ||
        IsCmd( cmdBegin, cmdEnd, CMDNAME_HELP, false, false, &extraParamsFound ) )
   {
-    txBuffer->WriteString( "This console is similar to the Bus Pirate console." EOL );
-    txBuffer->WriteString( "Commands longer than 1 character are case insensitive." EOL );
-    txBuffer->WriteString( "Commands are:" EOL );
+    UsbPrintStr( txBuffer, "This console is similar to the Bus Pirate console." EOL );
+    UsbPrintStr( txBuffer, "Commands longer than 1 character are case insensitive." EOL );
+    UsbPrintStr( txBuffer, "Commands are:" EOL );
 
     UsbPrint( txBuffer, "  %s, %s: Show this help text." EOL, CMDNAME_QUESTION_MARK, CMDNAME_HELP );
     UsbPrint( txBuffer, "  %s: Show version information." EOL, CMDNAME_I );
@@ -694,16 +694,16 @@ static void ProcessCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_MALLOCTEST, false, false, &extraParamsFound ) )
   {
-    txBuffer->WriteString( "Allocalling memory..." EOL );
+    UsbPrintStr( txBuffer, "Allocalling memory..." EOL );
 
     volatile uint32_t * const volatile mallocTest = (volatile uint32_t *) malloc(123);
     *mallocTest = 123;
 
-    txBuffer->WriteString( "Releasing memory..." EOL );
+    UsbPrintStr( txBuffer, "Releasing memory..." EOL );
 
     free( const_cast< uint32_t * >( mallocTest ) );
 
-    txBuffer->WriteString( "Test finished." EOL );
+    UsbPrintStr( txBuffer, "Test finished." EOL );
 
     return;
   }
@@ -713,16 +713,16 @@ static void ProcessCommand ( const char * const cmdBegin,
   {
     try
     {
-      txBuffer->WriteString( "Throwing integer exception..." EOL );
+      UsbPrintStr( txBuffer, "Throwing integer exception..." EOL );
       throw 123;
-      txBuffer->WriteString( "Throw did not work." EOL );
+      UsbPrintStr( txBuffer, "Throw did not work." EOL );
       assert( false );
     }
     catch ( ... )
     {
-      txBuffer->WriteString( "Caught integer exception." EOL );
+      UsbPrintStr( txBuffer, "Caught integer exception." EOL );
     }
-    txBuffer->WriteString( "Test finished." EOL );
+    UsbPrintStr( txBuffer, "Test finished." EOL );
 
     return;
   }
@@ -789,7 +789,7 @@ static void SpeedTest ( CUsbRxBuffer * const rxBuffer,
   if ( currentTime >= s_usbSpeedTestEndTime )
   {
     // This message may not make it to the console, depending on the test type.
-    txBuffer->WriteString( EOL "USB speed test finished." EOL );
+    UsbPrintStr( txBuffer, EOL "USB speed test finished." EOL );
     WritePrompt( txBuffer );
 
     s_usbSpeedTestType = stNone;
@@ -931,7 +931,7 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
 
       if ( cmd != NULL )
       {
-        txBuffer->WriteString( EOL );
+        UsbPrintStr( txBuffer, EOL );
 
         s_simulateProcolError = false;
 

@@ -78,7 +78,7 @@ void CSerialConsole::Reset ( void )
 
 void CSerialConsole::Bell ( CUsbTxBuffer * const txBuffer )
 {
-  txBuffer->WriteElem( 0x07 );
+  UsbPrintChar( txBuffer, 0x07 );
 }
 
 
@@ -236,7 +236,7 @@ void CSerialConsole::Backspace ( CUsbTxBuffer * const txBuffer )
   if ( m_cursorPos == m_cmdEndPos )
   {
     m_buffer[ m_cmdEndPos ] = 0;
-    txBuffer->WriteString("\x08 \x08"); // Go left one character, space (deletes the character), go left one character again.
+    UsbPrintStr( txBuffer, "\x08 \x08" ); // Go left one character, space (deletes the character), go left one character again.
     m_cmdEndPos = GetCircularPosMinusOne( m_cmdEndPos, BUF_LEN  );
     m_cursorPos = m_cmdEndPos;
     return;
@@ -247,17 +247,17 @@ void CSerialConsole::Backspace ( CUsbTxBuffer * const txBuffer )
 
   // Move the cursor left one position.
   m_cursorPos = GetCircularPosMinusOne( m_cursorPos, BUF_LEN );
-  txBuffer->WriteString( "\x1B[D" );
+  UsbPrintStr( txBuffer, "\x1B[D" );
 
   // Shift characters downwards one position, and print each one.
   for ( uint32_t i = m_cursorPos; i != GetCircularPosMinusOne( m_cmdEndPos, BUF_LEN ); i = ( i + 1 ) % BUF_LEN )
   {
     m_buffer[ i ] = m_buffer[ (i + 1) % BUF_LEN ];
-    txBuffer->WriteElem( m_buffer[ i ] );
+    UsbPrintChar( txBuffer, m_buffer[ i ] );
   }
 
   // Delete the last character by writing a space.
-  txBuffer->WriteElem( ' ' );
+  UsbPrintChar( txBuffer, ' ' );
 
   // Move the terminal cursor left to match our current cursor position.
   const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
@@ -292,7 +292,7 @@ void CSerialConsole::InsertChar ( const uint8_t c,
   {
     m_buffer[ m_cmdEndPos ] = c;
 
-    txBuffer->WriteElem( c );
+    UsbPrintChar( txBuffer, c );
 
     m_cursorPos = nextEndPos;
     m_cmdEndPos = nextEndPos;
@@ -312,7 +312,7 @@ void CSerialConsole::InsertChar ( const uint8_t c,
 
   // Print all characters.
   for ( uint32_t i = m_cursorPos; i != nextEndPos; i = ( i + 1 ) % BUF_LEN )
-    txBuffer->WriteElem( m_buffer[ i ] );
+    UsbPrintChar( txBuffer, m_buffer[ i ] );
 
   // Move the terminal cursor left to match our current cursor position.
   const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
@@ -353,7 +353,7 @@ void CSerialConsole::LeftArrow ( CUsbTxBuffer * const txBuffer )
 
   m_cursorPos = GetCircularPosMinusOne( m_cursorPos, BUF_LEN );
 
-  txBuffer->WriteString( "\x1B[D" );  // Move left.
+  UsbPrintStr( txBuffer, "\x1B[D" );  // Move left.
 }
 
 
@@ -367,5 +367,5 @@ void CSerialConsole::RightArrow ( CUsbTxBuffer * const txBuffer )
 
   m_cursorPos = ( m_cursorPos + 1 ) % BUF_LEN;
 
-  txBuffer->WriteString( "\x1B[C" );  // Move right.
+  UsbPrintStr( txBuffer, "\x1B[C" );  // Move right.
 }

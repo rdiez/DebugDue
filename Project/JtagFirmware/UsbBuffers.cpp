@@ -23,41 +23,68 @@
 #include "Globals.h"
 
 
+static void SendData ( CUsbTxBuffer * const txBuffer, const uint8_t * data, const size_t dataLen )
+{
+  if ( dataLen == 0 )
+  {
+    // This could happen, but is unusual.
+    assert( false );
+    return;
+  }
+
+  if ( dataLen > txBuffer->GetFreeCount() )
+  {
+    // The caller should always make sure that there is enough space in the Tx Buffer
+    // before calling this routine. Otherwise, all or part of the outgoing text
+    // will be dropped, and the user may get no hint whatsoever about what just happened.
+    //
+    // However, there are some situations where this is hard to implement, or where
+    // the risk of data loss is acceptable for performance reasons.
+    //
+    // I have left an assert in place because data truncation should be rare and
+    // you should strive to avoid it.
+    //
+    // Remember that, with the current implementation, data does not just get truncated
+    // at this point, but the whole connection gets reset.
+    assert( false );
+
+    throw std::runtime_error( "Tx Buffer overflow." );
+  }
+
+  txBuffer->WriteElemArray( data, dataLen );
+}
+
+
 // It is hard to keep the last discarded characters, and there is often an end-of-line sequence there.
 // As a (cheap) work-around, insert always an EOL.
 static const char TRUNCATION_SUFFIX[] = "[...]" EOL;
+static const size_t TRUNCATION_SUFFIX_LEN = sizeof( TRUNCATION_SUFFIX ) - 1;
 
 static void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va_list argList )
 {
-  const size_t TRUNCATION_SUFFIX_LEN = sizeof( TRUNCATION_SUFFIX ) - 1;
+  // POSSIBLE OPTIMISATION: It may be worth trying to print directly to the Tx Buffer
+  // and only resort to the stack-based buffer if there is not enough contiguous space
+  // in the Tx Buffer. Or maybe there is a variant of vsnprintf() which does not take
+  // a buffer to write to, but a call-back routine instead.
 
-  const CUsbTxBuffer::SizeType bufferFreeCount = txBuffer->GetFreeCount();
-
-  if ( bufferFreeCount < MAX_USB_PRINT_LEN + TRUNCATION_SUFFIX_LEN )
-  {
-    // The caller should always make sure that there is enough space in the Tx Buffer. Otherwise,
-    // the user may get no hint whatsoever about what happened.
-    assert( false );
-    throw std::runtime_error( "Not enough room in the Tx buffer in UsbPrintV()." );
-  }
-
-  char buffer[ MAX_USB_PRINT_LEN + TRUNCATION_SUFFIX_LEN + 1 ];
+  char buffer[ MAX_USB_PRINT_LEN + 1 ];
 
   const int len = vsnprintf( buffer, MAX_USB_PRINT_LEN + 1, formatStr, argList );
 
-  // If the string was truncated, append the truncation suffix.
-  // Leave the last 3 characters in place, so that any end-of-line characters remain.
-
-  if ( len >= MAX_USB_PRINT_LEN + 1 )
+  if ( len >= MAX_USB_PRINT_LEN + 1 )  // If the string needs to be truncated ...
   {
-    assert( false );  // We should not need to truncate any lines.
+    assert( false );  // The caller should strive to avoid any truncation.
 
+    // We don't actually need to assert on this, but I just want to be sure I know what happens in this case.
     assert( buffer[ MAX_USB_PRINT_LEN ] == 0 );
-    memcpy( &buffer[ MAX_USB_PRINT_LEN ], TRUNCATION_SUFFIX, TRUNCATION_SUFFIX_LEN + 1 );
-    assert( strlen(buffer) == MAX_USB_PRINT_LEN + TRUNCATION_SUFFIX_LEN );
-  }
 
-  txBuffer->WriteString( buffer );
+    SendData( txBuffer, (const uint8_t *)buffer, MAX_USB_PRINT_LEN );
+    SendData( txBuffer, (const uint8_t *)TRUNCATION_SUFFIX, TRUNCATION_SUFFIX_LEN );
+  }
+  else
+  {
+    SendData( txBuffer, (const uint8_t *)buffer, len );
+  }
 }
 
 
@@ -69,4 +96,15 @@ void UsbPrint ( CUsbTxBuffer * const txBuffer, const char * formatStr, ... )
   UsbPrintV( txBuffer, formatStr, argList );
 
   va_end( argList );
+}
+
+
+void UsbPrintStr ( CUsbTxBuffer * const txBuffer, const char * str )
+{
+  SendData( txBuffer, (const uint8_t *)str, strlen( str ) );
+}
+
+void UsbPrintChar ( CUsbTxBuffer * const txBuffer, const char c )
+{
+  SendData( txBuffer, (const uint8_t *)&c, sizeof(c) );
 }

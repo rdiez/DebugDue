@@ -34,8 +34,9 @@
 // part of the next command may already be available in the reception buffer.
 //
 // When a command is complete, its received data gets consumed, and optionally a response is generated
-// in the transmission buffer. Again, this buffer must be big enough for the longest possible reply.
-// The transmission buffer is mostly filled in place, in order to avoid copying the data around.
+// in the transmission buffer. Again, this buffer must be big enough for the longest possible reply,
+// especially when processing binary mode commands. When performance matters, the transmission buffer
+// is mostly filled in place, in order to avoid copying the data around.
 //
 // With the current implementation, the next received command cannot be processed until
 // the transmission buffer has enough room left for its response. This means that, if the previous
@@ -65,8 +66,12 @@
 typedef CCircularBuffer< uint8_t, uint32_t, USB_TX_BUFFER_SIZE > CUsbTxBuffer;
 typedef CCircularBuffer< uint8_t, uint32_t, USB_RX_BUFFER_SIZE > CUsbRxBuffer;
 
+// The maximum print length below determines how much stack space routine UsbPrint() needs.
 #define MAX_USB_PRINT_LEN 256
 void UsbPrint ( CUsbTxBuffer * txBuffer, const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
+
+void UsbPrintChar ( CUsbTxBuffer * txBuffer, const char c );
+void UsbPrintStr ( CUsbTxBuffer * txBuffer, const char * str );
 
 
 #endif  // Include this header file only once.
