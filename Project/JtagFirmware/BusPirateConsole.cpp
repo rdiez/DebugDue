@@ -46,6 +46,8 @@ static const char SPACE_AND_TAB[] = " \t";
 
 static unsigned s_binaryModeCount;
 
+static bool s_simulateProcolError;
+
 enum UsbSpeedTestEnum
 {
   stNone,
@@ -72,39 +74,51 @@ static void WritePrompt ( CUsbTxBuffer * const txBuffer )
 }
 
 
-static bool IsCmd ( const char * const cmdStart,
+static bool DoesStrMatch ( const char * const strBegin,
+                           const char * const strEnd,
+                           const char * const match,
+                           const bool isCaseSensitive )
+{
+  const size_t len = strEnd - strBegin;
+  assert( len > 0 );
+
+  size_t i;
+  for ( i = 0; i < len; ++i )
+  {
+    const char m = match[ i ];
+    if ( m == 0 )
+      return false;
+
+    const char c = strBegin[ i ];
+    assert( c != 0 );
+
+    // Otherwise, toupper() may not be reliable.
+    assert( IsPrintableAscii( m ) );
+
+    if ( c == m )
+      continue;
+
+    if ( !isCaseSensitive && toupper( c ) == toupper( m ) )
+      continue;
+
+    return false;
+  }
+
+  if ( match[ i ] != 0 )
+    return false;
+
+  return true;
+}
+
+
+static bool IsCmd ( const char * const cmdBegin,
                     const char * const cmdEnd,   // One character beyond the end, like the STL does.
                     const char * const cmdName,  // Must be printable ASCII and NULL-character terminated.
                     const bool isCaseSensitive,
                     const bool allowExtraParams,
                     bool * const extraParamsFound )
 {
-  const size_t len = cmdEnd - cmdStart;
-  assert( len > 0 );
-
-  size_t i;
-  for ( i = 0; i < len; ++i )
-  {
-    const char n = cmdName[ i ];
-    if ( n == 0 )
-      return false;
-
-    const char c = cmdStart[ i ];
-    assert( c != 0 );
-
-    // Otherwise, toupper() may not be reliable.
-    assert( IsPrintableAscii( n ) );
-
-    if ( c == n )
-      continue;
-
-    if ( !isCaseSensitive && toupper(c) == toupper(n) )
-      continue;
-
-    return false;
-  }
-
-  if ( cmdName[ i ] != 0 )
+  if ( !DoesStrMatch( cmdBegin, cmdEnd, cmdName, isCaseSensitive ) )
     return false;
 
   if ( !allowExtraParams )
@@ -442,6 +456,39 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
 }
 
 
+static void SimulateError ( const char * const paramBegin,
+                            CUsbTxBuffer * const txBuffer )
+{
+  if ( *paramBegin == 0 )
+  {
+    txBuffer->WriteString( "Please specify the error type as an argument: 'command' or 'protocol'" EOL );
+    return;
+  }
+
+  const char * const paramEnd      = SkipCharsNotInSet( paramBegin, SPACE_AND_TAB );
+  const char * const extraArgBegin = SkipCharsInSet   ( paramEnd,   SPACE_AND_TAB );
+
+  if ( *extraArgBegin != 0 )
+  {
+    txBuffer->WriteString( "Invalid arguments." EOL );
+    return;
+  }
+
+  if ( DoesStrMatch( paramBegin, paramEnd, "command", false ) )
+  {
+    throw std::runtime_error( "Simulated command error." );
+  }
+
+  if ( DoesStrMatch( paramBegin, paramEnd, "protocol", false ) )
+  {
+    s_simulateProcolError = true;
+    return;
+  }
+
+  UsbPrint( txBuffer, "Unknown error type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
+}
+
+
 static const char * const CMDNAME_QUESTION_MARK = "?";
 static const char * const CMDNAME_HELP = "help";
 static const char * const CMDNAME_I = "i";
@@ -493,7 +540,7 @@ static void ProcessCommand ( const char * const cmdBegin,
     UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
     UsbPrint( txBuffer, "  %s <addr> <byte count>" EOL, CMDNAME_PRINT_MEMORY );
     UsbPrint( txBuffer, "  %s <milliseconds>" EOL, CMDNAME_BUSY_WAIT );
-    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_SIMULATE_ERROR );
+    UsbPrint( txBuffer, "  %s <command|protocol>" EOL, CMDNAME_SIMULATE_ERROR );
 
     return;
   }
@@ -681,9 +728,10 @@ static void ProcessCommand ( const char * const cmdBegin,
   }
 
 
-  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_SIMULATE_ERROR, false, false, &extraParamsFound ) )
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_SIMULATE_ERROR, false, true, &extraParamsFound ) )
   {
-    throw std::runtime_error( "Simulated error." );
+    SimulateError( paramBegin, txBuffer );
+    return;
   }
 
 
@@ -884,6 +932,9 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
       if ( cmd != NULL )
       {
         txBuffer->WriteString( EOL );
+
+        s_simulateProcolError = false;
+
         try
         {
           ParseCommand( cmd, rxBuffer, txBuffer, currentTime );
@@ -891,6 +942,11 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
         catch ( const std::exception & e )
         {
           UsbPrint( txBuffer, "Error processing command: %s" EOL, e.what() );
+        }
+
+        if ( s_simulateProcolError )
+        {
+          throw std::runtime_error( "Simulated protocol error." );
         }
 
         WritePrompt( txBuffer );
