@@ -128,6 +128,9 @@ EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
 # Needed by the Atmel Software Framework.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
+# Needed by the Atmel Software Framework.
+EXTRA_CPP_FLAGS+=" -DCPU_CLOCK=84000000"
+
 # I had problems building some files in the Atmel Software Framework version 3.7.3.69
 # when I defined this flag:
 #   EXTRA_CPP_FLAGS+=" -DUDD_NO_SLEEP_MGR"
