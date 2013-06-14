@@ -68,9 +68,9 @@
 typedef CCircularBuffer< uint8_t, uint32_t, USB_TX_BUFFER_SIZE > CUsbTxBuffer;
 typedef CCircularBuffer< uint8_t, uint32_t, USB_RX_BUFFER_SIZE > CUsbRxBuffer;
 
-// The maximum print length below determines how much stack space routine UsbPrint() needs.
+// The maximum print length below determines how much stack space routine UsbPrintf() needs.
 #define MAX_USB_PRINT_LEN 256
-void UsbPrint ( CUsbTxBuffer * txBuffer, const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
+void UsbPrintf ( CUsbTxBuffer * txBuffer, const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
 void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va_list argList );
 
 void UsbPrintChar ( CUsbTxBuffer * txBuffer, const char c );

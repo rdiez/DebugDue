@@ -87,7 +87,7 @@ void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va
 }
 
 
-void UsbPrint ( CUsbTxBuffer * const txBuffer, const char * formatStr, ... )
+void UsbPrintf ( CUsbTxBuffer * const txBuffer, const char * formatStr, ... )
 {
   va_list argList;
   va_start( argList, formatStr );

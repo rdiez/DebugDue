@@ -211,43 +211,43 @@ static void PrintPinStatus ( CUsbTxBuffer * const txBuffer,
 
   const uint8_t arduinoDuePinNumber = GetArduinoDuePinNumberFromPio( pioPtr, pinNumber );
 
-  UsbPrint( txBuffer, "%s (pin %02u): %s", pinName, unsigned(arduinoDuePinNumber), status );
+  UsbPrintf( txBuffer, "%s (pin %02u): %s", pinName, unsigned(arduinoDuePinNumber), status );
 }
 
 
 void PrintJtagPinStatus ( CUsbTxBuffer * const txBuffer )
 {
-  UsbPrint( txBuffer, "Input status of all JTAG pins:" EOL );
+  UsbPrintStr( txBuffer, "Input status of all JTAG pins:" EOL );
 
   PrintPinStatus( txBuffer, "TDI  ", JTAG_TDI_PIO, JTAG_TDI_PIN );
-  UsbPrint( txBuffer, "  |  " );
+  UsbPrintStr( txBuffer, "  |  " );
   PrintPinStatus( txBuffer, "GND2 ", JTAG_GND2_PIO, JTAG_GND2_PIN );
 
-  UsbPrint( txBuffer, EOL );
+  UsbPrintStr( txBuffer, EOL );
 
-  UsbPrint( txBuffer, "%s (pin %02u): %s", " -   ", unsigned( GetArduinoDuePinNumberFromPio( PIOC, 19 ) ), " -  " );
-  UsbPrint( txBuffer, "  |  " );
+  UsbPrintf( txBuffer, "%s (pin %02u): %s", " -   ", unsigned( GetArduinoDuePinNumberFromPio( PIOC, 19 ) ), " -  " );
+  UsbPrintStr( txBuffer, "  |  " );
   PrintPinStatus( txBuffer, "nTRST", JTAG_TRST_PIO, JTAG_TRST_PIN );
 
-  UsbPrint( txBuffer, EOL );
+  UsbPrintStr( txBuffer, EOL );
 
   PrintPinStatus( txBuffer, "TMS  ", JTAG_TMS_PIO, JTAG_TMS_PIN );
-  UsbPrint( txBuffer, "  |  " );
+  UsbPrintStr( txBuffer, "  |  " );
   PrintPinStatus( txBuffer, "nSRST", JTAG_SRST_PIO, JTAG_SRST_PIN );
 
-  UsbPrint( txBuffer, EOL );
+  UsbPrintStr( txBuffer, EOL );
 
   PrintPinStatus( txBuffer, "TDO  ", JTAG_TDO_PIO, JTAG_TDO_PIN );
-  UsbPrint( txBuffer, "  |  " );
+  UsbPrintStr( txBuffer, "  |  " );
   PrintPinStatus( txBuffer, "VCC  ", JTAG_VCC_PIO, JTAG_VCC_PIN );
 
-  UsbPrint( txBuffer, EOL );
+  UsbPrintStr( txBuffer, EOL );
 
   PrintPinStatus( txBuffer, "TCK  ", JTAG_TCK_PIO, JTAG_TCK_PIN );
-  UsbPrint( txBuffer, "  |  " );
+  UsbPrintStr( txBuffer, "  |  " );
   PrintPinStatus( txBuffer, "GND1 ", JTAG_GND1_PIO, JTAG_GND1_PIN );
 
-  UsbPrint( txBuffer, EOL );
+  UsbPrintStr( txBuffer, EOL );
 }
 
 
@@ -369,7 +369,7 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
 
 static void SendOpenOcdModeWelcome ( CUsbTxBuffer * const txBuffer )
 {
-  UsbPrint( txBuffer, "OCD1");
+  UsbPrintStr( txBuffer, "OCD1");
 }
 
 

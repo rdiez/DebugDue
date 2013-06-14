@@ -129,7 +129,7 @@ static CUsbSerialConsole s_console;
 
 static void WritePrompt ( CUsbTxBuffer * const txBuffer )
 {
-  UsbPrint( txBuffer, ">" );
+  UsbPrintStr( txBuffer, ">" );
 }
 
 
@@ -229,18 +229,18 @@ static void HexDump ( const void * const ptr,
     if ( lineElemCount == LINE_BYTE_COUNT )
     {
       lineElemCount = 0;
-      UsbPrint( txBuffer, "%s", endOfLineChars );
+      UsbPrintf( txBuffer, "%s", endOfLineChars );
       actualOutputLen += eolLen;
     }
     const uint8_t b = bytePtr[ i ];
 
-    UsbPrint( txBuffer, "%02X ", b );
+    UsbPrintf( txBuffer, "%02X ", b );
     actualOutputLen += 3;
 
     ++lineElemCount;
   }
 
-  UsbPrint( txBuffer, "%s", endOfLineChars );
+  UsbPrintf( txBuffer, "%s", endOfLineChars );
   actualOutputLen += eolLen;
 
   assert( actualOutputLen == expectedOutputLen );
@@ -340,7 +340,7 @@ static void BusyWait ( const char * const paramBegin,
     BusyWaitLoop( oneMsIterationCount );
   }
 
-  UsbPrint( txBuffer, "Waited %u ms." EOL, unsigned( delayMs ) );
+  UsbPrintf( txBuffer, "Waited %u ms." EOL, unsigned( delayMs ) );
 }
 
 
@@ -403,47 +403,47 @@ static void ProcessUsbSpeedTestCmd ( const char * const paramBegin,
   }
 
   if ( extraParamsFound )
-    UsbPrint( txBuffer, "No parameters are allowed after test type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
+    UsbPrintf( txBuffer, "No parameters are allowed after test type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
   else
-    UsbPrint( txBuffer, "Unknown test type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
+    UsbPrintf( txBuffer, "Unknown test type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
 }
 
 
 static void DisplayResetCause ( CUsbTxBuffer * const txBuffer )
 {
-  UsbPrint( txBuffer, "Reset cause: " );
+  UsbPrintStr( txBuffer, "Reset cause: " );
 
   const uint32_t resetCause = rstc_get_reset_cause( RSTC );
 
   switch ( resetCause )
   {
   case RSTC_GENERAL_RESET:
-    UsbPrint( txBuffer, "General" );
+    UsbPrintStr( txBuffer, "General" );
     break;
 
   case RSTC_BACKUP_RESET:
-    UsbPrint( txBuffer, "Backup" );
+    UsbPrintStr( txBuffer, "Backup" );
     break;
 
   case RSTC_WATCHDOG_RESET:
-    UsbPrint( txBuffer, "Watchdog" );
+    UsbPrintStr( txBuffer, "Watchdog" );
     break;
 
   case RSTC_SOFTWARE_RESET:
-    UsbPrint( txBuffer, "Software" );
+    UsbPrintStr( txBuffer, "Software" );
     break;
 
   case RSTC_USER_RESET:
-    UsbPrint( txBuffer, "User" );
+    UsbPrintStr( txBuffer, "User" );
     break;
 
   default:
-    UsbPrint( txBuffer, "<unknown>" );
+    UsbPrintStr( txBuffer, "<unknown>" );
     assert( false );
     break;
   }
 
-  UsbPrint( txBuffer, EOL );
+  UsbPrintStr( txBuffer, EOL );
 }
 
 
@@ -470,7 +470,7 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
   minuteAverage = minuteAverage * 100 / ( CPU_LOAD_MINUTE_SLOT_COUNT * 255 );
   assert( minuteAverage <= 100 );
 
-  UsbPrint( txBuffer, "CPU load in the last 60 seconds (1 second intervals, oldest to newest):" EOL );
+  UsbPrintStr( txBuffer, "CPU load in the last 60 seconds (1 second intervals, oldest to newest):" EOL );
 
   for ( unsigned j = 0; j < CPU_LOAD_MINUTE_SLOT_COUNT; ++j )
   {
@@ -480,7 +480,7 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
 
     assert( val <= 100 );
 
-    UsbPrint( txBuffer, "%3u %%" EOL, unsigned( val ) );
+    UsbPrintf( txBuffer, "%3u %%" EOL, unsigned( val ) );
   }
 
 
@@ -497,7 +497,7 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
   assert( secondAverage <= 100 );
 
 
-  UsbPrint( txBuffer, "CPU load in the last second (50 ms intervals, oldest to newest):" EOL );
+  UsbPrintStr( txBuffer, "CPU load in the last second (50 ms intervals, oldest to newest):" EOL );
 
   for ( unsigned j = 0; j < CPU_LOAD_SECOND_SLOT_COUNT; ++j )
   {
@@ -507,11 +507,11 @@ static void DisplayCpuLoad ( CUsbTxBuffer * const txBuffer )
 
     assert( val <= 100 );
 
-    UsbPrint( txBuffer, "%2u %%" EOL, unsigned( val ) );
+    UsbPrintf( txBuffer, "%2u %%" EOL, unsigned( val ) );
   }
 
-  UsbPrint( txBuffer, "Average CPU load in the last 60 seconds: %2u %%" EOL, unsigned( minuteAverage ) );
-  UsbPrint( txBuffer, "Average CPU load in the last    second : %2u %%" EOL, unsigned( secondAverage ) );
+  UsbPrintf( txBuffer, "Average CPU load in the last 60 seconds: %2u %%" EOL, unsigned( minuteAverage ) );
+  UsbPrintf( txBuffer, "Average CPU load in the last    second : %2u %%" EOL, unsigned( secondAverage ) );
 }
 
 
@@ -544,7 +544,7 @@ static void SimulateError ( const char * const paramBegin,
     return;
   }
 
-  UsbPrint( txBuffer, "Unknown error type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
+  UsbPrintf( txBuffer, "Unknown error type \"%.*s\"." EOL, paramEnd - paramBegin, paramBegin );
 }
 
 
@@ -585,21 +585,21 @@ static void ProcessCommand ( const char * const cmdBegin,
     UsbPrintStr( txBuffer, "Commands longer than 1 character are case insensitive." EOL );
     UsbPrintStr( txBuffer, "Commands are:" EOL );
 
-    UsbPrint( txBuffer, "  %s, %s: Show this help text." EOL, CMDNAME_QUESTION_MARK, CMDNAME_HELP );
-    UsbPrint( txBuffer, "  %s: Show version information." EOL, CMDNAME_I );
-    UsbPrint( txBuffer, "  %s: Test USB transfer speed." EOL, CMDNAME_USBSPEEDTEST );
-    UsbPrint( txBuffer, "  %s: Show JTAG pin status (read as inputs)." EOL, CMDNAME_JTAGPINS );
-    UsbPrint( txBuffer, "  %s: Test JTAG shift speed. WARNING: Do NOT connect any JTAG device." EOL, CMDNAME_JTAGSHIFTSPEEDTEST );
-    UsbPrint( txBuffer, "  %s: Exercises malloc()." EOL, CMDNAME_MALLOCTEST );
-    UsbPrint( txBuffer, "  %s: Exercises C++ exceptions." EOL, CMDNAME_CPP_EXCEPTION_TEST );
-    UsbPrint( txBuffer, "  %s: Shows memory usage." EOL, CMDNAME_MEMORY_USAGE );
-    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_CPU_LOAD );
-    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_UPTIME );
-    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET );
-    UsbPrint( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
-    UsbPrint( txBuffer, "  %s <addr> <byte count>" EOL, CMDNAME_PRINT_MEMORY );
-    UsbPrint( txBuffer, "  %s <milliseconds>" EOL, CMDNAME_BUSY_WAIT );
-    UsbPrint( txBuffer, "  %s <command|protocol>" EOL, CMDNAME_SIMULATE_ERROR );
+    UsbPrintf( txBuffer, "  %s, %s: Show this help text." EOL, CMDNAME_QUESTION_MARK, CMDNAME_HELP );
+    UsbPrintf( txBuffer, "  %s: Show version information." EOL, CMDNAME_I );
+    UsbPrintf( txBuffer, "  %s: Test USB transfer speed." EOL, CMDNAME_USBSPEEDTEST );
+    UsbPrintf( txBuffer, "  %s: Show JTAG pin status (read as inputs)." EOL, CMDNAME_JTAGPINS );
+    UsbPrintf( txBuffer, "  %s: Test JTAG shift speed. WARNING: Do NOT connect any JTAG device." EOL, CMDNAME_JTAGSHIFTSPEEDTEST );
+    UsbPrintf( txBuffer, "  %s: Exercises malloc()." EOL, CMDNAME_MALLOCTEST );
+    UsbPrintf( txBuffer, "  %s: Exercises C++ exceptions." EOL, CMDNAME_CPP_EXCEPTION_TEST );
+    UsbPrintf( txBuffer, "  %s: Shows memory usage." EOL, CMDNAME_MEMORY_USAGE );
+    UsbPrintf( txBuffer, "  %s" EOL, CMDNAME_CPU_LOAD );
+    UsbPrintf( txBuffer, "  %s" EOL, CMDNAME_UPTIME );
+    UsbPrintf( txBuffer, "  %s" EOL, CMDNAME_RESET );
+    UsbPrintf( txBuffer, "  %s" EOL, CMDNAME_RESET_CAUSE );
+    UsbPrintf( txBuffer, "  %s <addr> <byte count>" EOL, CMDNAME_PRINT_MEMORY );
+    UsbPrintf( txBuffer, "  %s <milliseconds>" EOL, CMDNAME_BUSY_WAIT );
+    UsbPrintf( txBuffer, "  %s <command|protocol>" EOL, CMDNAME_SIMULATE_ERROR );
 
     return;
   }
@@ -612,9 +612,9 @@ static void ProcessCommand ( const char * const cmdBegin,
       const char buildType[] = "Release build";
     #endif
 
-    UsbPrint( txBuffer, "JtagDue %s" EOL, PACKAGE_VERSION );
-    UsbPrint( txBuffer, "%s, compiler version %s" EOL, buildType, __VERSION__ );
-    UsbPrint( txBuffer, "Watchdog %s" EOL, ENABLE_WDT ? "enabled" : "disabled" );
+    UsbPrintf( txBuffer, "JtagDue %s" EOL, PACKAGE_VERSION );
+    UsbPrintf( txBuffer, "%s, compiler version %s" EOL, buildType, __VERSION__ );
+    UsbPrintf( txBuffer, "Watchdog %s" EOL, ENABLE_WDT ? "enabled" : "disabled" );
 
     return;
   }
@@ -636,7 +636,7 @@ static void ProcessCommand ( const char * const cmdBegin,
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_CPU_LOAD, false, false, &extraParamsFound ) )
   {
     if ( ENABLE_CPU_SLEEP )
-      UsbPrint( txBuffer, "CPU load statistics not available." EOL );
+      UsbPrintStr( txBuffer, "CPU load statistics not available." EOL );
     else
       DisplayCpuLoad( txBuffer );
 
@@ -646,7 +646,7 @@ static void ProcessCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_UPTIME, false, false, &extraParamsFound ) )
   {
-    UsbPrint( txBuffer, "Uptime: %llu seconds." EOL, (long long)(GetUptime() / 1000) );
+    UsbPrintf( txBuffer, "Uptime: %llu seconds." EOL, (long long)(GetUptime() / 1000) );
     return;
   }
 
@@ -744,8 +744,8 @@ static void ProcessCommand ( const char * const cmdBegin,
     SetJtagPullups( oldPullUps );
 
     // I am getting 221 KiB/s with GCC 4.7.3 and optimisation level "-O3".
-    UsbPrint( txBuffer, EOL "Finished JTAG shift speed test, throughput %u Kbits/s (%u KiB/s)." EOL,
-              kBitsPerSec, kBitsPerSec / 8 );
+    UsbPrintf( txBuffer, EOL "Finished JTAG shift speed test, throughput %u Kbits/s (%u KiB/s)." EOL,
+               kBitsPerSec, kBitsPerSec / 8 );
 
     return;
   }
@@ -798,21 +798,21 @@ static void ProcessCommand ( const char * const cmdBegin,
   {
     const unsigned heapSize = unsigned( GetHeapEndAddr() - uintptr_t( &_end ) );
 
-    UsbPrint( txBuffer, "Partitions: malloc heap: %u bytes, free: %u bytes, stack: %u bytes." EOL,
-              heapSize,
-              GetStackStartAddr() - GetHeapEndAddr(),
-              STACK_SIZE );
+    UsbPrintf( txBuffer, "Partitions: malloc heap: %u bytes, free: %u bytes, stack: %u bytes." EOL,
+               heapSize,
+               GetStackStartAddr() - GetHeapEndAddr(),
+               STACK_SIZE );
 
-    UsbPrint( txBuffer, "Used stack (estimated): %u from %u bytes." EOL,
-              unsigned( GetStackSizeUsageEstimate() ),
-              STACK_SIZE );
+    UsbPrintf( txBuffer, "Used stack (estimated): %u from %u bytes." EOL,
+               unsigned( GetStackSizeUsageEstimate() ),
+               STACK_SIZE );
 
     const struct mallinfo mi = mallinfo();
     const unsigned heapSizeAccordingToNewlib = unsigned( mi.arena );
 
-    UsbPrint( txBuffer, "Heap: %u allocated from %u bytes." EOL,
-              unsigned( mi.uordblks ),
-              unsigned( mi.arena ) );
+    UsbPrintf( txBuffer, "Heap: %u allocated from %u bytes." EOL,
+               unsigned( mi.uordblks ),
+               unsigned( mi.arena ) );
 
     assert( heapSize == heapSizeAccordingToNewlib );
     UNUSED_IN_RELEASE( heapSizeAccordingToNewlib );
@@ -821,9 +821,9 @@ static void ProcessCommand ( const char * const cmdBegin,
   }
 
   if ( extraParamsFound )
-    UsbPrint( txBuffer, "Command \"%.*s\" does not take any parameters." EOL, cmdEnd - cmdBegin, cmdBegin );
+    UsbPrintf( txBuffer, "Command \"%.*s\" does not take any parameters." EOL, cmdEnd - cmdBegin, cmdBegin );
   else
-    UsbPrint( txBuffer, "Unknown command \"%.*s\"." EOL, cmdEnd - cmdBegin, cmdBegin );
+    UsbPrintf( txBuffer, "Unknown command \"%.*s\"." EOL, cmdEnd - cmdBegin, cmdBegin );
 }
 
 
@@ -865,7 +865,7 @@ static void SpeedTest ( CUsbRxBuffer * const rxBuffer,
       if ( txBuffer->GetFreeCount() < 40 )
         break;
 
-      UsbPrint( txBuffer, "%u - %u" EOL, unsigned(currentTime), unsigned(s_usbSpeedTestEndTime) );
+      UsbPrintf( txBuffer, "%u - %u" EOL, unsigned(currentTime), unsigned(s_usbSpeedTestEndTime) );
     }
 
     break;
@@ -927,7 +927,7 @@ static void SpeedTest ( CUsbRxBuffer * const rxBuffer,
       if ( false )
       {
         if ( txBuffer->GetFreeCount() >= 80 )
-          UsbPrint( txBuffer, "Discarded %u read bytes." EOL, unsigned(elemCount) );
+          UsbPrintf( txBuffer, "Discarded %u read bytes." EOL, unsigned(elemCount) );
       }
 
       rxBuffer->ConsumeReadElements( elemCount );
@@ -1000,7 +1000,7 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
         }
         catch ( const std::exception & e )
         {
-          UsbPrint( txBuffer, "Error processing command: %s" EOL, e.what() );
+          UsbPrintf( txBuffer, "Error processing command: %s" EOL, e.what() );
         }
 
         if ( s_simulateProcolError )
@@ -1038,8 +1038,8 @@ void BusPirateConsole_Init ( CUsbTxBuffer * const txBufferForWelcomeMsg )
 
   if ( false )
   {
-    UsbPrint( txBufferForWelcomeMsg, "Welcome to the Arduino Due's native USB serial port." EOL );
-    UsbPrint( txBufferForWelcomeMsg, "Type '?' for help." EOL );
+    UsbPrintStr( txBufferForWelcomeMsg, "Welcome to the Arduino Due's native USB serial port." EOL );
+    UsbPrintStr( txBufferForWelcomeMsg, "Type '?' for help." EOL );
     // Not even a short prompt alone is tolerated:
     WritePrompt( txBufferForWelcomeMsg );
   }

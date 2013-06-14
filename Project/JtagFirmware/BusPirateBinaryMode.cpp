@@ -34,7 +34,7 @@
 
 static void SendBinaryModeWelcome ( CUsbTxBuffer * const txBuffer )
 {
-  UsbPrint( txBuffer, "BBIO1" );
+  UsbPrintStr( txBuffer, "BBIO1" );
 }
 
 
