@@ -49,9 +49,9 @@ inline uint32_t SysTickCountToMs ( const uint32_t sysTickClockTickCount )
 
   // Otherwise you should adjust the logic below for better accuracy.
   // Beware of possible integer overflows then.
-  assert( 0 == ( SystemCoreClock % 1000 ) );
+  assert( 0 == ( CPU_CLOCK % 1000 ) );
 
-  return sysTickClockTickCount / ( SystemCoreClock / 1000 );
+  return sysTickClockTickCount / ( CPU_CLOCK / 1000 );
 }
 
 
@@ -61,19 +61,22 @@ inline uint32_t SysTickCountToUs ( const uint32_t sysTickClockTickCount )
 
   // Otherwise you should adjust the logic below for better accuracy.
   // Beware of possible integer overflows then.
-  assert( 0 == ( SystemCoreClock % 1000000 ) );
+  assert( 0 == ( CPU_CLOCK % 1000000 ) );
 
-  return sysTickClockTickCount / ( SystemCoreClock / 1000000 );
+  return sysTickClockTickCount / ( CPU_CLOCK / 1000000 );
 }
 
 
 inline uint32_t UsToSysTickCount ( const uint32_t timeInUs )
 {
+  // Avoid using variable SystemCoreClock here. It is slower, and this routine
+  // is also called very early on start-up, where SystemCoreClock is not yet set.
+
   // Otherwise you should adjust the logic below for better accuracy.
   // Beware of possible integer overflows then.
-  assert( 0 == ( SystemCoreClock % 1000000 ) );
+  assert( 0 == ( CPU_CLOCK % 1000000 ) );
 
-  const uint32_t clockTicksPerUs = SystemCoreClock / 1000000;
+  const uint32_t clockTicksPerUs = CPU_CLOCK / 1000000;
 
   return timeInUs * clockTicksPerUs;
 }
