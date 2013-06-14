@@ -194,10 +194,16 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
 
     // Delay the start-up sequence, so that an external JTAG debugger has a chance
     // to stop the firmware near the beginning.
+    //
     // How much busy wait time you need to spend here depends on how fast your JTAG adapter is.
-    // With my slow Bus Pirate, I need around 960000 iterations.
-    const unsigned BUSY_WAIT_LOOP_ITERATION_COUNT = 1000000;
-    BusyWaitLoop( BUSY_WAIT_LOOP_ITERATION_COUNT );
+    // With my slow Bus Pirate (at 'normal' speed, instead of 'fast'), and with a non-optimised
+    // JtagDue firmware, I need around 34 ms. If you have a fast JTAG probe, you can probably
+    // lower this time in order to get faster overall boot times.
+    //
+    // If you do not need to debug the firmware from the very beginning, or if you do not place
+    // breakpoints somewhere during the initialisation code, then you can comment-out this busy wait.
+    const unsigned BUSY_WAIT_LOOP_US = 36 * 1000;
+    BusyWaitLoop( GetBusyWaitLoopIterationCountFromUs( BUSY_WAIT_LOOP_US ) );
 
 
     // Relocate the initialised data from flash to SRAM.
@@ -241,7 +247,7 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
     SystemCoreClockUpdate();
 
     #ifndef NDEBUG
-      // ASSERT( SystemCoreClock == F_CPU );
+      assert( SystemCoreClock == CPU_CLOCK );
       assert( SystemCoreClock == CHIP_FREQ_CPU_MAX );
     #endif
 
