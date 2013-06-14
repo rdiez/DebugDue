@@ -17,7 +17,7 @@
 #include "BusPirateConnection.h"  // The include file for this module should come first.
 
 #include <BareMetalSupport/MainLoopSleep.h>
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/SerialPrint.h>
 
 #include "BusPirateConsole.h"
 #include "BusPirateBinaryMode.h"
@@ -79,7 +79,7 @@ void ChangeBusPirateMode ( const BusPirateModeEnum newMode,
 
   if ( TRACE_MODE_CHANGES && s_busPirateMode != bpInvalid )
   {
-    DbgconPrint( "Leaving mode %s." EOL, GetModeName( s_busPirateMode ) );
+    SerialPrintf( "Leaving mode %s." EOL, GetModeName( s_busPirateMode ) );
   }
 
 
@@ -100,7 +100,7 @@ void ChangeBusPirateMode ( const BusPirateModeEnum newMode,
 
   if ( TRACE_MODE_CHANGES && newMode != bpInvalid )
   {
-    DbgconPrint( "Entering mode %s." EOL, GetModeName( newMode ) );
+    SerialPrintf( "Entering mode %s." EOL, GetModeName( newMode ) );
   }
 
 

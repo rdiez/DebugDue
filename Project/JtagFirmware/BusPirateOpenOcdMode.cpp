@@ -19,7 +19,7 @@
 #include <assert.h>
 #include <stdexcept>
 
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/IoUtils.h>
@@ -117,7 +117,7 @@ static bool s_pullUps;
 
 static void ConfigureJtagPins ( void )
 {
-  // DbgconPrintStr( "Configuring the JTAG pins..." EOL );
+  // SerialPrintStr( "Configuring the JTAG pins..." EOL );
 
   assert( IsPinControlledByPio( JTAG_TDI_PIO , JTAG_TDI_PIN  ) );
   assert( IsPinControlledByPio( JTAG_TMS_PIO , JTAG_TMS_PIN  ) );
@@ -189,7 +189,7 @@ static void ConfigureJtagPins ( void )
   pio_set_input( JTAG_TDO_PIO, BV(JTAG_TDO_PIN), inputPullUpOption );
 
 
-  // DbgconPrintStr( "Finished configuring the JTAG pins." EOL );
+  // SerialPrintStr( "Finished configuring the JTAG pins." EOL );
 }
 
 
@@ -201,70 +201,20 @@ void InitJtagPins ( void )
 }
 
 
-static void PrintPinStatus ( CUsbTxBuffer * const txBuffer,
-                             const char * const pinName,
-                             const Pio * const pioPtr,
-                             const uint8_t pinNumber  // 0-31
-                           )
-{
-  const char * const status = IsInputPinHigh( pioPtr, pinNumber ) ? "high" : "low ";
-
-  const uint8_t arduinoDuePinNumber = GetArduinoDuePinNumberFromPio( pioPtr, pinNumber );
-
-  UsbPrintf( txBuffer, "%s (pin %02u): %s", pinName, unsigned(arduinoDuePinNumber), status );
-}
-
-
-void PrintJtagPinStatus ( CUsbTxBuffer * const txBuffer )
-{
-  UsbPrintStr( txBuffer, "Input status of all JTAG pins:" EOL );
-
-  PrintPinStatus( txBuffer, "TDI  ", JTAG_TDI_PIO, JTAG_TDI_PIN );
-  UsbPrintStr( txBuffer, "  |  " );
-  PrintPinStatus( txBuffer, "GND2 ", JTAG_GND2_PIO, JTAG_GND2_PIN );
-
-  UsbPrintStr( txBuffer, EOL );
-
-  UsbPrintf( txBuffer, "%s (pin %02u): %s", " -   ", unsigned( GetArduinoDuePinNumberFromPio( PIOC, 19 ) ), " -  " );
-  UsbPrintStr( txBuffer, "  |  " );
-  PrintPinStatus( txBuffer, "nTRST", JTAG_TRST_PIO, JTAG_TRST_PIN );
-
-  UsbPrintStr( txBuffer, EOL );
-
-  PrintPinStatus( txBuffer, "TMS  ", JTAG_TMS_PIO, JTAG_TMS_PIN );
-  UsbPrintStr( txBuffer, "  |  " );
-  PrintPinStatus( txBuffer, "nSRST", JTAG_SRST_PIO, JTAG_SRST_PIN );
-
-  UsbPrintStr( txBuffer, EOL );
-
-  PrintPinStatus( txBuffer, "TDO  ", JTAG_TDO_PIO, JTAG_TDO_PIN );
-  UsbPrintStr( txBuffer, "  |  " );
-  PrintPinStatus( txBuffer, "VCC  ", JTAG_VCC_PIO, JTAG_VCC_PIN );
-
-  UsbPrintStr( txBuffer, EOL );
-
-  PrintPinStatus( txBuffer, "TCK  ", JTAG_TCK_PIO, JTAG_TCK_PIN );
-  UsbPrintStr( txBuffer, "  |  " );
-  PrintPinStatus( txBuffer, "GND1 ", JTAG_GND1_PIO, JTAG_GND1_PIN );
-
-  UsbPrintStr( txBuffer, EOL );
-}
-
-
 void SetJtagPinMode ( const JtagPinModeEnum mode )
 {
   switch ( mode )
   {
   case MODE_HIZ:
-    // DbgconPrintStr( "Mode: HiZ." EOL );
+    // SerialPrintStr( "Mode: HiZ." EOL );
     break;
 
   case MODE_JTAG:
-    // DbgconPrintStr( "Mode: JTAG normal." EOL );
+    // SerialPrintStr( "Mode: JTAG normal." EOL );
     break;
 
   case MODE_JTAG_OD:
-    // DbgconPrintStr( "Mode: JTAG open-drain." EOL );
+    // SerialPrintStr( "Mode: JTAG open-drain." EOL );
     break;
 
   default:
@@ -318,17 +268,17 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
     // so ignore this command.
 
     // if ( action == ACTION_ENABLE )
-    //   DbgconPrintStr( "Feature: Voltage Regulator on." EOL );
+    //   SerialPrintStr( "Feature: Voltage Regulator on." EOL );
     // else
-    //   DbgconPrintStr( "Feature: Voltage Regulator off." EOL );
+    //   SerialPrintStr( "Feature: Voltage Regulator off." EOL );
 
     break;
 
   case FEATURE_PULLUP:
     // if ( action == ACTION_ENABLE )
-    //   DbgconPrintStr( "Feature: Pull-up resistors on." EOL );
+    //   SerialPrintStr( "Feature: Pull-up resistors on." EOL );
     // else
-    //   DbgconPrintStr( "Feature: Pull-up resistors off." EOL );
+    //   SerialPrintStr( "Feature: Pull-up resistors off." EOL );
 
     SetJtagPullups( action == ACTION_ENABLE );
 
@@ -338,9 +288,9 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
     if ( false )
     {
       if ( action == ACTION_ENABLE )
-        DbgconPrintStr( "Feature: TRST on." EOL );
+        SerialPrintStr( "Feature: TRST on." EOL );
       else
-        DbgconPrintStr( "Feature: TRST off." EOL );
+        SerialPrintStr( "Feature: TRST off." EOL );
     }
 
     SetOutputDataDrivenOnPin( JTAG_TRST_PIO, JTAG_TRST_PIN, action == ACTION_ENABLE );
@@ -352,9 +302,9 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
     if ( false )
     {
       if ( action == ACTION_ENABLE )
-        DbgconPrintStr( "Feature: SRST on." EOL );
+        SerialPrintStr( "Feature: SRST on." EOL );
       else
-        DbgconPrintStr( "Feature: SRST off." EOL );
+        SerialPrintStr( "Feature: SRST off." EOL );
     }
 
     SetOutputDataDrivenOnPin( JTAG_SRST_PIO, JTAG_SRST_PIN, action == ACTION_ENABLE );
@@ -369,7 +319,7 @@ static void HandleFeature ( const uint8_t feature, const uint8_t action )
 
 static void SendOpenOcdModeWelcome ( CUsbTxBuffer * const txBuffer )
 {
-  UsbPrintStr( txBuffer, "OCD1");
+  UsbPrintStr( txBuffer, "OCD1" );
 }
 
 
@@ -420,7 +370,7 @@ static bool ShiftSingleBit ( const bool tdiBit, const bool tmsBit )
   {
     if ( isTdoSet != IsInputPinHigh( JTAG_TDO_PIO, JTAG_TDO_PIN ) )
     {
-      DbgconPrint( "TDO stability check failed at iteration %i." EOL, int(i) );
+      SerialPrintf( "TDO stability check failed at iteration %i." EOL, int(i) );
       assert( false );
       break;
     }
@@ -456,7 +406,7 @@ static uint8_t ShiftSeveralBits ( const uint8_t tdi8,
   }
 
   if ( TRACE_JTAG_SHIFTING )
-    DbgconPrint( "TDI8: 0x%02X, TMS8: 0x%02X, TDO8: 0x%02X" EOL, tdi8, tms8, tdo8 );
+    SerialPrintf( "TDI8: 0x%02X, TMS8: 0x%02X, TDO8: 0x%02X" EOL, tdi8, tms8, tdo8 );
 
 
   // Note that OpenOCD 0.8.0's Bus Pirate driver does not bother clearing the last buffer
@@ -650,8 +600,8 @@ static uint8_t Shift2Bits ( uint8_t tdi8,
 static uint8_t ShiftFullByte ( const uint8_t tdi8,
                                const uint8_t tms8 )
 {
-  // DbgconPrint( "TDI8: 0x%02X" EOL, tdi8 );
-  // DbgconPrint( "TMS8: 0x%02X" EOL, tms8 );
+  // SerialPrint( "TDI8: 0x%02X" EOL, tdi8 );
+  // SerialPrint( "TMS8: 0x%02X" EOL, tms8 );
 
   const uint8_t tdo1 = Shift2Bits( tdi8,      tms8 );
   const uint8_t tdo2 = Shift2Bits( tdi8 >> 2, tms8 >> 2 );
@@ -728,7 +678,7 @@ static void ShiftJtagData_InBufferBlocks ( CUsbRxBuffer * const rxBuffer,
 
     const uint32_t maxIterationCount = MinFrom( MinFrom( maxReadCount / 2, maxWriteCount ), remainingBytes );
 
-    // DbgconPrint( "It cnt: %u" EOL, unsigned( maxIterationCount ) );
+    // SerialPrint( "It cnt: %u" EOL, unsigned( maxIterationCount ) );
 
     if ( maxIterationCount == 0 )
     {
@@ -755,7 +705,7 @@ void ShiftJtagData ( CUsbRxBuffer * const rxBuffer,
                      const uint16_t dataBitCount )
 {
   if ( TRACE_JTAG_SHIFTING )
-    DbgconPrint( "--- Begin of JTAG shifting for %u bits ---" EOL, dataBitCount );
+    SerialPrintf( "--- Begin of JTAG shifting for %u bits ---" EOL, dataBitCount );
 
   const uint16_t fullDataByteCount = dataBitCount / 8;
   const uint8_t  restBitCount      = uint8_t( dataBitCount % 8 );
@@ -792,7 +742,7 @@ void ShiftJtagData ( CUsbRxBuffer * const rxBuffer,
   }
 
   if ( TRACE_JTAG_SHIFTING )
-    DbgconPrintStr( "--- End of JTAG shifting ---" EOL );
+    SerialPrintStr( "--- End of JTAG shifting ---" EOL );
 }
 
 
@@ -833,7 +783,7 @@ static bool ShiftCommand ( CUsbRxBuffer * const rxBuffer,
 
   rxBuffer->ConsumeReadElements( TAP_SHIFT_CMD_HEADER_LEN );
 
-  // DbgconPrint( "CMD_TAP_SHIFT: %u bits." EOL, dataBitCount );
+  // SerialPrint( "CMD_TAP_SHIFT: %u bits." EOL, dataBitCount );
 
   STATIC_ASSERT( TAP_SHIFT_CMD_HEADER_LEN == 3, "Header size mismatch" );
   txBuffer->WriteElem( CMD_TAP_SHIFT );
@@ -889,7 +839,7 @@ static bool ProcessReceivedData ( CUsbRxBuffer * const rxBuffer,
 
       if ( PeekCmdData( rxBuffer, cmdData, sizeof(cmdData) ) )
       {
-        // DbgconPrintStr( "CMD_PORT_MODE." EOL );
+        // SerialPrintStr( "CMD_PORT_MODE." EOL );
         SetJtagPinMode( JtagPinModeEnum( cmdData[ FIRST_PARAM_POS ] ) );
 
         rxBuffer->ConsumeReadElements( sizeof( cmdData ) );
@@ -904,7 +854,7 @@ static bool ProcessReceivedData ( CUsbRxBuffer * const rxBuffer,
 
       if ( PeekCmdData( rxBuffer, cmdData, sizeof(cmdData) ) )
       {
-        // DbgconPrintStr( "CMD_FEATURE." EOL );
+        // SerialPrintStr( "CMD_FEATURE." EOL );
         HandleFeature( cmdData[ FIRST_PARAM_POS + 0 ],
                        cmdData[ FIRST_PARAM_POS + 1 ] );
 
@@ -922,7 +872,7 @@ static bool ProcessReceivedData ( CUsbRxBuffer * const rxBuffer,
       if ( txBuffer->GetFreeCount() >= RESPONSE_SIZE &&
            PeekCmdData( rxBuffer, cmdData, sizeof(cmdData) ) )
       {
-        // DbgconPrintStr( "CMD_UART_SPEED." EOL );
+        // SerialPrintStr( "CMD_UART_SPEED." EOL );
 
         // Any attempts to change the serial port speed for this USB connection are just ignored.
         const uint8_t serialSpeed = cmdData[ FIRST_PARAM_POS + 0 ];
@@ -949,7 +899,7 @@ static bool ProcessReceivedData ( CUsbRxBuffer * const rxBuffer,
   default:
     if ( txBuffer->GetFreeCount() >= 1 )
     {
-      DbgconPrint( "Unknown OpenOCD command with code %u (0x%02X).", cmdCode, cmdCode );
+      SerialPrintf( "Unknown OpenOCD command with code %u (0x%02X).", cmdCode, cmdCode );
       assert( false );  // This should actually never happen if the client is written correctly.
 
       // Answer with a single zero. The protocol does not allow for any better error indication.

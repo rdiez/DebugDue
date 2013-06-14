@@ -23,14 +23,16 @@
 #include <BareMetalSupport/StackCheck.h>
 #include <BareMetalSupport/Uptime.h>
 #include <BareMetalSupport/IoUtils.h>
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/SerialPortAsyncTx.h>
+#include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/MainLoopSleep.h>
 
 #include "Globals.h"
 #include "UsbConnection.h"
 #include "UsbSupport.h"
 #include "Led.h"
-#include "SerialPort.h"
+#include "SerialPortConsole.h"
 #include "BusPirateOpenOcdMode.h"
 
 #include <sam3xa.h>  // All interrupt handlers must probably be extern "C", so include their declarations here.
@@ -43,7 +45,7 @@
 const uint32_t WATCHDOG_PERIOD_MS = 1000;
 
 #ifndef NDEBUG
-  static const size_t MIN_UNUSED_STACK_SIZE = MaxFrom( MaxFrom( ASSERT_MSG_BUFSIZE, MAX_DBGCON_PRINT_LEN ), MAX_USB_PRINT_LEN ) + 200;
+  static const size_t MIN_UNUSED_STACK_SIZE = MaxFrom( MaxFrom( ASSERT_MSG_BUFSIZE, MAX_SERIAL_PRINT_LEN ), MAX_USB_PRINT_LEN ) + 200;
 #endif
 
 
@@ -61,10 +63,10 @@ static void PrintPanicMsg ( const char * const msg )
 {
   // This routine is called with interrupts disabled and should rely
   // on as little other code as possible.
-  DbgconSyncWriteStr( EOL );
-  DbgconSyncWriteStr( "PANIC: " );
-  DbgconSyncWriteStr( msg );
-  DbgconSyncWriteStr( EOL );
+  SerialSyncWriteStr( EOL );
+  SerialSyncWriteStr( "PANIC: " );
+  SerialSyncWriteStr( msg );
+  SerialSyncWriteStr( EOL );
 
   // Here it would be a good place to print a stack backtrace,
   // but I have not been able to figure out yet how to do that
@@ -82,10 +84,11 @@ static void Configure ( void )
   // Enable the pull-up resistor for RX0.
   pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
 
-  InitDebugConsole( true );
+  InitSerialPort( true );
+  InitSerialPortAsyncTx( EOL );
   // Print this msg only on serial port, and not on USB port:
-  DbgconPrint( "--- JtagDue %s ---" EOL, PACKAGE_VERSION );
-  DbgconPrintStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
+  SerialPrintf( "--- JtagDue %s ---" EOL, PACKAGE_VERSION );
+  SerialPrintStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
 
   SetUserPanicMsgFunction( &PrintPanicMsg );
 
@@ -169,10 +172,10 @@ static void Configure ( void )
 
     if ( false )
     {
-      DbgconPrint( "A PIO_OWSR: 0x%08X" EOL, unsigned( PIOA->PIO_OWSR ) );
-      DbgconPrint( "B PIO_OWSR: 0x%08X" EOL, unsigned( PIOB->PIO_OWSR ) );
-      DbgconPrint( "C PIO_OWSR: 0x%08X" EOL, unsigned( PIOC->PIO_OWSR ) );
-      DbgconPrint( "D PIO_OWSR: 0x%08X" EOL, unsigned( PIOD->PIO_OWSR ) );
+      SerialPrintf( "A PIO_OWSR: 0x%08X" EOL, unsigned( PIOA->PIO_OWSR ) );
+      SerialPrintf( "B PIO_OWSR: 0x%08X" EOL, unsigned( PIOB->PIO_OWSR ) );
+      SerialPrintf( "C PIO_OWSR: 0x%08X" EOL, unsigned( PIOC->PIO_OWSR ) );
+      SerialPrintf( "D PIO_OWSR: 0x%08X" EOL, unsigned( PIOD->PIO_OWSR ) );
     }
   }
 
@@ -189,10 +192,10 @@ static void Configure ( void )
 
   if ( false )
   {
-    DbgconPrint( "A PIO_PSR: 0x%08X" EOL, unsigned( PIOA->PIO_PSR ) );
-    DbgconPrint( "B PIO_PSR: 0x%08X" EOL, unsigned( PIOB->PIO_PSR ) );
-    DbgconPrint( "C PIO_PSR: 0x%08X" EOL, unsigned( PIOC->PIO_PSR ) );
-    DbgconPrint( "D PIO_PSR: 0x%08X" EOL, unsigned( PIOD->PIO_PSR ) );
+    SerialPrintf( "A PIO_PSR: 0x%08X" EOL, unsigned( PIOA->PIO_PSR ) );
+    SerialPrintf( "B PIO_PSR: 0x%08X" EOL, unsigned( PIOB->PIO_PSR ) );
+    SerialPrintf( "C PIO_PSR: 0x%08X" EOL, unsigned( PIOC->PIO_PSR ) );
+    SerialPrintf( "D PIO_PSR: 0x%08X" EOL, unsigned( PIOD->PIO_PSR ) );
   }
 
   InitJtagPins();
@@ -244,16 +247,18 @@ void StartOfUserCode ( void )
       const unsigned initDataSize = unsigned( uintptr_t( &_erelocate ) - uintptr_t( &_srelocate ) );
       const unsigned bssDataSize  = unsigned( uintptr_t( &_ebss      ) - uintptr_t( &_sbss      ) );
 
-      DbgconPrint( "Code size: %u, initialised data size: %u, BSS size: %u." EOL,
-                   codeSize,
-                   initDataSize,
-                   bssDataSize );
+      SerialPrintf( "Code size: %u, initialised data size: %u, BSS size: %u." EOL,
+                    codeSize,
+                    initDataSize,
+                    bssDataSize );
     }
 
 
     // ------ Main loop ------
 
-    DbgconPrintStr( "Entering the main loop." EOL );
+    SerialPrintStr( "Entering the main loop." EOL );
+
+    InitSerialPortConsole();  // Call this after the last message printed to the serial port.
 
     uint64_t longestIterationTime = 0;
 
@@ -268,7 +273,7 @@ void StartOfUserCode ( void )
 
       ServiceUsbConnection( currentTime );
 
-      ServiceSerialPort();
+      ServiceSerialPortConsole( currentTime );
 
       if ( HasUptimeElapsedMs( currentTime, lastReferenceTimeForPeriodicAction, 500 ) )
       {
@@ -298,7 +303,7 @@ void StartOfUserCode ( void )
       if ( PRINT_LONGEST_ITERATION_TIME &&
            longestIterationTime != prevLongestInterationTime )
       {
-          DbgconPrint( "%u" EOL, unsigned( longestIterationTime ) );
+          SerialPrintf( "%u" EOL, unsigned( longestIterationTime ) );
       }
 
       MainLoopSleep();
@@ -310,7 +315,7 @@ void HardFault_Handler ( void )
 {
   // Note that instruction BKPT causes a HardFault when no debugger is currently attached.
 
-  DbgconSyncWriteStr( "HardFault" EOL );
+  SerialSyncWriteStr( "HardFault" EOL );
 
   ForeverHangAfterPanic();
 }
@@ -322,8 +327,7 @@ static uint32_t s_mainLoopWakeUpCounterCpuLoad  = 0;
 void SysTick_Handler ( void )
 {
   if ( false )
-    DbgconSyncWriteStr( "." );
-
+    SerialPrintStr( "." );
 
   IncrementUptime( SYSTEM_TICK_PERIOD_MS );
 

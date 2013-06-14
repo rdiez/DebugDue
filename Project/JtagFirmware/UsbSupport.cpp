@@ -25,7 +25,7 @@
 
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/MainLoopSleep.h>
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/SerialPrint.h>
 
 #include "ConfigFilesForLibsam/my_usb_callbacks.h"
 
@@ -53,7 +53,7 @@ void MyUsbCallback_udc_resume ( void )
   // and then a second, stable resume notification.
 
   if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
-    DbgconPrintStr( "MyUsbCallback_udc_resume()" EOL );
+    SerialPrintStr( "MyUsbCallback_udc_resume()" EOL );
 
   assert( !s_isUsbCableConnected );
   s_isUsbCableConnected = true;
@@ -63,7 +63,7 @@ void MyUsbCallback_udc_resume ( void )
 void MyUsbCallback_udc_suspend ( void )
 {
   if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
-    DbgconPrintStr( "MyUsbCallback_udc_suspend()" EOL );
+    SerialPrintStr( "MyUsbCallback_udc_suspend()" EOL );
 
   // This routine is always called once at the beginning, therefore we cannot assert this here:
   //   ASSERT( s_isUsbCableConnected );
@@ -79,7 +79,7 @@ void MyUsbCallback_udc_suspend ( void )
 bool MyUsbCallback_cdc_enable ( const uint8_t port )
 {
   if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
-    DbgconPrintStr( "MyUsbCallback_cdc_enable()" EOL );
+    SerialPrintStr( "MyUsbCallback_cdc_enable()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -95,7 +95,7 @@ bool MyUsbCallback_cdc_enable ( const uint8_t port )
 void MyUsbCallback_cdc_disable ( const uint8_t port )
 {
   if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
-    DbgconPrintStr( "MyUsbCallback_cdc_disable()" EOL );
+    SerialPrintStr( "MyUsbCallback_cdc_disable()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -112,8 +112,8 @@ void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 {
   if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
   {
-    DbgconPrint( "MyUsbCallback_cdc_set_dtr( %s )" EOL,
-                 enable ? "enable" : "disable" );
+    SerialPrintf( "MyUsbCallback_cdc_set_dtr( %s )" EOL,
+                  enable ? "enable" : "disable" );
   }
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
@@ -138,12 +138,12 @@ void MyUsbCallback_cdc_set_dtr ( const uint8_t port, const bool enable )
 void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
 {
   if ( false )
-    DbgconPrintStr( "MyUsbCallback_cdc_rx_notify()" EOL );
+    SerialPrintStr( "MyUsbCallback_cdc_rx_notify()" EOL );
 
   // Print the received packet size (not quite reliable), for performance research purposes only:
   if ( false )
   {
-    DbgconPrint( "%u" EOL, unsigned( udi_cdc_get_nb_received_data() ) );
+    SerialPrintf( "%u" EOL, unsigned( udi_cdc_get_nb_received_data() ) );
   }
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
@@ -159,7 +159,7 @@ void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
 void MyUsbCallback_cdc_tx_empty_notify ( const uint8_t port )
 {
   if ( false )
-    DbgconPrintStr( "MyUsbCallback_cdc_tx_empty_notify()" EOL );
+    SerialPrintStr( "MyUsbCallback_cdc_tx_empty_notify()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );
@@ -174,7 +174,7 @@ void MyUsbCallback_cdc_tx_empty_notify ( const uint8_t port )
 void MyUsbCallback_cdc_set_coding ( const uint8_t port, usb_cdc_line_coding_t * const cfg )
 {
   if ( false )
-    DbgconPrintStr( "MyUsbCallback_cdc_set_coding()" EOL );
+    SerialPrintStr( "MyUsbCallback_cdc_set_coding()" EOL );
 
   assert( port == USB_CALLBACK_PORT_NUMBER );
   UNUSED_IN_RELEASE( port );

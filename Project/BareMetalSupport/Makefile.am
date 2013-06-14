@@ -15,11 +15,13 @@ libbare_metal_support_a_SOURCES = \
     MiscellaneousAsm.S \
     IntegerPrintUtils.cpp \
     IoUtils.cpp \
-    DebugConsole.cpp \
+    SerialPortUtils.cpp \
+    SerialPrint.cpp \
+    SerialPortAsyncTx.cpp \
     BoardInit.cpp \
     StackCheck.cpp \
     TextParsingUtils.cpp \
-    SerialConsole.cpp \
+    GenericSerialConsole.cpp \
     Uptime.cpp \
     SysTickUtils.cpp \
     BusyWait.cpp \

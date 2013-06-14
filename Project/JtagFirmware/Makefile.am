@@ -107,7 +107,8 @@ jtagdue_elf_SOURCES += \
     BusPirateConsole.cpp \
     BusPirateBinaryMode.cpp \
     BusPirateOpenOcdMode.cpp \
-    SerialPort.cpp \
+    CommandProcessor.cpp \
+    SerialPortConsole.cpp \
     InterruptHandlers.cpp
     # Note that there are other files below.
 

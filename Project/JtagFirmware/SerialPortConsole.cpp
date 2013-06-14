@@ -14,12 +14,13 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "SerialPort.h"  // The include file for this module should come first.
+#include "SerialPortConsole.h"  // The include file for this module should come first.
 
 #include <stdexcept>
 
-#include <BareMetalSupport/SerialConsole.h>
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/GenericSerialConsole.h>
+#include <BareMetalSupport/SerialPortAsyncTx.h>
+#include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/CircularBuffer.h>
 #include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/Miscellaneous.h>
@@ -28,14 +29,16 @@
 
 #include <Globals.h>
 
-#define SERIAL_PORT_RX_BUFFER_SIZE  32
+#include "CommandProcessor.h"
+
+
+#define SERIAL_PORT_RX_BUFFER_SIZE   32
 
 typedef CCircularBuffer< uint8_t, uint32_t, SERIAL_PORT_RX_BUFFER_SIZE > CSerialPortRxBuffer;
 
 
 // This instance should be "volatile", but then I get difficult compilation errors,
-// more investigation is needed. In the mean time, see AssumeMemoryHasChanged() below.
-
+// more investigation is needed. In the mean time, see the AssumeMemoryHasChanged() calls below.
 static CSerialPortRxBuffer s_serialPortRxBuffer;
 
 
@@ -46,10 +49,10 @@ static volatile bool s_uartFrameErr = false;
 static volatile bool s_rxBufferOverrun = false;
 
 
-class CSerialPortConsole : public CSerialConsole
+class CSerialPortConsole : public CGenericSerialConsole
 {
 private:
-  virtual void Printf ( const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
+  virtual void Printf ( const char * formatStr, ... ) const __attribute__ ((format(printf, 2, 3)));
 
 public:
 
@@ -59,27 +62,52 @@ public:
 };
 
 
-void CSerialPortConsole::Printf ( const char * formatStr, ... )
+void CSerialPortConsole::Printf ( const char * formatStr, ... ) const
 {
   va_list argList;
   va_start( argList, formatStr );
 
-  DbgconPrintV( formatStr, argList );
+  SerialPrintV( formatStr, argList );
 
   va_end( argList );
+}
+
+
+class CProgrammingUsbCommandProcessor : public CCommandProcessor
+{
+private:
+  virtual void Printf ( const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
+  virtual void PrintStr ( const char * str );
+
+public:
+    CProgrammingUsbCommandProcessor ( void )
+      : CCommandProcessor( NULL, NULL )
+  {
+  }
+};
+
+
+void CProgrammingUsbCommandProcessor::Printf ( const char * const formatStr, ... )
+{
+  va_list argList;
+  va_start( argList, formatStr );
+
+  SerialPrintV( formatStr, argList );
+
+  va_end( argList );
+}
+
+
+void CProgrammingUsbCommandProcessor::PrintStr ( const char * const str )
+{
+  SerialPrintStr( str );
 }
 
 
 static CSerialPortConsole s_serialPortConsole;
 
 
-static void WritePrompt ( void )
-{
-  DbgconPrintStr( ">" );
-}
-
-
-void ServiceSerialPort ( void )
+static void ServiceSerialPortRx ( const uint64_t currentTime )
 {
   const bool uartOverrun     = s_uartOverrun;
   const bool uartFrameErr    = s_uartFrameErr;
@@ -90,14 +118,14 @@ void ServiceSerialPort ( void )
   s_rxBufferOverrun = false;
 
   if ( uartOverrun )
-      DbgconPrintStr( "UART overrun." EOL );
-    
+      SerialPrintStr( "UART overrun." EOL );
+
   if ( uartFrameErr )
-      DbgconPrintStr( "UART frame error." EOL );
+      SerialPrintStr( "UART frame error." EOL );
 
   if ( rxBufferOverrun )
-      DbgconPrintStr( "UART Rx Buffer overrun." EOL );
-  
+      SerialPrintStr( "UART Rx Buffer overrun." EOL );
+
 
   for ( ; ; )
   {
@@ -106,7 +134,7 @@ void ServiceSerialPort ( void )
     { // Scope for autoDisableInterrupts.
       CAutoDisableInterrupts autoDisableInterrupts;
 
-      AssumeMemoryHasChanged();
+      AssumeMemoryHasChanged();  // Because s_serialPortRxBuffer should be volatile.
 
       if ( s_serialPortRxBuffer.IsEmpty() )
         break;
@@ -114,33 +142,61 @@ void ServiceSerialPort ( void )
       c = s_serialPortRxBuffer.ReadElement();
     }
 
+    if ( HasSerialPortDataBeenSentSinceLastCall() )
+    {
+      SerialPrintStr( EOL );
+      SerialPrintStr( BUS_PIRATE_CONSOLE_PROMPT );
+      s_serialPortConsole.RepaintLine();
+    }
+
     uint32_t cmdLen;
     const char * const cmd = s_serialPortConsole.AddChar( c, &cmdLen );
 
     if ( cmd != NULL )
     {
-      DbgconPrintStr( EOL );
+      SerialPrintStr( EOL );
 
-      try
-      {
-        if ( true ) // TODO: set to false.
-          DbgconPrint( "Cmd received: %s" EOL, cmd );
+      if ( false )
+        SerialPrintf( "Cmd received: %s" EOL, cmd );
 
-        // ParseCommand( cmd, rxBuffer, txBuffer, currentTime );
-      }
-      catch ( const std::exception & e )
-      {
-        DbgconPrint( "Error processing command: %s" EOL, e.what() );
-      }
+      CProgrammingUsbCommandProcessor cmdProcessor;
 
-      
-      WritePrompt();
+      cmdProcessor.ProcessCommand( cmd, currentTime );
+
+      SerialPrintStr( BUS_PIRATE_CONSOLE_PROMPT );
     }
+
+    HasSerialPortDataBeenSentSinceLastCall();  // Reset the flag.
   }
 }
 
 
-void UART_Handler ( void )
+static void HandleError ( const char * const errMsg )
+{
+  SerialPrintStr( EOL "Error servicing the serial port connection: " );
+  SerialPrintStr( errMsg );
+  SerialPrintStr( EOL );
+}
+
+
+void ServiceSerialPortConsole ( const uint64_t currentTime )
+{
+  try
+  {
+    ServiceSerialPortRx( currentTime );
+  }
+  catch ( const std::exception & e )
+  {
+    HandleError( e.what() );
+  }
+  catch ( ... )
+  {
+    HandleError( "Unexpected C++ exception." );
+  }
+}
+
+
+void SerialPortRxInterruptHandler ( void )
 {
   // There is no FIFO in our UART, so we process just 1 character every time this interrupt is triggered.
 
@@ -150,16 +206,14 @@ void UART_Handler ( void )
 
   if ( status & UART_SR_RXRDY )
   {
-    if ( false )
-      DbgconPrintStr( "Serial port character received." EOL );
-
     // We must always read the available character, otherwise the interrupt will trigger again.
     const char c = UART->UART_RHR;
 
     { // Scope for autoDisableInterrupts.
+
       CAutoDisableInterrupts autoDisableInterrupts;
 
-      AssumeMemoryHasChanged();
+      AssumeMemoryHasChanged();  // Because s_serialPortRxBuffer should be volatile.
 
       if ( s_serialPortRxBuffer.IsFull() )
       {
@@ -169,7 +223,8 @@ void UART_Handler ( void )
       {
         s_serialPortRxBuffer.WriteElem( c );
       }
-    }
+
+    }  // Scope for autoDisableInterrupts.
 
     WakeFromMainLoopSleep();
   }
@@ -189,4 +244,16 @@ void UART_Handler ( void )
     UART->UART_CR |= UART_CR_RSTSTA;
     WakeFromMainLoopSleep();
   }
+}
+
+
+void UART_Handler ( void )
+{
+  SerialPortRxInterruptHandler();
+  SerialPortAsyncTxInterruptHandler();
+}
+
+void InitSerialPortConsole ( void )
+{
+    HasSerialPortDataBeenSentSinceLastCall();  // Reset the flag.
 }

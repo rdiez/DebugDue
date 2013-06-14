@@ -19,7 +19,7 @@
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/BoardInit.h>
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/SerialPortUtils.h>
 
 #include <sam3xa.h>  // All interrupt handlers must probably be extern "C", so include their declarations here.
 
@@ -39,10 +39,10 @@ static void PrintPanicMsg ( const char * const msg )
   {
     // This routine is called with interrupts disabled and should rely
     // on as little other code as possible.
-    DbgconSyncWriteStr( EOL );
-    DbgconSyncWriteStr( "PANIC: " );
-    DbgconSyncWriteStr( msg );
-    DbgconSyncWriteStr( EOL );
+    SerialSyncWriteStr( EOL );
+    SerialSyncWriteStr( "PANIC: " );
+    SerialSyncWriteStr( msg );
+    SerialSyncWriteStr( EOL );
 
     // Here it would be a good place to print a stack backtrace,
     // but I have not been able to figure out yet how to do that
@@ -63,10 +63,10 @@ static void Configure ( void )
     // Enable the pull-up resistor for RX0.
     pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
 
-    InitDebugConsole( false );
+    InitSerialPort( false );
 
-    DbgconSyncWriteStr( "--- EmptyDue " PACKAGE_VERSION " ---" EOL );
-    DbgconSyncWriteStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
+    SerialSyncWriteStr( "--- EmptyDue " PACKAGE_VERSION " ---" EOL );
+    SerialSyncWriteStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
   }
 
   SetUserPanicMsgFunction( &PrintPanicMsg );
@@ -109,13 +109,13 @@ void StartOfUserCode ( void )
       const unsigned initDataSize = unsigned( uintptr_t( &_erelocate ) - uintptr_t( &_srelocate ) );
       const unsigned bssDataSize  = unsigned( uintptr_t( &_ebss      ) - uintptr_t( &_sbss      ) );
 
-      DbgconSyncWriteStr( "Code size: 0x" );
-      DbgconSyncWriteUint32Hex( codeSize );
-      DbgconSyncWriteStr( ", initialised data size: 0x" );
-      DbgconSyncWriteUint32Hex( initDataSize );
-      DbgconSyncWriteStr( ", BSS size: 0x" );
-      DbgconSyncWriteUint32Hex( bssDataSize );
-      DbgconSyncWriteStr( "." EOL );
+      SerialSyncWriteStr( "Code size: 0x" );
+      SerialSyncWriteUint32Hex( codeSize );
+      SerialSyncWriteStr( ", initialised data size: 0x" );
+      SerialSyncWriteUint32Hex( initDataSize );
+      SerialSyncWriteStr( ", BSS size: 0x" );
+      SerialSyncWriteUint32Hex( bssDataSize );
+      SerialSyncWriteStr( "." EOL );
     }
 
 
@@ -123,7 +123,7 @@ void StartOfUserCode ( void )
 
     if ( ENABLE_DEBUG_CONSOLE )
     {
-      DbgconSyncWriteStr( "Entering the main loop, which just waits forever." EOL );
+      SerialSyncWriteStr( "Entering the main loop, which just waits forever." EOL );
     }
 
     for (;;)
@@ -138,7 +138,7 @@ void HardFault_Handler ( void )
 
   if ( ENABLE_DEBUG_CONSOLE )
   {
-    DbgconSyncWriteStr( "HardFault" EOL );
+    SerialSyncWriteStr( "HardFault" EOL );
   }
 
   ForeverHangAfterPanic();

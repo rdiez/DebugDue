@@ -14,12 +14,12 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "SerialConsole.h"  // The include file for this module should come first.
+#include "GenericSerialConsole.h"  // The include file for this module should come first.
 
 #include <algorithm>
 
 #include "AssertionUtils.h"
-#include "DebugConsole.h"
+#include "SerialPrint.h"
 #include "TextParsingUtils.h"
 
 #define DBG_EOL "\r\n"  // Carriage Return, 0x0D, followed by a Line Feed, 0x0A.
@@ -59,7 +59,7 @@ static uint32_t GetCircularPosMinusOne ( const uint32_t pos,
 }
 
 
-void CSerialConsole::Reset ( void )
+void CGenericSerialConsole::Reset ( void )
 {
   m_state = stIdle;
 
@@ -76,7 +76,7 @@ void CSerialConsole::Reset ( void )
 }
 
 
-void CSerialConsole::Bell ( void )
+void CGenericSerialConsole::Bell ( void )
 {
   PrintChar( 0x07 );
 }
@@ -94,16 +94,16 @@ void CSerialConsole::Bell ( void )
 // of the circular buffer). However, every now and then a rotation must still take place. The user
 // may then wonder why some commands take much longer than others to process.
 
-const char * CSerialConsole::AddChar ( const uint8_t c,
+const char * CGenericSerialConsole::AddChar ( const uint8_t c,
                                        uint32_t * const retCmdLen )
 {
   // Trace the incoming characters.
   if ( false )
   {
     if ( IsPrintableAscii(c) )
-      DbgconPrint( "0x%02X (%3u, %c)" DBG_EOL, c, c, c  );
+      SerialPrintf( "0x%02X (%3u, %c)" DBG_EOL, c, c, c  );
     else
-      DbgconPrint( "0x%02X (%3u)" DBG_EOL, c, c );
+      SerialPrintf( "0x%02X (%3u)" DBG_EOL, c, c );
   }
 
   bool isCmdReady = false;
@@ -137,12 +137,12 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
 
   if ( false )
   {
-    DbgconPrint( "Char: 0x%02X, cmd begin: %u, end: %u, len: %u, pos: %u" DBG_EOL,
-                 c,
-                 unsigned( m_cmdBeginPos ),
-                 unsigned( m_cmdEndPos ),
-                 unsigned( GetCircularDistance( m_cmdBeginPos, m_cmdEndPos, BUF_LEN ) ),
-                 unsigned( m_cursorPos ) );
+    SerialPrintf( "Char: 0x%02X, cmd begin: %u, end: %u, len: %u, pos: %u" DBG_EOL,
+                  c,
+                  unsigned( m_cmdBeginPos ),
+                  unsigned( m_cmdEndPos ),
+                  unsigned( GetCircularDistance( m_cmdBeginPos, m_cmdEndPos, BUF_LEN ) ),
+                  unsigned( m_cursorPos ) );
   }
 
   if ( isCmdReady )
@@ -165,7 +165,7 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
     m_cmdEndPos   = cmdLen;
     m_cursorPos   = cmdLen;
 
-    // DbgconPrint( "Command ready." DBG_EOL );
+    // SerialPrint( "Command ready." DBG_EOL );
 
     assert( strlen( m_buffer ) == cmdLen );
 
@@ -180,7 +180,7 @@ const char * CSerialConsole::AddChar ( const uint8_t c,
 }
 
 
-bool CSerialConsole::ProcessChar ( const uint8_t c )
+bool CGenericSerialConsole::ProcessChar ( const uint8_t c )
 {
   // When the user inserts characters at the command's beginning,
   // a number of bytes are sent to the terminal, depending on the command length.
@@ -221,7 +221,7 @@ bool CSerialConsole::ProcessChar ( const uint8_t c )
 }
 
 
-void CSerialConsole::Backspace ( void )
+void CGenericSerialConsole::Backspace ( void )
 {
   // If at the beginning, or if the command is empty...
   if ( m_cursorPos == m_cmdBeginPos )
@@ -266,7 +266,7 @@ void CSerialConsole::Backspace ( void )
 }
 
 
-void CSerialConsole::InsertChar ( const uint8_t c )
+void CGenericSerialConsole::InsertChar ( const uint8_t c )
 {
   // If not printable...
   if ( !IsPrintableAscii( c ) )
@@ -321,7 +321,7 @@ void CSerialConsole::InsertChar ( const uint8_t c )
 }
 
 
-bool CSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c )
+bool CGenericSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c )
 {
   switch (c)
   {
@@ -346,7 +346,7 @@ bool CSerialConsole::ProcessCharAfterEscapeBracket ( const uint8_t c )
 }
 
 
-void CSerialConsole::LeftArrow ( void )
+void CGenericSerialConsole::LeftArrow ( void )
 {
   if ( m_cursorPos == m_cmdBeginPos )
   {
@@ -360,7 +360,7 @@ void CSerialConsole::LeftArrow ( void )
 }
 
 
-void CSerialConsole::RightArrow ( void )
+void CGenericSerialConsole::RightArrow ( void )
 {
   if ( m_cursorPos == m_cmdEndPos )
   {
@@ -374,12 +374,26 @@ void CSerialConsole::RightArrow ( void )
 }
 
 
-void CSerialConsole::PrintStr ( const char * const str )
+void CGenericSerialConsole::PrintStr ( const char * const str ) const
 {
   Printf( "%s", str );
 }
 
-void CSerialConsole::PrintChar ( const char c )
+void CGenericSerialConsole::PrintChar ( const char c ) const
 {
   Printf( "%c", c );
+}
+
+
+void CGenericSerialConsole::RepaintLine ( void ) const
+{
+  for ( uint32_t i = m_cmdBeginPos; i != m_cmdEndPos; i = ( i + 1 ) % BUF_LEN )
+  {
+    PrintChar( m_buffer[ i ] );
+  }
+
+  const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
+
+  if ( distanceToEnd > 0 )
+    Printf( "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
 }

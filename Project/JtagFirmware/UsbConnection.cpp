@@ -24,7 +24,7 @@
 #include <stdexcept>
 
 #include <BareMetalSupport/Uptime.h>
-#include <BareMetalSupport/DebugConsole.h>
+#include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/MainLoopSleep.h>
 
@@ -59,9 +59,9 @@ static void ResetBuffers ( void )
 
 static void UsbConnectionEstablished ( void )
 {
-  DbgconPrintStr( "Connection opened on the native USB port." EOL );
+  SerialPrintStr( "Connection opened on the native USB port." EOL );
 
-  // DbgconPrint( "Rx buffer size: %u, Tx buffer size: %u" EOL, unsigned(USB_RX_BUFFER_SIZE), unsigned(USB_TX_BUFFER_SIZE) );
+  // SerialPrint( "Rx buffer size: %u, Tx buffer size: %u" EOL, unsigned(USB_RX_BUFFER_SIZE), unsigned(USB_TX_BUFFER_SIZE) );
 
   ResetBuffers();
   BusPirateConnection_Init( &s_usbTxBuffer );
@@ -70,7 +70,7 @@ static void UsbConnectionEstablished ( void )
 
 static void UsbConnectionLost ( void )
 {
-  DbgconPrintStr( "Connection lost on the native USB port." EOL );
+  SerialPrintStr( "Connection lost on the native USB port." EOL );
 
   BusPirateConnection_Terminate();
   ResetBuffers();
@@ -148,8 +148,8 @@ static bool SendData ( void )
 
     if ( false )
     {
-      DbgconPrintStr( "Data sent:" EOL );
-      DbgconHexDump( readPtr, writtenCount, EOL );
+      SerialPrintStr( "Data sent:" EOL );
+      SerialPrintHexDump( readPtr, writtenCount, EOL );
     }
 
     s_usbTxBuffer.ConsumeReadElements( writtenCount );
@@ -197,8 +197,8 @@ static bool ReceiveData ( void )
 
     if ( false )
     {
-      DbgconPrintStr( "Data received:" EOL );
-      DbgconHexDump( writePtr, readCount, EOL );
+      SerialPrintStr( "Data received:" EOL );
+      SerialPrintHexDump( writePtr, readCount, EOL );
     }
 
 
@@ -206,7 +206,7 @@ static bool ReceiveData ( void )
 
     if ( false )
     {
-      DbgconPrint( "%u" EOL, unsigned( readCount ) );
+      SerialPrintf( "%u" EOL, unsigned( readCount ) );
     }
 
 
@@ -267,9 +267,9 @@ static void HandleError ( const char * const errMsg )
   // Here we could close and reopen the USB connection (the virtual serial port),
   // but I do not know yet how to do that from this side.
 
-  DbgconPrintStr( "Error servicing the USB connection: " );
-  DbgconPrintStr( errMsg );
-  DbgconPrintStr( EOL );
+  SerialPrintStr( EOL "Error servicing the USB connection: " );
+  SerialPrintStr( errMsg );
+  SerialPrintStr( EOL );
 
   // We need to consume the data in the Rx buffer, otherwise we may enter an infinite loop.
   s_usbRxBuffer.Reset();
@@ -297,7 +297,7 @@ void ServiceUsbConnection ( const uint64_t currentTime )
         s_lastReferenceTimeForUsbOpen = currentTime;
         s_connectionStatus = csInitialDelay;
         if ( false )
-          DbgconPrintStr( "Connection detected, starting the delay timer." EOL );
+          SerialPrintStr( "Connection detected, starting the delay timer." EOL );
       }
       break;
 

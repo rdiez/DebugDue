@@ -20,7 +20,7 @@
 
 #include <sam3xa.h>
 
-#include "DebugConsole.h"
+#include "SerialPrint.h"
 #include "AssertionUtils.h"
 #include "Miscellaneous.h"
 
@@ -293,6 +293,6 @@ void GetCpuLoadStats ( const uint8_t ** const lastMinute,
     *lastSecondIndex = s_lastSecondIndex;
 
     if ( ENABLE_CALIBRATION_MODE )
-      DbgconPrint( "Max loop count found: %llu\n" , s_maximumSleepLoopCount );
+      SerialPrintf( "Max loop count found: %llu\n" , s_maximumSleepLoopCount );
   }
 }

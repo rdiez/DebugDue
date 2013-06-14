@@ -15,8 +15,8 @@
 
 
 // Include this header file only once.
-#ifndef BMS_SERIAL_CONSOLE_H_INCLUDED
-#define BMS_SERIAL_CONSOLE_H_INCLUDED
+#ifndef BMS_GENERIC_SERIAL_CONSOLE_H_INCLUDED
+#define BMS_GENERIC_SERIAL_CONSOLE_H_INCLUDED
 
 #include <stdint.h>
 
@@ -27,7 +27,7 @@
 //  - Unicode support.
 //  - Handle more keys like these: home, end, del, Ctrl+arrow keys.
 
-class CSerialConsole
+class CGenericSerialConsole
 {
 private:
   enum { BUF_LEN = 1024 };
@@ -58,17 +58,17 @@ private:
   void Backspace  ( void );
   void InsertChar ( uint8_t c );
 
-  void PrintStr ( const char * str );
-  void PrintChar ( const char c );
+  void PrintStr ( const char * str ) const;
+  void PrintChar ( char c ) const;
 
-  virtual void Printf ( const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3))) = 0;
+  virtual void Printf ( const char * formatStr, ... ) const __attribute__ ((format(printf, 2, 3))) = 0;
 
  protected:
   // Maximum number of tx bytes that a single user edit operation may generate, approximately.
   enum { MAX_TX_BUFFER_SIZE_NEEDED = MAX_SINGLE_CMD_LEN + 40 };
 
 public:
-  CSerialConsole ( void )
+  CGenericSerialConsole ( void )
   {
     STATIC_ASSERT( MAX_SINGLE_CMD_LEN < BUF_LEN / 2, "Otherwise, the max single cmd len does not make much sense." );
     Reset();
@@ -77,6 +77,7 @@ public:
   void Reset ( void );
 
   const char * AddChar ( uint8_t c, uint32_t * cmdLen );
+  void RepaintLine ( void ) const;
 };
 
 
