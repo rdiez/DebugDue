@@ -38,13 +38,6 @@ typedef CCircularBuffer< uint8_t, uint32_t, SERIAL_PORT_RX_BUFFER_SIZE > CSerial
 
 static CSerialPortRxBuffer s_serialPortRxBuffer;
 
-inline void AssumeMemoryHasChanged ( void )
-{
-  // This routine tries to compensate for the lack of 'volatile' in s_serialPortRxBuffer.
-
-  asm volatile( "" ::: "memory" );
-}
-
 
 // Note that we do not keep track of the position of these errors. If you need it,
 // you will have to store them in the circular buffer next to each received character.

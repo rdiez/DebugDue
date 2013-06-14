@@ -110,4 +110,11 @@ void BreakpointPlaceholder ( void );
 void ResetBoard ( bool triggerWatchdogDuringWait )  __attribute__ ((__noreturn__));
 
 
+inline void AssumeMemoryHasChanged ( void )
+{
+  // This routine is used to try to compensate for the lack of 'volatile' in some complex data structures.
+  asm volatile( "" ::: "memory" );
+}
+
+
 #endif  // Include this header file only once.
