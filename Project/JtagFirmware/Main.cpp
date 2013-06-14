@@ -97,7 +97,10 @@ static void Configure ( void )
 
   // ------- Configure the Systick -------
 
-  if ( 0 != SysTick_Config( SystemCoreClock * SYSTEM_TICK_PERIOD_MS / 1000 ) )
+  assert( SystemCoreClock == CPU_CLOCK );
+  assert( 0 == ( CPU_CLOCK % 1000 ) );  // Otherwise you should adjust the logic below for better accuracy.
+                                        // Beware of possible integer overflows then.
+  if ( 0 != SysTick_Config( CPU_CLOCK / 1000 * SYSTEM_TICK_PERIOD_MS ) )
     Panic( "SysTick error." );
 
 
@@ -136,6 +139,22 @@ static void Configure ( void )
     assert( ( supcMr & SUPC_MR_BODDIS   ) == SUPC_MR_BODDIS_ENABLE   );
     assert( ( supcMr & SUPC_MR_BODRSTEN ) == SUPC_MR_BODRSTEN_ENABLE );
   #endif
+
+
+  // ------- Adjust and check some SCB CCR flags -------
+
+  // SerialPrintf( "CCR: 0x%08X" EOL, unsigned( SCB->CCR ) );
+
+  #ifdef __ARM_FEATURE_UNALIGNED
+    assert( 0 == ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
+  #else
+    assert( 0 != ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
+    #error "We normally do not expect this scenario."
+  #endif
+
+  // We could clear here bit STKALIGN in the SCB CCR register in order to save 4 bytes per interrupt stack frame.
+
+  SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;  // Trap on division by 0.
 
 
   // ------- Configure the JTAG pins -------
