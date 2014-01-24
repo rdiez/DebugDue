@@ -167,7 +167,7 @@ static void RunUserCode ( void ) __attribute__ ((noinline));
 
 void RunUserCode ( void )
 {
-    #ifdef _CPPUNWIND  // If the compiler supports C++ exceptions...
+    #ifdef __EXCEPTIONS  // If the compiler supports C++ exceptions...
 
       try
       {
