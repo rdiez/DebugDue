@@ -1,7 +1,7 @@
 
-# Copyright (C) 2012 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2012-2014 R. Diez - see the JtagDue project for licensing information.
 
-AC_INIT([arduino-due-native-usb-speed-test],[1.0.1])
+AC_INIT([arduino-due-native-usb-speed-test],[1.1.0])
 AC_PREREQ([2.65])  # Tested mainly with version 2.68.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
@@ -14,7 +14,7 @@ LT_INIT
 # Use "make V=1" in order to see the gcc command-lines during compilation.
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
-# According to the autoconf documentation:
+# According to the autoconf documentation, this is about the right place to define compiler flags:
 #   If your package does not like this default, then it is acceptable to insert the line
 #  ': ${CXXFLAGS=""}' after AC_INIT and before AC_PROG_CXX to select an empty default instead.
 CXXFLAGS="-g -Wall"
@@ -47,6 +47,7 @@ then
     AC_MSG_RESULT(yes)
     # I had to add "-g" again at this point in order to get line number information generated
     # in the general debug information.
+    # We could use GCC 4.8's new optimisation level "-Og", but "-O0" still provides the most comfortable debugging experience.
     DEBUG_FLAGS="-O0 -DDEBUG -g3"
 else
     AC_MSG_RESULT(no)
@@ -85,7 +86,7 @@ CCASFLAGS+=" $DEBUG_FLAGS"
 
 AC_ARG_WITH(atmel-software-framework,
 [AS_HELP_STRING([--with-atmel-software-framework=PATH],
-		[specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.7.3".])])
+		[specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.7.3.69".])])
 
 if test "x$with_atmel_software_framework" == x; then
   AC_MSG_ERROR([Please specify the --with-atmel-software-framework=PATH configuration switch])
@@ -111,6 +112,9 @@ EXTRA_C_AND_CXX_FLAGS=""
 # WARNING: All flags that affect the ABI must match those specified when building the toolchain.
 
 EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
+
+# I am not sure whether specifying our own --param max-inline-insns-single is a good idea,
+# but that's what the Arduino Framework does:
 EXTRA_C_AND_CXX_FLAGS+=" --param max-inline-insns-single=500"
 
 EXTRA_CPP_FLAGS=""
@@ -125,7 +129,7 @@ EXTRA_CPP_FLAGS+=" -D__SAM3X8E__"
 # Needed by the Atmel Software Framework.
 EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
 
-# Needed by the Atmel Software Framework.
+# Needed by NewlibSyscalls.cpp.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
 # Needed by the Atmel Software Framework.
