@@ -5,11 +5,24 @@
 
 SHELL := bash  # This makefile has only been tested with bash.
 
+# ------- User Configuration -------
+
+# Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG, which enables debug code at least
+# in newlib's malloc implementation, and probably in other places too.
+#
+# It would be best to build both the debug and non-debug library versions, and that's probably what
+# GCC's "multilib" support is all about, but I haven't figured it out yet.
+
+ifeq ($(origin ENABLE_DEBUG_TOOLCHAIN), undefined)
+  ENABLE_DEBUG_TOOLCHAIN := 0
+endif
+
+ifeq ($(origin TOOLCHAIN_TARGET_CPU), undefined)
+  TOOLCHAIN_TARGET_CPU := cortex-m3
+endif
+
 
 # ------- Miscellaneous definitions -------
-
-# This accelerates makefile execution, but may not be compatible with all makefiles.
-SUBMAKE_FLAGS := --no-builtin-variables
 
 verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
 verify_dir_does_not_exist = $(if $(shell if [ -d "$(1)" ]; then echo exists; fi),$(error Directory "$(1)" already exists, but it should not at this point.))
@@ -22,7 +35,10 @@ SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 # Targets 'help' and 'clean' do not build, all other targets (usually 'all') do build.
 TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
-ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
+ifeq ($(strip $(MAKECMDGOALS)),)
+  # The default target is 'help'
+  IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
 else ifneq ($(filter $(TARGET_NAME_CLEAN), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
@@ -67,23 +83,58 @@ endif
 
 COMMON_CFLAGS :=
 
+
+# --- Debug oder Release Toolchain.
+
+ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 0)
+  COMMON_CFLAGS += -g -O3
+  ifeq ($(IS_BUILDING),1)
+    $(info Building a release (non-debug) toolchain.)
+  endif
+else ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 1)
+  COMMON_CFLAGS += -g -Og -DDEBUG
+  ifeq ($(IS_BUILDING),1)
+    $(info Building a debug toolchain.)
+  endif
+else
+  $(error Variable ENABLE_DEBUG_TOOLCHAIN has invalid value "$(ENABLE_DEBUG_TOOLCHAIN)")
+endif
+
+
+# --- Target CPU.
+
+ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m3)
+  COMMON_CFLAGS += -mcpu=cortex-m3 -mthumb
+  GCC_FLOATING_POINT_FLAGS := --without-fp --with-float=soft
+else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m4f)
+  COMMON_CFLAGS += -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+  GCC_FLOATING_POINT_FLAGS := # No flags needed here.
+else
+  $(error Variable TOOLCHAIN_TARGET_CPU has invalid value "$(TOOLCHAIN_TARGET_CPU)")
+endif
+
+ifeq ($(IS_BUILDING),1)
+  $(info Building toolchain for CPU: $(TOOLCHAIN_TARGET_CPU).)
+endif
+
+
+# --- Other flags.
+
 # Frame pointers are generally useful in order to investigate crash dumps or to debug an optimised build.
 # They do cost a little in terms of stack space, code space and performance, though.
-COMMON_CFLAGS += -g -Os -fno-omit-frame-pointer
+COMMON_CFLAGS += -fno-omit-frame-pointer
 COMMON_CFLAGS += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
 COMMON_CFLAGS += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
-COMMON_CFLAGS += -mcpu=cortex-m3 -mthumb
-
 # I did one quick test, and enabling exceptions here did not add any code when building the toolchain with -Os
-# and the application without exceptions enabled. Therefore, I am leaving exceptions enabled here until
-# the other investigations about C++ exceptions at application level are complete.
+# and the application without exceptions enabled. Therefore, I am leaving exceptions enabled here
+# even though the application might never not use them.
 #   COMMON_CFLAGS += -fno-exceptions
 
 
 # ------- Binutils flags -------
 
-BINUTILS_VERSION := 2.23.1
+BINUTILS_VERSION := 2.24
 BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.bz2
@@ -96,7 +147,7 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 
 # ------- GCC flags -------
 
-GCC_VERSION := 4.7.3
+GCC_VERSION := 4.8.2
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -119,7 +170,7 @@ COMMON_GCC_OPTIONS += --config-cache
 COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 
 COMMON_GCC_OPTIONS += --target=$(ARM_TARGET)
-COMMON_GCC_OPTIONS += --without-fp --with-float=soft
+COMMON_GCC_OPTIONS += $(GCC_FLOATING_POINT_FLAGS)
 
 COMMON_GCC_OPTIONS += --disable-nls
 COMMON_GCC_OPTIONS += --disable-shared
@@ -133,19 +184,15 @@ COMMON_GCC_OPTIONS += --disable-fixed-point    # May not be necessary.
 COMMON_GCC_OPTIONS += --enable-threads=single
 
 COMMON_GCC_OPTIONS += --with-newlib
+COMMON_GCC_OPTIONS += --disable-libstdcxx-verbose
 COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
 COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
 
-# This patch emulates GCC 4.8.0's new configuration switch --disable-libstdcxx-verbose in the 4.7.2 version.
-# Command to create the patch:
-#  diff -u "libstdc++-v3/libsupc++/eh_term_handler.cc.old" "libstdc++-v3/libsupc++/eh_term_handler.cc" >$"../../gcc-disable-libstdcxx-verbose.patch"
-PATCH_GCC_EXCEP_VERBOSE := $(THIS_MAKEFILE_DIR)/gcc-disable-libstdcxx-verbose.patch
-
 
 # ------- Newlib flags -------
 
-NEWLIB_VERSION := 1.20.0
+NEWLIB_VERSION := 2.0.0
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
@@ -166,7 +213,7 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 # ------- GDB flags -------
 
-GDB_VERSION := 7.5.1
+GDB_VERSION := 7.6.2
 GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.bz2
@@ -213,14 +260,14 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
 	echo "Building binutils ..." && \
 	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" $(SUBMAKE_FLAGS) && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
 	echo "The binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
 	echo "The binutils build has finished."
 
 $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo "Installing binutils ..." && \
 	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" $(SUBMAKE_FLAGS) install && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" install && \
 	echo "The binutils install has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
 	echo "The binutils install has finished."
 
@@ -232,10 +279,6 @@ $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf "$(GCC_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfj "$(TAR_FILES_DIR)/$(GCC_TAR_FILE)" && \
-	popd >/dev/null && \
-	pushd "$(GCC_SRC_DIR)" >/dev/null && \
-	echo "Applying patch \"$(PATCH_GCC_EXCEP_VERBOSE)\" ..." && \
-    patch -p0 --forward <"$(PATCH_GCC_EXCEP_VERBOSE)" && \
 	popd >/dev/null && \
 	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
 	echo "Unpacking GCC finished."
@@ -261,7 +304,7 @@ $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	echo "Building GCC phase 1 ..." && \
     export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
     PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC1_OBJ_DIR)" $(SUBMAKE_FLAGS) all-gcc && \
+      $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
     echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
     echo "The GCC phase 1 build has finished."
 
@@ -269,7 +312,7 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 	echo "Installing GCC phase 1 ..." && \
     export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
     PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC1_OBJ_DIR)" $(SUBMAKE_FLAGS) install-gcc && \
+      $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
     echo "The GCC phase 1 install has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
     echo "The GCC phase 1 install has finished."
 
@@ -340,9 +383,6 @@ $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	popd >/dev/null && \
 	echo "The binutils config has finished."
 
-# Note that newlib's libgloss makefile is not compatible with switch '--no-builtin-variables',
-# so we cannot pass SUBMAKE_FLAGS here.
-
 $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
 	echo "Building newlib ..." && \
     export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
@@ -355,7 +395,7 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	echo "Installing newlib ..." && \
     export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
     PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" $(SUBMAKE_FLAGS) install && \
+      $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" install && \
     echo "The newlib install has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
     echo "The newlib install has finished."
 
@@ -382,8 +422,7 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
     export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-        CFLAGS_FOR_TARGET="$(GCC_CFLAGS)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS)" \
-        $(SUBMAKE_FLAGS) && \
+        CFLAGS_FOR_TARGET="$(GCC_CFLAGS)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS)" && \
     echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
     echo "The GCC phase 2 build has finished."
 
@@ -395,7 +434,7 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo "Installing GCC phase 2 ..." && \
     export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
     PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC2_OBJ_DIR)" $(SUBMAKE_FLAGS) install && \
+      $(MAKE) -C "$(GCC2_OBJ_DIR)" install && \
     echo "The GCC phase 2 install has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
     echo "The GCC phase 2 install has finished."
 
@@ -425,9 +464,6 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	popd >/dev/null && \
 	echo "The GDB config has finished."
 
-# Note that GDB's makefile is not compatible with switch '--no-builtin-variables',
-# so we cannot pass SUBMAKE_FLAGS here.
-
 $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	echo "Building GDB ..." && \
 	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
@@ -438,7 +474,7 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "Installing GDB ..." && \
 	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
-	$(MAKE) -C "$(GDB_OBJ_DIR)" $(SUBMAKE_FLAGS) install && \
+	$(MAKE) -C "$(GDB_OBJ_DIR)" install && \
 	echo "The GDB install has finished." >"$(GDB_INSTALL_SENTINEL)" && \
 	echo "The GDB install has finished."
 
@@ -452,7 +488,7 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 $(TARGET_NAME_HELP):
 	@echo
 	@echo "This makefile builds a GCC/newlib toolchain for a 'bare metal' programming environment for the Arduino Due."
-	@echo "A small patch is applied in order to emulate GCC 4.8.0's --disable-libstdcxx-verbose switch with GCC 4.7.x ."
+	@echo "Other CPUs are supported, search for TOOLCHAIN_TARGET_CPU in the makefile for details."
 	@echo
 	@echo "Before running the makefile, you need to do the following:"
 	@echo
@@ -462,17 +498,26 @@ $(TARGET_NAME_HELP):
 	@echo "     $(NEWLIB_TAR_FILE)"
 	@echo "     $(GDB_TAR_FILE)"
 	@echo
-	@echo "2) Set environment variable CROSS_TOOLCHAIN_DIR to some target directory of your choice where"
+	@echo "2) Set variable CROSS_TOOLCHAIN_DIR to some target directory of your choice where"
 	@echo "   the toolchain will be placed. For example: export CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain\""
+	@echo "   Alternatively, you can set this variable as a make argument, see below for an example."
 	@echo
-	@echo "3) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
-	@echo "   You will probably need to install the 'devel' versions of those packages."
+	@echo "3) Optionally set variable ENABLE_DEBUG_TOOLCHAIN to '1' in order to build a debug toolchain."
+	@echo "   This enables debug code in newlib's malloc implementation, for example."
+	@echo "   You can compile debug builds with a non-debug toolchain, but the libraries that the toolchain"
+	@echo "   provides (such as newlib) will be linked in as non-debug versions."
 	@echo
-	@echo "4) If you have already run this makefile in the past, you will have to delete"
+	@echo "4) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
+	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally "
+	@echo "   find such libraries in your Linux distribution's repository."
+	@echo
+	@echo "5) If you have already run this makefile in the past, you will have to delete"
 	@echo "   the Tmp subdirectory beforehand."
 	@echo
 	@echo "The recommended way to run this makefile is:"
-	@echo "  make --no-builtin-variables --warn-undefined-variables  -j \$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))  all"
+	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))  all"
+	@echo "You can set optional variables like this:"
+	@echo "  make  TOOLCHAIN_TARGET_CPU=cortex-m4f  ENABLE_DEBUG_TOOLCHAIN=1  ...etc..."
 	@echo
 
 all: $(GDB_INSTALL_SENTINEL)
