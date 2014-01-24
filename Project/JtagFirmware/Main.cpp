@@ -212,6 +212,7 @@ static void Configure ( void )
     const uint32_t wdp_mode = wdp_ms           |  // Field WDV.
                               ( wdp_ms << 16 ) |  // Field WDD.
                               WDT_MR_WDDBGHLT  |  // Otherwise, debugging over JTAG is impossible.
+                                                  // Alternatively, you could automate setting this flag in your GDB connection script.
                               WDT_MR_WDRSTEN;
     WDT->WDT_MR = wdp_mode;
   }

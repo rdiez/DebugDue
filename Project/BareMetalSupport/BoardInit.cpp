@@ -150,9 +150,9 @@ static void SetupCpuClock ( void )
 
     // You can check the Main Clock frequency by reading the CKGR_MCFR register like this:
     //   const uint16_t measuredMainClockFreqIn16SlowClockCycles = PMC->CKGR_MCFR & CKGR_MCFR_MAINF_Msk;
-    // On the Arduino Due, the crystal oscillator freq. is 12 MHz, and the Slow Clocks runs at 32 KHz,
+    // On the Arduino Due, the crystal oscillator freq. is 12 MHz, and the Slow Clock runs at 32 KHz,
     // that would be 375 Main Clock ticks for every Slow Clock tick.
-    // In 16 Slow Clocks ticks, we have 6000 Main Clock ticks then. On my board, the value read
+    // In 16 Slow Clock ticks, we have 6000 Main Clock ticks then. On my board, the value read
     // is 6601, which is around 10 % off.
 }
 

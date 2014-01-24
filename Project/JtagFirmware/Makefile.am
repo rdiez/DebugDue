@@ -136,10 +136,9 @@ jtagdue_elf_LDFLAGS += -Wl,--warn-common -Wl,--warn-section-align
 jtagdue_elf_LDFLAGS += -Wl,-Map,$(MAP_FILENAME)
 jtagdue_elf_LDFLAGS += -Wl,--cref  # Output a cross reference table, which will land in the map file.
 
-
-# The --entry switch below may well prevent the entry function from getting discarded, and is used by GDB too.
-# However, the CPU itself only looks at the vector table. Therefore, if you change the entry point,
-# make sure to update the vector table too.
+# Make sure that the vector table gets linked in by referencing the file that contains it.
+# The entry point is used by GDB. Note that the CPU itself only looks at the vector table,
+# so the entry point should match the reset vector.
 jtagdue_elf_LDFLAGS += -Wl,--entry=BareMetalSupport_Reset_Handler
 
 

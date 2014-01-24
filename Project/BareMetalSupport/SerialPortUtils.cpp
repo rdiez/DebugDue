@@ -42,7 +42,7 @@ void InitSerialPort ( const bool enableRxInterrupt )
 
   VERIFY( 0 == pmc_enable_periph_clk( ID_UART ) );
 
-  // Disable PDC channel
+  // Disable any receive and transmit transfers on the UART channel of the Peripheral DMA Controller (PDC).
   UART->UART_PTCR = UART_PTCR_RXTDIS | UART_PTCR_TXTDIS;
 
   // Reset and disable receiver and transmitter
