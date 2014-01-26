@@ -18,8 +18,16 @@ However, the POD syntax is quite simple and can be edited with a standard text e
 
 =head1 JtagDue Project
 
-The main goal of this project is to provide an up-to-date, comfortable bare-metal C++
-programming environment for the Arduino Due, with the following features:
+The main goal of this project is to provide an up-to-date, comfortable B<bare-metal C++
+programming environment> for the Arduino Due and, in the future, for similar boards.
+
+A secondary goal is to convert the Arduino Due into a B<JTAG adapter>
+by emulating a I<Bus Pirate> from L<< Dangerous Prototypes|http://dangerousprototypes.com/ >> ,
+so that it is compatible with L<< OpenOCD|http://openocd.sourceforge.net/ >> .
+
+=head2 About the Bare Metal C++ Environment
+
+The bare metal programming environment has the following features:
 
 =over
 
@@ -37,25 +45,25 @@ There are no OS background tasks or threads to worry about.
 
 =item * Debug console.
 
-Useful generic commands have been implemented: memory usage, CPU load in the last 60 seconds, compiler version used to build, last reset cause, uptime.
+Some useful generic commands are available: memory usage, CPU load in the last 60 seconds, compiler version used to build, last reset cause, uptime display, etc.
 
 =item * Library of common functions.
 
-Most basic functions you need to get started have been implemted: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, circular buffer, etc.
+Most basic functions you need to get started have been implemented: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, a template-based circular buffer implementation, etc.
 
-=item * Start-up delay for easy JTAG debugging right after reset.
+=item * Start-up delay for easy JTAG debugging right after reset. This is useful for JTAG probes that do not support the RCLK signal (adaptive clock speed).
 
-=item * Firmware cross-compiled with the standard autotools.
+=item * Firmware cross-compiled with the standard GCC and autotools.
 
 =back
 
-A secondary goal is to convert the Arduino Due into an OpenOCD JTAG adapter
-by emulating a Bus Pirate from Dangerous Prototypes.
+=head2 About the JTAG Functionality
+
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
 
-I made a quick test, and GDB's 'load' command reports a transfer rate of 85 KiB/s with the JtagDue firmware,
+I made a quick test, and GDB's 'load' command reports a transfer rate of 85 KiB/s with the JtagDue firmware when programming a second JtagDue board,
 compared to 8 KiB/s with the Bus Pirate. Note that I had to manually patch OpenOCD 0.8.0 as of May 2013 in order
-for setting "buspirate_speed fast" to work, otherwise you have to revert back to "buspirate_speed normal",
+for setting "buspirate_speed fast" to work with the Bus Pirate board, otherwise you have to revert back to "buspirate_speed normal",
 and then you get just 1 KiB/s with the Bus Pirate. If you modify OpenOCD to use bigger USB packets,
 you can reach 100 KiB/s with the JtagDue.
 
@@ -74,7 +82,7 @@ This means there is no JTAG adaptive clocking support either.
 =item * The JTAG signals are driven by software and their timings are not clean.
 
 For example, TCK does not stay 50 % of the time high.
-The lowest-level JTAG bit shifting routine should be written in assembly, help in this area would be appreciated.
+The lowest-level JTAG bit shifting routine should be rewritten in assembly. Help in this area would be appreciated.
 
 =item * The Arduino Due pull-ups are too weak to be of any use, see comments about setting 'buspirate_pullup' below.
 
