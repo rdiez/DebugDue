@@ -250,7 +250,7 @@ void SerialPortAsyncTxInterruptHandler ( void )
 
   if ( s_serialPortTxBuffer.IsEmpty() )
   {
-    uart_disable_interrupt( UART, UART_IER_TXRDY );
+    uart_disable_interrupt( UART, UART_IDR_TXRDY );
   }
 
   UART->UART_THR = c;
