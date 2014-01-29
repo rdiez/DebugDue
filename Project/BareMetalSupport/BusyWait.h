@@ -45,7 +45,7 @@ inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
 
   const uint32_t BUSY_WAIT_LOOP_ITER_PER_CLK_TICK = 3;
 
-  const uint32_t res = UsToSysTickCount( timeInUs ) / BUSY_WAIT_LOOP_ITER_PER_CLK_TICK;
+  const uint32_t res = UsToCpuClockTickCount( timeInUs ) / BUSY_WAIT_LOOP_ITER_PER_CLK_TICK;
 
   assert( res > 0 );
 

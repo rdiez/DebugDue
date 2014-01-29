@@ -67,7 +67,7 @@ inline uint32_t SysTickCountToUs ( const uint32_t sysTickClockTickCount )
 }
 
 
-inline uint32_t UsToSysTickCount ( const uint32_t timeInUs )
+inline uint32_t UsToCpuClockTickCount ( const uint32_t timeInUs )
 {
   // Avoid using variable SystemCoreClock here. It is slower, and this routine
   // is also called very early on start-up, where SystemCoreClock is not yet set.
