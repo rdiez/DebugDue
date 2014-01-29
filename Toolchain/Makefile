@@ -192,7 +192,7 @@ COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC
 
 # ------- Newlib flags -------
 
-NEWLIB_VERSION := 2.0.0
+NEWLIB_VERSION := 2.1.0
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
