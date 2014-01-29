@@ -136,6 +136,14 @@ That means an increase of 9,152 bytes the first time you touch a printf-style fu
 
 =head1 Installation Instructions
 
+=head2 Installing a binary file
+
+Pre-built binary files are available in a separate repository at L<< https://github.com/rdiez/JtagDueBinaries >> .
+These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
+in order to flash a pre-built binary file.
+
+=head2 Building by hand
+
 =over
 
 =item 1) Build the toolchain.
@@ -164,7 +172,9 @@ Change to the 'Toolchain' subdirectory and type "make help" for more information
 
 =item 4) Flash the new firmware.
 
-You will need the Bossac tool in order to download the firmware into the Arduino Due.
+First of all, plug the USB cable into the Arduino Due's "programming" USB socket (as opposed to the "native" socket).
+
+You will need the I<< Bossac >> tool in order to download the firmware into the Arduino Due.
 The easiest way to get it is probably to install the official Arduino software environment.
 Usage example for Linux:
 
@@ -294,6 +304,8 @@ The only LED on the Arduino Due is used as a heartbeat indicator at the moment.
 =over
 
 =item * Version 1.0.0, released on 11 may 2013, git tag "v1.0.0". First public version.
+
+=item * Version 1.1.2, released on 29 june 2014, git tag "v1.1.2". General improvement.
 
 =back
 
