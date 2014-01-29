@@ -61,13 +61,17 @@ Most basic functions you need to get started have been implemented: Busy wait lo
 
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
 
-I made a quick test, and GDB's 'load' command reports a transfer rate of 85 KiB/s with the JtagDue firmware when programming a second JtagDue board,
-compared to 8 KiB/s with the Bus Pirate. Note that I had to manually patch OpenOCD 0.8.0 as of May 2013 in order
-for setting "buspirate_speed fast" to work with the Bus Pirate board, otherwise you have to revert back to "buspirate_speed normal",
-and then you get just 1 KiB/s with the Bus Pirate. If you modify OpenOCD to use bigger USB packets,
-you can reach 100 KiB/s with the JtagDue.
+I made a quick test, and GDB's 'load' command reports a transfer rate of 24 KiB/s with the JtagDue firmware (release build)
+when programming a second JtagDue board, compared to 8 KiB/s with the Bus Pirate. When programming an STM32429I-EVAL1 evaluation board,
+which has an STM32F429 microcontroller, GDB reports 31 KiB/s compared to 24 KiB/s with its built-in SWD adapter,
+and I have obtained rates of around 84 KiB/s with an Atmel AT91SAM9G20-EK board when writing to SDRAM instead of Flash.
 
-The JTAG features with the JtagDue firmware on the Arduino Due are severely limited though:
+Note that I had to manually patch OpenOCD 0.8.0 as of May 2013 in order
+for setting "buspirate_speed fast" to work with the Bus Pirate board, otherwise you have to revert back to "buspirate_speed normal",
+and then you get just 1 KiB/s when using the Bus Pirate as a JTAG adapter. If you modify OpenOCD in order to use bigger USB packets,
+you can reach slightly higher speeds with the JtagDue.
+
+There are some caveats when using the Arduino Due with the JtagDue firmware as a JTAG adapter:
 
 =over
 
@@ -161,10 +165,10 @@ Change to the 'Toolchain' subdirectory and type "make help" for more information
 =item 4) Flash the new firmware.
 
 You will need the Bossac tool in order to download the firmware into the Arduino Due.
-The easiest way to get it is probably to install the Arduino software environment.
-Usage example:
+The easiest way to get it is probably to install the official Arduino software environment.
+Usage example for Linux:
 
-  bossac --port=ttyACM0 --force_usb_port=false --write "filename.bin" --boot=1 --reset
+  stty -F /dev/ttyACM0 1200 && bossac --port=ttyACM0 --force_usb_port=false --verify --write "filename.bin" --boot=1 --reset
 
 Alternatively, you could use the Arduino Due's JTAG port to download the firmware with GDB,
 but then you need some other JTAG adapter. I have used the Bus Pirate for that purpose.
@@ -232,18 +236,24 @@ Restarting udev with "sudo restart udev" should not be necessary for the new rul
 You can see the JTAG signal pin numbers on the Arduino Due and their current state (as if they all were inputs)
 with command "JtagPins". This is the kind of output generated:
 
+  Input status of all JTAG pins:
   TDI   (pin 42): high  |  GND2  (pin 43): low
    -    (pin 44):  -    |  nTRST (pin 45): high
   TMS   (pin 46): high  |  nSRST (pin 47): high
   TDO   (pin 48): high  |  VCC   (pin 49): high
   TCK   (pin 50): high  |  GND1  (pin 51): low
 
-This is the same pin layout as the 10-pin Altera USB Blaster connector, with some
+That is the same pin layout as the 10-pin Altera USB Blaster connector, with some
 Atmel additions from the AVR JTAG header. Pin 1 on the USB Blaster (TCK) corresponds
 then to pin 50 on the Arduino Due.
 
 With the command above you can also verify that at least the ground signals (GND1 and GND2)
 are low and the VCC signal is high after connecting the JTAG cable.
+
+In contrast to the Bus Pirate, the Arduino Due has no analog switch chip on board,
+so the VCC, GND1 and GND2 signals are _not_ used as reference voltages when driving the JTAG interface.
+You need to make sure beforehand that the voltage levels are the same on both the Arduino Due and
+the JTAG target board.
 
 =item 8) Connect to the JtagDue with OpenOCD.
 
