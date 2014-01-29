@@ -1,7 +1,7 @@
 
 # Copyright (C) 2012-2014 R. Diez - see the JtagDue project for licensing information.
 
-AC_INIT([arduino-due-native-usb-speed-test],[1.1.0])
+AC_INIT([arduino-due-native-usb-speed-test],[1.1.2])
 AC_PREREQ([2.65])  # Tested mainly with version 2.68.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
@@ -86,7 +86,7 @@ CCASFLAGS+=" $DEBUG_FLAGS"
 
 AC_ARG_WITH(atmel-software-framework,
 [AS_HELP_STRING([--with-atmel-software-framework=PATH],
-		[specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.7.3.69".])])
+		[specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.14.0.86".])])
 
 if test "x$with_atmel_software_framework" == x; then
   AC_MSG_ERROR([Please specify the --with-atmel-software-framework=PATH configuration switch])
