@@ -150,7 +150,8 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 
 # ------- GCC flags -------
 
-GCC_VERSION := 4.8.2
+# Tested with GCC version 4.8.3 too.
+GCC_VERSION := 4.9.1
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -216,10 +217,10 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 # ------- GDB flags -------
 
-GDB_VERSION := 7.6.2
+GDB_VERSION := 7.8
 GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
-GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.bz2
+GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
 
 GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 GDB_MAKEFILE := $(GDB_OBJ_DIR)/Makefile
@@ -241,7 +242,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(BINUTILS_TAR_FILE) ..." && \
 	if [ -d "$(BINUTILS_SRC_DIR)" ]; then rm -rf "$(BINUTILS_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfj "$(TAR_FILES_DIR)/$(BINUTILS_TAR_FILE)" && \
+	tar xfa "$(TAR_FILES_DIR)/$(BINUTILS_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
 	echo "Unpacking binutils finished."
@@ -281,7 +282,7 @@ $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(GCC_TAR_FILE) ..." && \
 	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf "$(GCC_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfj "$(TAR_FILES_DIR)/$(GCC_TAR_FILE)" && \
+	tar xfa "$(TAR_FILES_DIR)/$(GCC_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
 	echo "Unpacking GCC finished."
@@ -326,7 +327,7 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(NEWLIB_TAR_FILE) ..." && \
 	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf "$(NEWLIB_UNTAR_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfz "$(TAR_FILES_DIR)/$(NEWLIB_TAR_FILE)" && \
+	tar xfa "$(TAR_FILES_DIR)/$(NEWLIB_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
 	echo "Unpacking newlib finished."
@@ -448,7 +449,7 @@ $(GDB_UNTAR_SENTINEL): $(GCC2_INSTALL_SENTINEL)
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
 	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf "$(GDB_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfj "$(TAR_FILES_DIR)/$(GDB_TAR_FILE)" && \
+	tar xfa "$(TAR_FILES_DIR)/$(GDB_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
 	echo "Unpacking GDB finished."
