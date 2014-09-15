@@ -516,8 +516,8 @@ $(TARGET_NAME_HELP):
 	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally "
 	@echo "   find such libraries in your Linux distribution's repository."
 	@echo
-	@echo "5) If you have already run this makefile in the past, you will have to delete"
-	@echo "   the Tmp subdirectory beforehand."
+	@echo "5) If you have already run this makefile in the past, you will have to delete or rename"
+	@echo "   the Tmp subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
 	@echo
 	@echo "The recommended way to run this makefile is:"
 	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))  all"
@@ -526,16 +526,16 @@ $(TARGET_NAME_HELP):
 	@echo
 
 all: $(GDB_INSTALL_SENTINEL)
-	echo "Toolchain installed in $(CROSS_TOOLCHAIN_DIR)"
+	@echo "Toolchain installed in $(CROSS_TOOLCHAIN_DIR)"
 
 # This 'clean' rule does not delete the toolchain bin directory (variable CROSS_TOOLCHAIN_DIR),
 # the user has to delete it manually. I'm not sure whether that is a good idea or not,
 # but a toolchain takes long to build and the user may want to save it in case the new one
 # does not work correctly.
 $(TARGET_NAME_CLEAN):
-	@echo "Deleting directory \"$(TOOLCHAIN_OBJ_DIR)\"..." && \
-	if [ -d "$(TOOLCHAIN_OBJ_DIR)" ]; then rm -rf "$(TOOLCHAIN_OBJ_DIR)"; fi && \
-	echo "Finished. You may want to delete the toolchain directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
+	@echo "Deleting directory \"$(TOOLCHAIN_OBJ_DIR)\"..."
+	@if [ -d "$(TOOLCHAIN_OBJ_DIR)" ]; then rm -rf "$(TOOLCHAIN_OBJ_DIR)"; fi
+	@echo "Finished. You may want to delete the toolchain directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
 
 
 GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
