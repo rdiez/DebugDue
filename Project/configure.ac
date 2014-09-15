@@ -2,13 +2,13 @@
 # Copyright (C) 2012-2014 R. Diez - see the JtagDue project for licensing information.
 
 AC_INIT([arduino-due-native-usb-speed-test],[1.1.2])
-AC_PREREQ([2.65])  # Tested mainly with version 2.68.
+AC_PREREQ([2.65])  # Tested mainly with version 2.69.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
                    # see the toolchain makefile for more information about why this is needed. Short version:
                    # libgloss was not adapted for our board, so the toolchain alone cannot build executables.
 
-AM_INIT_AUTOMAKE([-Wall -Werror])
+AM_INIT_AUTOMAKE([-Wall])
 LT_INIT
 
 # Use "make V=1" in order to see the gcc command-lines during compilation.
@@ -176,7 +176,7 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wlogical-op"
 EXTRA_C_AND_CXX_FLAGS+=" -Wunsafe-loop-optimizations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wstack-protector"
 EXTRA_C_AND_CXX_FLAGS+=" -Wbuiltin-macro-redefined"
-EXTRA_C_AND_CXX_FLAGS+=" -Wmudflap"
+# EXTRA_C_AND_CXX_FLAGS+=" -Wmudflap"  # Not available from GCC version 4.9.
 EXTRA_C_AND_CXX_FLAGS+=" -Wabi"
 EXTRA_C_AND_CXX_FLAGS+=" -Wcpp"
 EXTRA_C_AND_CXX_FLAGS+=" -Wendif-labels"
