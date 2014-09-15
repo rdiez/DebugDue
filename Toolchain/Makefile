@@ -35,12 +35,15 @@ SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 # Targets 'help' and 'clean' do not build, all other targets (usually 'all') do build.
 TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
+TARGET_NAME_DOWNLOAD_TARBALLS := download-tarballs
 ifeq ($(strip $(MAKECMDGOALS)),)
   # The default target is 'help'
   IS_BUILDING := 0
 else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
 else ifneq ($(filter $(TARGET_NAME_CLEAN), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
 else
   IS_BUILDING := 1
@@ -490,9 +493,10 @@ $(TARGET_NAME_HELP):
 	@echo "This makefile builds a GCC/newlib toolchain for a 'bare metal' programming environment for the Arduino Due."
 	@echo "Other CPUs are supported, search for TOOLCHAIN_TARGET_CPU in the makefile for details."
 	@echo
-	@echo "Before running the makefile, you need to do the following:"
+	@echo "Before building the toolchain with this makefile, you need to do the following:"
 	@echo
-	@echo "1) Manually download the following files and place them in the Tarballs subdirectory:"
+	@echo "1) Run this makefile for target '$(TARGET_NAME_DOWNLOAD_TARBALLS)'. Alternatively,"
+	@echo "   manually download the following files and place them in the Tarballs subdirectory:"
 	@echo "     $(BINUTILS_TAR_FILE)"
 	@echo "     $(GCC_TAR_FILE)"
 	@echo "     $(NEWLIB_TAR_FILE)"
@@ -531,3 +535,13 @@ $(TARGET_NAME_CLEAN):
 	@echo "Deleting directory \"$(TOOLCHAIN_OBJ_DIR)\"..." && \
 	if [ -d "$(TOOLCHAIN_OBJ_DIR)" ]; then rm -rf "$(TOOLCHAIN_OBJ_DIR)"; fi && \
 	echo "Finished. You may want to delete the toolchain directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
+
+
+GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
+
+$(TARGET_NAME_DOWNLOAD_TARBALLS):
+	./DownloadTarball.sh "$(GNU_MIRROR_BASE_URL)/binutils/$(BINUTILS_TAR_FILE)"           "$(TAR_FILES_DIR)"
+	./DownloadTarball.sh "$(GNU_MIRROR_BASE_URL)/gcc/gcc-$(GCC_VERSION)/$(GCC_TAR_FILE)"  "$(TAR_FILES_DIR)"
+	./DownloadTarball.sh "$(GNU_MIRROR_BASE_URL)/gdb/$(GDB_TAR_FILE)"                     "$(TAR_FILES_DIR)"
+	./DownloadTarball.sh "ftp://sourceware.org/pub/newlib/$(NEWLIB_TAR_FILE)"             "$(TAR_FILES_DIR)"
+	@echo "Finished downloading tarballs."
