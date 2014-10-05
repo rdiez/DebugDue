@@ -9,6 +9,12 @@ AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C com
                    # libgloss was not adapted for our board, so the toolchain alone cannot build executables.
 
 AM_INIT_AUTOMAKE([-Wall])
+
+# Note that libtool (as of libtoolize 2.4.2) may generate spurious warning "configure: WARNING: using cross tools not prefixed with host triplet"
+# if you have a tool called "mt" on your system (which probably gets installed with Ubuntu package 'cpio').
+# I have reported this on the libtool mailing list:
+#   Thread title: "configure: WARNING: using cross tools not prefixed with host triplet"
+#   Thread URL:   http://lists.gnu.org/archive/html/libtool/2014-09/msg00008.html
 LT_INIT
 
 # Use "make V=1" (and remove the '-s' flag) in order to see the GCC command lines during compilation.
