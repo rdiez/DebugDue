@@ -66,14 +66,21 @@
 
 
 // Panic support.
+//
+// These routines are extern "C" so that they can be called from C-only code you may be using.
+// For example, the lwIP library has its own assert symbol that you can customize so that
+// it calls Panic() below, but the library compiles in C mode.
 
-typedef void (*UserPanicMsgFunction) ( const char * msg );
+extern "C"
+{
+  typedef void (*UserPanicMsgFunction) ( const char * msg );
 
-void SetUserPanicMsgFunction ( UserPanicMsgFunction functionPointer ) throw();
+  void SetUserPanicMsgFunction ( UserPanicMsgFunction functionPointer );
 
-void Panic ( const char * msg ) throw() __attribute__ ((__noreturn__));
+  void Panic ( const char * msg ) __attribute__ ((__noreturn__));
 
-void ForeverHangAfterPanic ( void ) throw() __attribute__ ((__noreturn__));
+  void ForeverHangAfterPanic ( void ) __attribute__ ((__noreturn__));
+};
 
 
 #endif  // Include this header file only once.

@@ -28,13 +28,13 @@
 
 static UserPanicMsgFunction s_UserPanicMsgFunction = NULL;
 
-void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer ) throw()
+void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer )
 {
     s_UserPanicMsgFunction = functionPointer;
 }
 
 
-void Panic ( const char * const msg ) throw()
+void Panic ( const char * const msg )
 {
     __disable_irq();
 
@@ -53,7 +53,7 @@ void Panic ( const char * const msg ) throw()
 }
 
 
-void ForeverHangAfterPanic ( void ) throw()
+void ForeverHangAfterPanic ( void )
 {
     // Forever hang.
     for ( ; ; )
