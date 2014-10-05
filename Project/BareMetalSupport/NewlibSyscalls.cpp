@@ -26,11 +26,11 @@ extern "C" void _exit( int status ) ;
 extern "C" void _kill( int pid, int sig ) ;
 extern "C" int _getpid ( void ) ;
 extern "C" caddr_t _sbrk( int incr ) ;
-extern "C" int _write( int file, char *ptr, int len ) ;
 
 /* We should not need any of these. If you get linker errors about them, you are probably trying to use
    some C runtime library function that is not supported on our 'bare metal' environment.
 
+extern "C" int _write( int file, char *ptr, int len ) ;
 extern "C" int link( char *cOld, char *cNew ) ;
 extern "C" int _close( int file ) ;
 extern "C" int _fstat( int file, struct stat *st ) ;
@@ -92,8 +92,6 @@ int _read ( int file, char *ptr, int len )
 {
     return 0 ;
 }
-*/
-
 
 int _write ( int file, char *ptr, int len )
 {
@@ -106,6 +104,7 @@ int _write ( int file, char *ptr, int len )
     Panic("_write() called.");
     return -1;
 }
+*/
 
 
 void _exit ( int status )
