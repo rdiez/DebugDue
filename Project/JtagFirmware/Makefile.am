@@ -120,6 +120,8 @@ jtagdue_elf_SOURCES += $(BARE_METAL_SUPPORT_DIR)/NewlibSyscalls.cpp
 jtagdue_elf_SOURCES += $(BARE_METAL_SUPPORT_DIR)/crt0.cpp
 
 
+LINKER_SCRIPT_FILENAME := $(BARE_METAL_SUPPORT_DIR)/flash.ld
+
 # Note that the linking order is important here: if library libfoo.a has an undefined symbol,
 # and that symbol is in libbar.a, you need to put libfoo.a before libbar.a on the command line.
 
@@ -129,7 +131,7 @@ jtagdue_elf_LDADD = ../BareMetalSupport/libbare_metal_support.a \
 
 jtagdue_elf_LDFLAGS =
 
-jtagdue_elf_LDFLAGS += -Wl,-T$(BARE_METAL_SUPPORT_DIR)/flash.ld
+jtagdue_elf_LDFLAGS += -Wl,-T$(LINKER_SCRIPT_FILENAME)
 
 jtagdue_elf_LDFLAGS += -Wl,--gc-sections
 jtagdue_elf_LDFLAGS += -Wl,--warn-common -Wl,--warn-section-align
@@ -140,6 +142,8 @@ jtagdue_elf_LDFLAGS += -Wl,--cref  # Output a cross reference table, which will 
 # The entry point is used by GDB. Note that the CPU itself only looks at the vector table,
 # so the entry point should match the reset vector.
 jtagdue_elf_LDFLAGS += -Wl,--entry=BareMetalSupport_Reset_Handler
+
+$(ELF_FILENAME): $(LINKER_SCRIPT_FILENAME)
 
 
 # ------------------------------------
