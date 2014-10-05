@@ -54,3 +54,7 @@ libbare_metal_support_a_SOURCES := \
 # File crt0.o gets automatically added to the list of object files to link, and
 # apparently it is not enough for file crt0.cpp to be in this library.
 # Therefore, your main project must compile crt0.cpp itself from this directory.
+
+
+libbare_metal_support_a_CPPFLAGS := $(CMSIS_INCLUDES)
+libbare_metal_support_a_CPPFLAGS += $(ASF_INCLUDES)

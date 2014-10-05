@@ -27,7 +27,7 @@
 #include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/SerialPrint.h>
 
-#include "ConfigFilesForLibsam/my_usb_callbacks.h"
+#include "my_usb_callbacks.h"
 
 #include "Globals.h"
 

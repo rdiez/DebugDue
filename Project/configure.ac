@@ -1,7 +1,7 @@
 
 # Copyright (C) 2012-2014 R. Diez - see the JtagDue project for licensing information.
 
-AC_INIT([arduino-due-native-usb-speed-test],[1.1.2])
+AC_INIT([arduino-due-native-usb-speed-test],[1.1.3])
 AC_PREREQ([2.65])  # Tested mainly with version 2.69.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
@@ -139,7 +139,7 @@ EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
 # Needed by NewlibSyscalls.cpp.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
-# Needed by the Atmel Software Framework.
+# Needed by the Atmel Software Framework library.
 EXTRA_CPP_FLAGS+=" -DCPU_CLOCK=84000000"
 
 # I had problems building some files in the Atmel Software Framework version 3.7.3.69
@@ -205,36 +205,6 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_list' has changed in GCC 4.4".
                                       # I do not know yet if this warning should be taken seriously.
 
-
-# ---  Include paths.
-
-# libsam
-
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/pmc"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/pio"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/rstc"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/wdt"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/adc"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/drivers/uart"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/utils"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/utils/header_files"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/utils/preprocessor"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/sam/boards"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/common/utils"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/common/services/clock"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/common/boards"
-
-# CMSIS
-
-CMSIS_BASE_DIR="$ASF_BASEDIR/sam/utils/cmsis/sam3x"
-
-CMSIS_SRC_TEMPLATE_DIR="$CMSIS_BASE_DIR/source/templates"
-AC_SUBST(CMSIS_SRC_TEMPLATE_DIR)
-
-EXTRA_CPP_FLAGS+=" -I$CMSIS_BASE_DIR/include"
-EXTRA_CPP_FLAGS+=" -I$CMSIS_SRC_TEMPLATE_DIR"
-EXTRA_CPP_FLAGS+=" -I$ASF_BASEDIR/thirdparty/CMSIS/Include"
-
 # --- Set the final variables.
 
 CXXFLAGS+=" $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS"
@@ -243,13 +213,53 @@ CCASFLAGS+=" $ARCH_FLAGS"
 
 CPPFLAGS+=" $EXTRA_CPP_FLAGS"
 
+
+# ---  Include paths.
+
+# ASF
+
+ASF_INCLUDES=""
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/pmc"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/pio"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/rstc"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/wdt"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/adc"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/uart"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/utils"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/utils/header_files"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/utils/preprocessor"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/boards"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/utils"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/boards"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/clock"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/sleepmgr"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb/class/cdc"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb/class/cdc/device"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb/udc"
+ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb"
+
+AC_SUBST(ASF_INCLUDES)
+
+
+# CMSIS
+
+CMSIS_BASE_DIR="$ASF_BASEDIR/sam/utils/cmsis/sam3x"
+AC_SUBST(CMSIS_BASE_DIR)
+
+CMSIS_INCLUDES=""
+CMSIS_INCLUDES+=" -I$CMSIS_BASE_DIR/include"
+CMSIS_INCLUDES+=" -I$CMSIS_BASE_DIR/source/templates"
+CMSIS_INCLUDES+=" -I$ASF_BASEDIR/thirdparty/CMSIS/Include"
+AC_SUBST(CMSIS_INCLUDES)
+
+
 # ----------------------------------------
 
 BARE_METAL_SUPPORT_DIR="$(readlink -f "$srcdir/BareMetalSupport")"
 AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
 # If you update this line, please update SUBDIRS in Makefile.am too.
-AC_CONFIG_FILES([Makefile BareMetalSupport/Makefile JtagFirmware/Makefile EmptyFirmware/Makefile])
+AC_CONFIG_FILES([Makefile CmsisMakefile/Makefile BareMetalSupport/Makefile AsfForEmptyFirmware/Makefile EmptyFirmware/Makefile AsfForJtagFirmware/Makefile JtagFirmware/Makefile])
 
 AC_OUTPUT
 

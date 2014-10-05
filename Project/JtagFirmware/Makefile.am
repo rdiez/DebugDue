@@ -14,60 +14,19 @@
 # along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS := foreign
 
-bin_PROGRAMS = jtagdue.elf
+ELF_FILENAME := jtagdue.elf
 
-lib_LIBRARIES = libcmsis.a \
-                libsam.a
+bin_PROGRAMS := $(ELF_FILENAME)
+
 
 # ------------------------------------
 # Global definitions.
 
-dist_data_DATA =  # See "dist_data_DATA += ..." statements below.
+dist_data_DATA :=  # See "dist_data_DATA += ..." statements below.
 
-MAP_FILENAME = jtagdue.map
-
-
-# ------------------------------------
-# Libraries.
-
-
-# ----- CMSIS comes from Atmel and ARM and has a very liberal license.
-
-# File startup_sam3x.c is no longer compiled with this library. The must had to be modified by the Arduino project anyway,
-# and it is problematic because it contains the vector table, which embeds a reference to Reset_Handler,
-# and we have a different entry point. The vector table source code has been copied to the BareMetalSupport library (with small changes).
-libcmsis_a_SOURCES = \
-    $(CMSIS_SRC_TEMPLATE_DIR)/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
-
-
-# ----- libsam comes from Atmel and has a very liberal license.
-
-LIBSAM_PMC_DIR   := $(ASF_BASEDIR)/sam/drivers/pmc
-LIBSAM_PIO_DIR   := $(ASF_BASEDIR)/sam/drivers/pio
-LIBSAM_USART_DIR := $(ASF_BASEDIR)/sam/drivers/usart
-
-LIBSAM_USB_DIR                := $(ASF_BASEDIR)/common/services/usb
-LIBSAM_USB_UDC_DIR            := $(ASF_BASEDIR)/common/services/usb/udc
-LIBSAM_USB_UDI_CDC_DIR        := $(ASF_BASEDIR)/common/services/usb/class/cdc
-LIBSAM_USB_UDI_CDC_DEVICE_DIR := $(ASF_BASEDIR)/common/services/usb/class/cdc/device
-
-libsam_a_SOURCES = \
-     $(LIBSAM_PMC_DIR)/pmc.c \
-     $(LIBSAM_PMC_DIR)/sleep.c \
-     $(LIBSAM_PIO_DIR)/pio.c \
-     $(ASF_BASEDIR)/sam/drivers/wdt/wdt.c \
-     $(ASF_BASEDIR)/sam/drivers/adc/adc.c \
-     $(ASF_BASEDIR)/sam/drivers/rstc/rstc.c \
-     $(ASF_BASEDIR)/sam/drivers/uart/uart.c \
-     $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc.c \
-     $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc_desc.c \
-     $(LIBSAM_USB_UDC_DIR)/udc.c \
-     $(ASF_BASEDIR)/sam/drivers/uotghs/uotghs_device.c \
-     $(ASF_BASEDIR)/common/utils/interrupt/interrupt_sam_nvic.c \
-     $(ASF_BASEDIR)/common/services/clock/sam3x/sysclk.c
-
+MAP_FILENAME := jtagdue.map
 
 # ------------------------------------
 # Include paths.
@@ -76,21 +35,16 @@ libsam_a_SOURCES = \
 # so here we just add all the extra ones we need.
 
 AM_CPPFLAGS := $(AM_CPPFLAGS)
+AM_CPPFLAGS += $(ASF_INCLUDES)
 
-# POSSIBLE IMPROVEMENT: We probably do not need these include paths when compiling each component.
 
-AM_CPPFLAGS += -I$(ASF_BASEDIR)/common/services/sleepmgr
-AM_CPPFLAGS += -I$(LIBSAM_USART_DIR)
-AM_CPPFLAGS += -I$(LIBSAM_USB_UDI_CDC_DIR)
-AM_CPPFLAGS += -I$(LIBSAM_USB_UDI_CDC_DEVICE_DIR)
-AM_CPPFLAGS += -I$(LIBSAM_USB_UDC_DIR)
-AM_CPPFLAGS += -I$(LIBSAM_USB_DIR)
-
-AM_CPPFLAGS += -I$(srcdir)/ConfigFilesForLibsam
+AM_CPPFLAGS += -I$(srcdir)/../AsfForJtagFirmware/ConfigFilesForAsf
 
 AM_CPPFLAGS += -I$(BARE_METAL_SUPPORT_DIR)/..  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
                                                # does find the files in $(BARE_METAL_SUPPORT_DIR).
                                                # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).
+AM_CPPFLAGS += $(CMSIS_INCLUDES)
+
 
 # ------------------------------------
 # Build the main .elf file.
@@ -125,11 +79,11 @@ LINKER_SCRIPT_FILENAME := $(BARE_METAL_SUPPORT_DIR)/flash.ld
 # Note that the linking order is important here: if library libfoo.a has an undefined symbol,
 # and that symbol is in libbar.a, you need to put libfoo.a before libbar.a on the command line.
 
-jtagdue_elf_LDADD = ../BareMetalSupport/libbare_metal_support.a \
-                    libsam.a \
-                    libcmsis.a
+jtagdue_elf_LDADD := ../BareMetalSupport/libbare_metal_support.a \
+                    ../AsfForJtagFirmware/libasfforjtagfirmware.a \
+                    ../CmsisMakefile/libcmsis.a
 
-jtagdue_elf_LDFLAGS =
+jtagdue_elf_LDFLAGS :=
 
 jtagdue_elf_LDFLAGS += -Wl,-T$(LINKER_SCRIPT_FILENAME)
 

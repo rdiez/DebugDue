@@ -12,4 +12,4 @@ AUTOMAKE_OPTIONS := foreign
 ACLOCAL_AMFLAGS = -I m4
 
 # If you update this line, please update AC_CONFIG_FILES in configure.ac too.
-SUBDIRS = BareMetalSupport JtagFirmware EmptyFirmware
+SUBDIRS := CmsisMakefile BareMetalSupport AsfForEmptyFirmware EmptyFirmware AsfForJtagFirmware JtagFirmware
