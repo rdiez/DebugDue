@@ -39,7 +39,6 @@
 #include <pio.h>
 #include <pmc.h>
 #include <wdt.h>
-#include <usart.h>
 
 
 const uint32_t WATCHDOG_PERIOD_MS = 1000;
