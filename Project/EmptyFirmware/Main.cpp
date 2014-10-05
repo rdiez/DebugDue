@@ -24,7 +24,6 @@
 #include <sam3xa.h>  // All interrupt handlers must probably be extern "C", so include their declarations here.
 
 #include <pio.h>
-#include <usart.h>
 
 
 #define EOL "\r\n"  // Carriage Return, 0x0D, followed by a Line Feed, 0x0A.
