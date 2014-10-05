@@ -54,7 +54,8 @@ then
     # I had to add "-g" again at this point in order to get line number information generated
     # in the general debug information.
     # We could use GCC 4.8's new optimisation level "-Og", but "-O0" still provides the most comfortable debugging experience.
-    DEBUG_FLAGS="-O0 -DDEBUG -g3"
+    # Switch -fmerge-constants helps mainly reduce the code size of all possible assertion failed messages.
+    DEBUG_FLAGS="-O0 -fmerge-constants -DDEBUG -g3"
 else
     AC_MSG_RESULT(no)
     # One quick test I did showed these JTAG transfer speeds: with -Os: 25 KB/s
