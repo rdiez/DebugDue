@@ -252,3 +252,16 @@ AC_SUBST(BARE_METAL_SUPPORT_DIR)
 AC_CONFIG_FILES([Makefile BareMetalSupport/Makefile JtagFirmware/Makefile EmptyFirmware/Makefile])
 
 AC_OUTPUT
+
+
+SHOW_AUTOTOOLS_VERSIONS=false
+
+if $SHOW_AUTOTOOLS_VERSIONS; then
+  echo "Autotools versions:"
+
+  TMP_TXT="$(autoconf --version)"
+  head -n 1 - <<<"- $TMP_TXT"
+
+  TMP_TXT="$(automake --version)"
+  head -n 1 - <<<"- $TMP_TXT"
+fi
