@@ -1,15 +1,15 @@
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS := foreign
 
 
-lib_LIBRARIES = libbare_metal_support.a
+lib_LIBRARIES := libbare_metal_support.a
 
 
 # -----  Bare Metal Support library, which I have written myself.
 
 # Note that files NewlibSyscalls.cpp and crt0.cpp are missing here, see below.
 
-libbare_metal_support_a_SOURCES = \
+libbare_metal_support_a_SOURCES := \
     AssertionUtils.cpp \
     Miscellaneous.cpp \
     MiscellaneousAsm.S \
