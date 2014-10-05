@@ -63,6 +63,7 @@ void ForeverHangAfterPanic ( void )
       // to attach a debugger and see the call stack.
       // Otherwise, let the watchdog trigger if enabled.
       #ifndef NDEBUG
+        // I guess we should not be doing this if the watchdog is disabled.
         wdt_restart( WDT );
       #endif
     }
