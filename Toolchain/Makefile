@@ -12,6 +12,9 @@ SHELL := bash  # This makefile has only been tested with bash.
 #
 # It would be best to build both the debug and non-debug library versions, and that's probably what
 # GCC's "multilib" support is all about, but I haven't figured it out yet.
+# There is also the --enable-libstdcxx-debug switch, which builds separate C++ debug libraries too,
+# but that only applies to the libstdc++. I also don't know yet how to link against those debug versions
+# instead of the normal ones.
 
 ifeq ($(origin ENABLE_DEBUG_TOOLCHAIN), undefined)
   ENABLE_DEBUG_TOOLCHAIN := 0
@@ -97,7 +100,7 @@ COMMON_CFLAGS :=
 # --- Debug oder Release Toolchain.
 
 ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 0)
-  COMMON_CFLAGS += -g -O3
+  COMMON_CFLAGS += -g -Os
   ifeq ($(IS_BUILDING),1)
     $(info Building a release (non-debug) toolchain.)
   endif
@@ -195,7 +198,15 @@ COMMON_GCC_OPTIONS += --disable-fixed-point    # May not be necessary.
 COMMON_GCC_OPTIONS += --enable-threads=single
 
 COMMON_GCC_OPTIONS += --with-newlib
+
+# The built-in C++ exception support code is often the only place that needs the standard file I/O
+# support from the C run-time library. By disabling this necessity with "--disable-libstdcxx-verbose",
+# if your embedded software does not use printf (to stdout) and the like, you will end up saving
+# a sizable amount of code size.
+# You can still use sprintf() and so on, because they do not write to files like stdout,
+# but just to memory buffers.
 COMMON_GCC_OPTIONS += --disable-libstdcxx-verbose
+
 COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
 COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
@@ -385,7 +396,7 @@ NEWLIB_CFG_FLAGS += --disable-multilib
 #
 #   Therefore, for the time being I am using undocumented macro AC_NO_EXECUTABLES in the autoconf project,
 #   in order to work-around the error message described above.
-#   
+#
 NEWLIB_CFG_FLAGS += --disable-libgloss
 NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
