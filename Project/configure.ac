@@ -11,7 +11,7 @@ AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C com
 AM_INIT_AUTOMAKE([-Wall])
 LT_INIT
 
-# Use "make V=1" in order to see the gcc command-lines during compilation.
+# Use "make V=1" (and remove the '-s' flag) in order to see the GCC command lines during compilation.
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 # According to the autoconf documentation, this is about the right place to define compiler flags:
