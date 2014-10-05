@@ -1,12 +1,15 @@
 
-AUTOMAKE_OPTIONS = foreign
+AUTOMAKE_OPTIONS := foreign
 
-# Without the ACLOCAL_AMFLAGS line below, you get this warning:
+# The "m4" subdir must already exist, see autogen.sh for more information.
+# Do not use ":=" here, or you will get warning:
 #   libtoolize: Consider adding `-I m4' to ACLOCAL_AMFLAGS in Makefile.am.
-# However, with it, autoreconf does not work if you don't manually create
-# the m4 subdirectory beforehand, even if you add the --install flag here.
-# I have tested with autoconf 2.65 and automake 1.11.1 .
-#   ACLOCAL_AMFLAGS = -I m4
+# I have reported this issue in the Automake mailing list:
+#   Title: Setting ACLOCAL_AMFLAGS with ':=' vs '='
+#   URL:   http://lists.gnu.org/archive/html/automake/2014-09/msg00013.html
+# With the advent of AC_CONFIG_MACRO_DIR, setting ACLOCAL_AMFLAGS here should not be
+# necessary anymore, but libtoolize 2.4.2 probably does not support AC_CONFIG_MACRO_DIR yet.
+ACLOCAL_AMFLAGS = -I m4
 
 # If you update this line, please update AC_CONFIG_FILES in configure.ac too.
 SUBDIRS = BareMetalSupport JtagFirmware EmptyFirmware
