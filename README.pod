@@ -25,6 +25,9 @@ A secondary goal is to convert the Arduino Due into a B<JTAG adapter>
 by emulating a I<Bus Pirate> from L<< Dangerous Prototypes|http://dangerousprototypes.com/ >> ,
 so that it is compatible with L<< OpenOCD|http://openocd.sourceforge.net/ >> .
 
+This means that you can use an Arduino Due (acting as a JTAG adapter) in order to debug with GDB
+your own code running on a second Arduino Due.
+
 =head2 About the Bare Metal C++ Environment
 
 The bare metal programming environment has the following features:
@@ -47,6 +50,11 @@ There are no OS background tasks or threads to worry about.
 
 Some useful generic commands are available: memory usage, CPU load in the last 60 seconds, compiler version used to build, last reset cause, uptime display, etc.
 
+Your code can write log messages to the console asynchronously, which means that normal execution carries on
+while the message characters are sent to the USB virtual serial port in the background (interrupt driven).
+If the background console output buffer overflows, console text will be lost, but the user will always see
+an indication that some text was lost at the position where the overflow occurred.
+
 =item * Library of common functions.
 
 Most basic functions you need to get started have been implemented: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, a template-based circular buffer implementation, etc.
@@ -66,7 +74,7 @@ when programming a second JtagDue board, compared to 8 KiB/s with the Bus Pirate
 which has an STM32F429 microcontroller, GDB reports 31 KiB/s compared to 24 KiB/s with its built-in SWD adapter,
 and I have obtained rates of around 84 KiB/s with an Atmel AT91SAM9G20-EK board when writing to SDRAM instead of Flash.
 
-Note that I had to manually patch OpenOCD 0.8.0 as of May 2013 in order
+Note that I had to manually patch OpenOCD version 0.8.0 as of May 2013 in order
 for setting "buspirate_speed fast" to work with the Bus Pirate board, otherwise you have to revert back to "buspirate_speed normal",
 and then you get just 1 KiB/s when using the Bus Pirate as a JTAG adapter. If you modify OpenOCD in order to use bigger USB packets,
 you can reach slightly higher speeds with the JtagDue.
@@ -146,11 +154,13 @@ in order to flash a pre-built binary file.
 
 =over
 
-=item 1) Build the toolchain.
+=item 1) Build the toolchain (the GCC compiler for the Arduino Due).
 
 Change to the 'Toolchain' subdirectory and type "make help" for more information.
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
+
+I have tested against ASF version 3.19.0.95.
 
 =item 3) Build the JtagDue firmware for the Arduino Due like most Autotools projects:
 
@@ -158,9 +168,14 @@ Change to the 'Toolchain' subdirectory and type "make help" for more information
 
 =item a) Make sure the new toolchain's 'bin' subdirectory is in the PATH.
 
-=item b) Run autogen.sh in the 'Project' subdirectory.
+This is so that autoconf can find GCC etc. for the Arduino Due. You can check that the PATH is right manually
+by verifying that this command works:
 
-=item c) It is best to build out of the source tree like this:
+ arm-none-eabi-gcc --version
+
+=item b) Run autogen.sh in the 'Project' subdirectory in order to generate the F<< configure >> script.
+
+=item c) Build the firmware. It is best to build out of the source tree like this:
 
   mkdir obj
   cd obj
@@ -204,28 +219,34 @@ Now you should be able to connect to the virtual serial port with your favorite 
 For example, this Linux client allows you to conveniently quit the client-side terminal emulator
 (the local 'socat' command) with Ctrl+C:
 
-  socat READLINE,echo=0 /dev/ttyACM0,b115200,raw,echo=0
+  socat -t0  STDIO,raw,echo=0,escape=0x03  /dev/ttyACM0,b115200,cs8,parenb=0,cstopb=0,clocal=0,raw,echo=0,setlk,flock-ex-nb
 
 On Windows, you can use Putty like this:
 
   putty -serial COM8
 
 The JtagDue firmware does not implement the usual command-line editing comfort features yet, like
-command history and all the standard cursor key movements, but you can use the Readline library
-on the client side instead as follows:
-
-  # Without READLINE, but so that Ctrl+C still quits socat:
-  socat -,echo=0,icanon=0 /dev/ttyACM0,b115200,raw,echo=0
+command history and all the standard cursor key movements.
 
 Due to a protocol limitation, there is no welcome banner. Press the Enter key at least once
 to see the cursor ('>'), or type "help" for a list of available commands.
 
-=item 6) Create a Linux I<< udev >> rule in order to get the same "/dev/jtagdue1" name every time.
+=item 6) Find a way to address the JtagDue USB virtual serial port comfortably.
 
 When you connect the Arduino Due to your Linux PC, you will get a new virtual serial port like
 /dev/ttyACM0 or /dev/ttyACM1, depending on how many serial ports currently exist on the system.
 If you wish to write your own scripts to automate JTAG tasks,
 it is desirable that the assigned device name is always the same.
+
+The easiest way is to look under F<< /dev/serial/by-id >>. Normally, when running the JtagDue
+firmware, you will automatically get a link like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00 >>,
+but the exact name may be different on your system. This link will stay the same even if you
+connect the Arduino Due to another USB port.
+
+If you want to address your devices based on the USB port they are connected to, look under
+F<< /dev/serial/by-path >>.
+
+Alternatively, create a Linux I<< udev >> rule in order to get the same "/dev/jtagdue1" name every time.
 
 The JtagDue firmware uses the standard Arduino Due Vendor ID, but uses a Device ID of 0x1234
 (you can change it when configuring the build). It also reports a serial number of "JtagDue1".
@@ -257,6 +278,11 @@ That is the same pin layout as the 10-pin Altera USB Blaster connector, with som
 Atmel additions from the AVR JTAG header. Pin 1 on the USB Blaster (TCK) corresponds
 then to pin 50 on the Arduino Due.
 
+If you are connecting to the JTAG interface of a second Arduino Due, the layout is different,
+look at the Arduino Due's schematic for details. You will probably need an adapter like Olimex' ARM-JTAG-20-10,
+because the JTAG header is smaller than usual, it has a 1.27 mm pitch (Samtec 0.05" micro header) instead of the normal 2.54 mm (0.1").
+Power your target (second) Arduino Due by connecting its "programming" USB socket to your PC.
+
 With the command above you can also verify that at least the ground signals (GND1 and GND2)
 are low and the VCC signal is high after connecting the JTAG cable.
 
@@ -267,9 +293,9 @@ the JTAG target board.
 
 =item 8) Connect to the JtagDue with OpenOCD.
 
-You will need to disconnect the command console beforehand if you have it open.
+You will need to disconnect the command console from the USB virtual serial port beforehand, if you have it open.
 
-Configure OpenOCD as if your JTAG adapter were a Bus Pirate, but bear in mind that:
+I have tested these instructions with OpenOCD version 0.8.0. Configure OpenOCD as if your JTAG adapter were a Bus Pirate, but bear in mind that:
 
 =over
 
@@ -296,6 +322,39 @@ or have external ones in order to guarantee a high level on the lines when neces
 The only LED on the Arduino Due is used as a heartbeat indicator at the moment.
 
 =back
+
+If you are connecting to a second Arduino Due target, check out the files under F<< OpenOCD/SecondArduinoDueAsTarget/ >> .
+You should be able to connect to it with a command like this:
+
+  cd <JtagDue root dir where this README file is>
+  openocd  --command "set JTAGDUE_SERIAL_PORT /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"  -f "OpenOCD/SecondArduinoDueAsTarget/JtagDueInterfaceConfig.cfg"  -f "target/at91sam3ax_8x.cfg"  -f "OpenOCD/SecondArduinoDueAsTarget/OpenOCDJtagConfig.cfg"
+
+If there are no errors, you should see at the bottom the following output:
+
+  Info : Buspirate switched to FAST mode
+  Info : Buspirate Interface ready!
+  Info : This adapter doesn't support configurable speed
+  Info : JTAG tap: sam3.cpu tap/device found: 0x4ba00477 (mfg: 0x23b, part: 0xba00, ver: 0x4)
+  Info : sam3.cpu: hardware has 6 breakpoints, 4 watchpoints
+
+Press Ctrl+C to quit OpenOCD at this point.
+
+=back
+
+=head1 Still To Do
+
+=over
+
+=item * Stack Backtrace on Crash
+
+If the firmware crashes, I would like to get a call stack (a backtrace) on the debug console.
+
+On the PowerPC architecture, you can get a backtrace programmatically if I turn off GCC's stack frame optimisation.
+However, it looks like that is not easy to do on the ARM architecture. Or am I mistaken here? Is there
+perhaps a way to tell GCC to generate some sort of stack frame for this purpose?
+
+Otherwise, is it possible to dump the tip of the stack in such a way that a PC tool can then later
+on reconstruct the call stack, if the .elf file with debug information is available?
 
 =back
 
