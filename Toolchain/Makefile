@@ -22,6 +22,13 @@ ifeq ($(origin TOOLCHAIN_TARGET_CPU), undefined)
 endif
 
 
+# Reduce the code size by removing the assert expressions and function names from the failed assertion messages.
+# If you need to further reduce the size of your debug build binaries, you could also remove
+# the filenames and line positions, but then it would be hard to know which assert just triggered.
+# You could try storing only the code address, and then using addr2line in order to lookup the source code position.
+USE_SMALLER_ASSERT := 1
+
+
 # ------- Miscellaneous definitions -------
 
 verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
@@ -207,6 +214,8 @@ NEWLIB_NEWLIB_MAKEFILE := $(NEWLIB_NEWLIB_OBJ_DIR)/Makefile
 NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 NEWLIB_NEWLIB_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
 
+NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibSmallerAssert.patch
+
 # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS)
 NEWLIB_CFLAGS := $(COMMON_CFLAGS)
 
@@ -328,6 +337,12 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf "$(NEWLIB_UNTAR_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TAR_FILES_DIR)/$(NEWLIB_TAR_FILE)" && \
+	popd >/dev/null && \
+	pushd "$(NEWLIB_SRC_DIR)" >/dev/null && \
+	if [ $(USE_SMALLER_ASSERT) -ne 0 ]; then \
+	  echo "Applying patch \"$(NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME)\" ..." && \
+	  patch -p0 --forward <"$(NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME)"; \
+	fi && \
 	popd >/dev/null && \
 	echo "Unpacking newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
 	echo "Unpacking newlib finished."
