@@ -183,6 +183,8 @@ by verifying that this command works:
   make  --no-builtin-rules  -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
   make install
 
+The binaries files land in the prefix directory you specified, inside a subdirectory called  F<< share >>S< .> Look for files F<< jtagdue.bin >> and F<< emptydue.bin >>S< .>
+
 =back
 
 =item 4) Flash the new firmware.
@@ -194,6 +196,8 @@ The easiest way to get it is probably to install the official Arduino software e
 Usage example for Linux:
 
   stty -F /dev/ttyACM0 1200 && bossac --port=ttyACM0 --force_usb_port=false --verify --write "filename.bin" --boot=1 --reset
+
+Note that you need to leave the "/dev/" prefix out in the I<< --port >> argument.
 
 Alternatively, you could use the Arduino Due's JTAG port to download the firmware with GDB,
 but then you need some other JTAG adapter. I have used the Bus Pirate for that purpose.
@@ -323,7 +327,9 @@ The only LED on the Arduino Due is used as a heartbeat indicator at the moment.
 
 =back
 
-If you are connecting to a second Arduino Due target, check out the files under F<< OpenOCD/SecondArduinoDueAsTarget/ >> .
+From this point on, follow the standard OpenOCD instructions in order to connect to your target board.
+
+If you are connecting to a second Arduino Due target, check out the files under F<< OpenOCD/SecondArduinoDueAsTarget/ >>S< .>
 You should be able to connect to it with a command like this:
 
   cd <JtagDue root dir where this README file is>
@@ -338,6 +344,22 @@ If there are no errors, you should see at the bottom the following output:
   Info : sam3.cpu: hardware has 6 breakpoints, 4 watchpoints
 
 Press Ctrl+C to quit OpenOCD at this point.
+
+You may find it difficult to control your second Arduino Due over JTAG if it is not running the right kind of firmware.
+The reason is that, if the CPU is sleeping or not running at a high-enough frequency, the JTAG connection will not work well.
+Note also that the JtagDue firmware does not support adaptive JTAG clocking, which could help in this situation.
+If you hold the ERASE button for at least 220 ms on the target Arduino Due, you will experience this issue.
+OpenOCD will detect the JTAG chain correctly, but you will get errors like this if you try to connect over OpenOCD/JTAG with GDB:
+
+  Error: JTAG-DP OVERRUN - check clock, memaccess, or reduce jtag speed
+
+After this error, any OpenOCD command like I<< step >> is likely to fail with an error such as "target not halted".
+
+The easiest way to overcome this problem is to flash the "EmptyFirmware" project (file F<< emptydue.bin >>) with I<< Bossac >>, see above for details.
+The EmptyFirmware, like the full JtagDue project, ramps up the CPU speed at the very beginning and then makes a short "busy" pause (without sleeping).
+This way, OpenOCD stands a good chance of connecting over JTAG right after resetting the board and stopping the CPU
+before the firmware runs too far away. The very early pause location enables you to debug comfortably most of the firmware initialisation sequence.
+You should use the same technique in your own firmware, or it will be hard (or maybe downright impossible) to debug it over JTAG.
 
 =back
 
