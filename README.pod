@@ -22,8 +22,8 @@ The main goal of this project is to provide an up-to-date, comfortable B<bare-me
 programming environment> for the Arduino Due and, in the future, for similar boards.
 
 A secondary goal is to convert the Arduino Due into a B<JTAG adapter>
-by emulating a I<Bus Pirate> from L<< Dangerous Prototypes|http://dangerousprototypes.com/ >> ,
-so that it is compatible with L<< OpenOCD|http://openocd.sourceforge.net/ >> .
+by emulating a I<Bus Pirate> from L<< Dangerous Prototypes|http://dangerousprototypes.com/ >>S< ,>
+so that it is compatible with L<< OpenOCD|http://openocd.sourceforge.net/ >>S< .>
 
 This means that you can use an Arduino Due (acting as a JTAG adapter) in order to debug with GDB
 your own code running on a second Arduino Due.
@@ -146,7 +146,7 @@ That means an increase of 9,152 bytes the first time you touch a printf-style fu
 
 =head2 Installing a binary file
 
-Pre-built binary files are available in a separate repository at L<< https://github.com/rdiez/JtagDueBinaries >> .
+Pre-built binary files are available in a separate repository at L<< https://github.com/rdiez/JtagDueBinaries >>S< .>
 These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
 in order to flash a pre-built binary file.
 
