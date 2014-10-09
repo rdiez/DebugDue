@@ -94,6 +94,7 @@ $(ELF_FILENAME): $(LINKER_SCRIPT_FILENAME)
 dist_data_DATA += emptydue.bin
 
 %.bin: %.elf
+	echo "Generating binary file \"$@\"..." && \
 	arm-none-eabi-objcopy -O binary $< $@
 
 
