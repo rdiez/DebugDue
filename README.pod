@@ -367,6 +367,37 @@ This way, OpenOCD stands a good chance of connecting over JTAG right after reset
 before the firmware runs too far away. The very early pause location enables you to debug comfortably most of the firmware initialisation sequence.
 You should use the same technique in your own firmware, or it will be hard (or maybe downright impossible) to debug it over JTAG.
 
+=item 9) Prepare a comfortable development environment.
+
+First of all, make sure that script F<< OpenOCD/SecondArduinoDueAsTarget/run-in-new-console.sh >> works fine on your system.
+You may have to install Konsole (KDE's terminal emulator) or amend the script to use some other terminal program.
+You can test it as follows:
+
+  ./run-in-new-console.sh "echo Press ENTER... && read"
+
+If everything works correctly, you should see a new console window asking you to press the ENTER key.
+
+Then edit script F<< JtagDueBuilder.sh >>, which lives next to this README file is. If you are programming a second Arduino Due over JTAG,
+you will have to make minimal modifications to routine I<< user_config() >>. For other targets, you will have to make more amendments.
+
+Try the modified script out with the following command:
+
+  ./JtagDueBuilder.sh --clean --build --program --debug
+
+That should build the firmware from scratch, send it to the target device and start debugging it.
+
+The idea is that, no matter what development environment you are using (Emacs, Vim, Eclipse, ...),
+you should configure the usual compile/run/etc. keys to run the script with different arguments. For example:
+
+ F7 (compile):          ./JtagDueBuilder.sh --build
+ F5 (run)    :          ./JtagDueBuilder.sh --build --program --debug --debugger-type=ddd
+ Ctrl+Alt+F7 (rebuild): ./JtagDueBuilder.sh --clean --build
+ Ctrl+R (run to line):  ./JtagDueBuilder.sh --build --program --debug --add-breakpoint="Main.cpp:123"
+
+This way, you will not have to type any console commands in order to run or debug your firmware.
+You will not get the full comfort you are used to when writing standard PC applications,
+but it will come close enough.
+
 =back
 
 =head1 Still To Do
