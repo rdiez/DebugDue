@@ -106,19 +106,21 @@ See this page for more information about my experience with the Arduino Due:
 =head1 Empty Firmware Project
 
 There is an "EmptyFirmware" directory that generates a dummy firmware which performs
-minimal initialisation and then just waits forever. This project exists for the following reasons:
+minimal initialisation, prints some basic information (including the code and data size values explained below)
+to the Arduino Due's "programming" USB virtual serial port
+and then stops (it waits forever). This project exists for the following reasons:
 
 =over
 
 =item 1) The project can serve as a starting point for other projects.
 
-=item 2) With the empty firmware you can reliably stop the CPU over the JTAG interface.
+=item 2) With the I<< Empty Firmware >> you can reliably stop the CPU over the JTAG interface.
 
 That is the best way to measure OpenOCD and GDB transfer speeds or to stress-test the JTAG interface.
 
 =item 3) You can use this project to perform code size experiments.
 
-The empty firmware is very small and you can easily see how much code size isolated features
+The I<< Empty Firmware >> is very small and you can easily see how much code size isolated features
 or components contribute to the final binary size.
 
 You should get byte sizes similar to the following with an optimised build with asserts turned off:
@@ -128,10 +130,9 @@ You should get byte sizes similar to the following with an optimised build with 
   BSS size:               2,160
   Total:                 17,668
 
-The empty firmware prints some basic text to the serial port console with the size values above. It also has C++ exception support,
-which automatically pulls in malloc() support from newlib.
+This firmware also has C++ exception support, which automatically pulls in malloc() support from I<< newlib >>.
 
-For example, adding a call to sprintf() pulls in the corresponding formatting code from newlib and yields the following sizes:
+Adding a call to sprintf() pulls in the corresponding formatting code from I<< newlib >> and yields the following sizes:
 
   Code size:             23,300
   Initialised data size:  1,360
