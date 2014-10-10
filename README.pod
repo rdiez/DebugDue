@@ -297,7 +297,13 @@ the JTAG target board.
 
 =item 8) Connect to the JtagDue with OpenOCD.
 
-You will need to disconnect the command console from the USB virtual serial port beforehand, if you have it open.
+First of all, you may need to build OpenOCD with support for the Bus Pirate. For example:
+
+  ./configure --enable-buspirate --prefix="$HOME/SomeDir/openocd-0.8.0-bin"
+  make -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
+  make install
+
+You will need to disconnect the command console from the JtagDue's USB virtual serial port beforehand, if you have it open.
 
 I have tested these instructions with OpenOCD version 0.8.0. Configure OpenOCD as if your JTAG adapter were a Bus Pirate, but bear in mind that:
 
