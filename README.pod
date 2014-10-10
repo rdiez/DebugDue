@@ -250,21 +250,32 @@ connect the Arduino Due to another USB port.
 If you want to address your devices based on the USB port they are connected to, look under
 F<< /dev/serial/by-path >>.
 
-Alternatively, create a Linux I<< udev >> rule in order to get the same "/dev/jtagdue1" name every time.
+On many Linux systems, normal users do not have enough permissions to access USB virtual serial ports.
+In order to allow all users to access such ports, you will have to create a Linux I<< udev >> rule.
+You can also specify a fixed name for a device, in order to get the same "/dev/jtagdue1"
+filename every time you connect your JtagDue-running Arduino Due.
 
 The JtagDue firmware uses the standard Arduino Due Vendor ID, but uses a Device ID of 0x1234
 (you can change it when configuring the build). It also reports a serial number of "JtagDue1".
-In order to get a fixed /dev/jtagdue1 device name,
+In order to get a fixed "/dev/jtagdue1" device name,
 create a new file called /etc/udev/rules.d/47-JtagDue.rules (as root) with the following content:
 
   SUBSYSTEM=="tty" ATTRS{idVendor}=="2341" ATTRS{idProduct}=="1234" ATTRS{serial}=="JtagDue1" MODE="0666" SYMLINK+="jtagdue1"
+
+You can also add an entry for the standard Arduino Due "programming" USB port. For example:
+
+  SUBSYSTEM=="tty" ATTRS{idVendor}=="2341" ATTRS{idProduct}=="003d" MODE="0666"
+
+Restarting udev with "sudo restart udev" should not be necessary for the new rule file to be taken into account.
 
 Theoretically, you can add a GROUP="some_group" option in order to restrict access to a particular user group,
 but I could not make it work on my system.
 
 The next time you plug the Arduino Due, if it is running the JtagDue firmware, an entry like /dev/ttyACM1
 will still be created, but there will also be a /dev/jtagdue1 link pointing to the right one.
-Restarting udev with "sudo restart udev" should not be necessary for the new rule file to be taken into account.
+
+If you are using the second example rule, you will not get a user-defined link, but the automatically-created links
+under F<< /dev/serial/by-id >> and so on should now work for any user account.
 
 =item 7) Connect the JTAG pins to the target device.
 
