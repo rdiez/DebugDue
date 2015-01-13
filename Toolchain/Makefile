@@ -147,7 +147,7 @@ COMMON_CFLAGS += -ffunction-sections  # Keeps functions in separate data section
 
 # ------- Binutils flags -------
 
-BINUTILS_VERSION := 2.24
+BINUTILS_VERSION := 2.25
 BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.bz2
@@ -161,7 +161,7 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 # ------- GCC flags -------
 
 # Tested with GCC version 4.8.3 too.
-GCC_VERSION := 4.9.1
+GCC_VERSION := 4.9.2
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -214,7 +214,7 @@ COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC
 
 # ------- Newlib flags -------
 
-NEWLIB_VERSION := 2.1.0
+NEWLIB_VERSION := 2.2.0
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
@@ -237,7 +237,7 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 # ------- GDB flags -------
 
-GDB_VERSION := 7.8
+GDB_VERSION := 7.8.1
 GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
