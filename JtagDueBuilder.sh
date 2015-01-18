@@ -16,6 +16,11 @@ user_config ()
 
   DEFAULT_PATH_TO_OPENOCD="$HOME/SomeDir/openocd-0.8.0-bin/bin/openocd"
 
+  JTAG_ADAPTER="JtagDue"
+  # JTAG_ADAPTER="Flyswatter2"
+  # JTAG_ADAPTER="Olimex-ARM-USB-OCD-H"
+
+  # This setting only matters when JTAG_ADAPTER="JtagDue".
   JTAGDUE_SERIAL_PORT="/dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"
 
   DEFAULT_BUILD_TYPE="debug"
@@ -470,13 +475,40 @@ do_program_and_debug ()
 {
   local OPEN_OCD_CMD="\"$PATH_TO_OPENOCD\" "
 
-  add_openocd_cmd "set JTAGDUE_SERIAL_PORT \"$JTAGDUE_SERIAL_PORT\""
-
-  add_openocd_arg "-f \"$OPENOCD_CONFIG_DIR/JtagDueInterfaceConfig.cfg\""
+  case "$JTAG_ADAPTER" in
+    JtagDue)
+      add_openocd_cmd "set JTAGDUE_SERIAL_PORT \"$JTAGDUE_SERIAL_PORT\""
+      add_openocd_arg "-f \"$OPENOCD_CONFIG_DIR/JtagDueInterfaceConfig.cfg\""
+      ;;
+    Flyswatter2)
+      add_openocd_arg "-f \"interface/ftdi/flyswatter2.cfg\""
+      ;;
+    Olimex-ARM-USB-OCD-H)
+      add_openocd_arg "-f \"interface/ftdi/olimex-arm-usb-ocd-h.cfg\""
+      ;;
+    *) abort "Invalid JTAG_ADAPTER value of \"$JTAG_ADAPTER\"." ;;
+  esac
 
   add_openocd_arg "-f \"target/at91sam3ax_8x.cfg\""
 
   add_openocd_arg "-f \"$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.cfg\""
+
+  # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
+  # back to 500 KHz, at least with the Flyswatter2.
+  case "$JTAG_ADAPTER" in
+    JtagDue)
+      # The JtagDue software has no speed control yet.
+      ;;
+    Olimex-ARM-USB-OCD-H)
+      # TODO: Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
+      add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
+      ;;
+    Flyswatter2)
+      # Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
+      add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
+      ;;
+    *) abort "Invalid JTAG_ADAPTER value of \"$JTAG_ADAPTER\"." ;;
+  esac
 
   add_openocd_cmd "init"
 
