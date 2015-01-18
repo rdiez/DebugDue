@@ -60,6 +60,13 @@ emptydue_elf_SOURCES += \
 emptydue_elf_SOURCES += $(BARE_METAL_SUPPORT_DIR)/NewlibSyscalls.cpp
 emptydue_elf_SOURCES += $(BARE_METAL_SUPPORT_DIR)/crt0.cpp
 
+# Make all sources recompile if this makefile changes. This will undoubtedly recompile
+# too often, but it is the easiest and safest way I could find yet. Note that xxx_OBJECTS
+# variables are not documented in the Automake manual, so they could change in the future.
+# The way I have tested this is to change the project's version number in configure.ac
+# and check that a new firmware binary with the new version number gets built automatically.
+$(emptydue_elf_OBJECTS): Makefile
+
 LINKER_SCRIPT_FILENAME := $(BARE_METAL_SUPPORT_DIR)/flash.ld
 
 # Note that the linking order is important here: if library libfoo.a has an undefined symbol,
