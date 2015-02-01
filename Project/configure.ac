@@ -1,6 +1,11 @@
 
 # Copyright (C) 2012-2014 R. Diez - see the JtagDue project for licensing information.
 
+# By default, if you change the firmware version number below, the next 'make' invocation
+# will rebuild the 'configure' script. This script will have the updated version number
+# in the PACKAGE_VERSION variable. All makefiles will automatically get rebuilt,
+# but despite this, the sources will not be recompiled.
+# I tried the "maintainer mode" (AM_MAINTAINER_MODE), but that did not help.
 AC_INIT([JtagDue],[1.1.4])
 AC_PREREQ([2.65])  # Tested mainly with version 2.69.
 
@@ -69,26 +74,6 @@ CFLAGS+=" $DEBUG_FLAGS"
 CCASFLAGS+=" $DEBUG_FLAGS"
 
 
-# ----------- Path to the Arduino environment -----------
-
-# AC_ARG_WITH(arduino,
-# [AS_HELP_STRING([--with-arduino=PATH],
-# 		[specify directory for the installed Arduino package, for example "$HOME/arduino-1.5.2".])])
-#
-# if test "x$with_arduino" == x; then
-#   AC_MSG_ERROR([Please specify the --with-arduino=PATH configuration switch])
-# else
-#   ARDUINO_ENV_BASEDIR="$(readlink -f "$with_arduino")"
-# fi
-#
-#
-# if ! test -d "${ARDUINO_ENV_BASEDIR}/hardware"; then
-#   AC_MSG_ERROR([The Arduino package does not seem to be installed at $ARDUINO_ENV_BASEDIR])
-# fi
-#
-# AC_SUBST(ARDUINO_ENV_BASEDIR)
-
-
 # ----------- Path to the Atmel Software Framework -----------
 
 AC_ARG_WITH(atmel-software-framework,
@@ -97,13 +82,13 @@ AC_ARG_WITH(atmel-software-framework,
 
 if test "x$with_atmel_software_framework" == x; then
   AC_MSG_ERROR([Please specify the --with-atmel-software-framework=PATH configuration switch])
-else
-  ASF_BASEDIR="$(readlink -f "$with_atmel_software_framework")"
 fi
 
+ASF_BASEDIR="$(readlink -f "$with_atmel_software_framework")"
 
 if ! test -d "${ASF_BASEDIR}/sam"; then
-  AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at $ASF_BASEDIR])
+  # If the path is completely wrong, "readlink -f" can fail. Therefore, we must not use its result in the error message.
+  AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at "$with_atmel_software_framework".])
 fi
 
 AC_SUBST(ASF_BASEDIR)
