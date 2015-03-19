@@ -183,6 +183,8 @@ EXTRA_C_FLAGS+=" -Wstrict-prototypes"
 EXTRA_C_FLAGS+=" -Wmissing-prototypes"
 EXTRA_C_FLAGS+=" -Wpointer-to-int-cast"
 
+# With -std=c++11 you do not get vsnprintf.
+EXTRA_CXX_FLAGS=" -std=gnu++11"
 
 # Turn off warnings that occur too often in the libraries.
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
@@ -192,7 +194,7 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_
 
 # --- Set the final variables.
 
-CXXFLAGS+=" $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS"
+CXXFLAGS+=" $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
 CFLAGS+=" $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
 CCASFLAGS+=" $ARCH_FLAGS"
 
