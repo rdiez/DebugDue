@@ -18,6 +18,7 @@
 
 #include <assert.h>  // For the function prototype of newlib's __assert_func().
 #include <stdio.h>
+#include <malloc.h>  // For M_TRIM_THRESHOLD.
 
 #include "AssertionUtils.h"
 #include "StackCheck.h"
@@ -44,8 +45,10 @@ caddr_t _sbrk ( const int incr )
 {
     // I read somewhere that the increment can be negative, in order to release memory,
     // but I have yet to see this in real life, because the default value of
-    // newlib's M_TRIM_THRESHOLD is rather high.
-    assert( incr > 0 );
+    // newlib's M_TRIM_THRESHOLD is rather high, if not disabled altogether.
+    static_assert( M_TRIM_THRESHOLD == -1, "" );
+    assert( incr > 0 );  // If the value does indeed go negative, we need to adjust
+                         // the code below (signed instead of unsigned integers and so on).
 
     const uintptr_t prevHeapEnd = GetHeapEndAddr();
 
