@@ -1,5 +1,6 @@
 
 AUTOMAKE_OPTIONS := foreign
+.DELETE_ON_ERROR:
 
 # The "m4" subdir must already exist, see autogen.sh for more information.
 # Do not use ":=" here, or you will get warning:

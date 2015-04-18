@@ -1,6 +1,6 @@
 
 AUTOMAKE_OPTIONS := foreign
-
+.DELETE_ON_ERROR:
 
 lib_LIBRARIES := libbare_metal_support.a
 

@@ -15,6 +15,7 @@
 
 
 AUTOMAKE_OPTIONS := foreign
+.DELETE_ON_ERROR:
 
 ELF_FILENAME := jtagdue.elf
 
