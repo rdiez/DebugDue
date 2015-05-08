@@ -222,7 +222,7 @@ do_autogen_if_necessary ()
 {
   if ! [ -f "$CONFIGURE_SCRIPT_PATH" ]; then
     echo "File \"$CONFIGURE_SCRIPT_PATH\" does not exist, running the autotools..."
-    
+
     pushd "$PROJECT_SRC_DIR" >/dev/null
     ./autogen.sh
     popd >/dev/null
@@ -419,6 +419,14 @@ do_build ()
     MAKE_CMD+=" V=1"
   else
     MAKE_CMD+=" -s"
+  fi
+
+  # If you are building from within emacs, GCC will not automatically turn the diagnostics colours on
+  # because it is not running on a real console. You can overcome this by enabling colours in emacs'
+  # build output window and then setting the following variable to 'true'.
+  local FORCE_GCC_DIAGNOSTICS_COLOR=false
+  if $FORCE_GCC_DIAGNOSTICS_COLOR; then
+    MAKE_CMD+=" CPPFLAGS=\"-fdiagnostics-color=always\""
   fi
 
   if $INSTALL_SPECIFIED; then

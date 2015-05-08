@@ -30,21 +30,27 @@ dist_data_DATA :=  # See "dist_data_DATA += ..." statements below.
 MAP_FILENAME := jtagdue.map
 
 # ------------------------------------
+# Manually compile crt0.cpp to the exact name "crt0.o", so that later the linker finds it.
+CRT0_SRC_FILENAME := $(BARE_METAL_SUPPORT_DIR)/crt0.cpp
+CRT0_O_FILENAME := crt0.o
+$(CRT0_O_FILENAME): $(LINKER_SCRIPT_TEMPLATE_FILENAME)
+	echo "Compiling $(CRT0_SRC_FILENAME) to $(CRT0_O_FILENAME)..." && \
+        $(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) $(CRT0_SRC_FILENAME) -c -o $(CRT0_O_FILENAME)
+
+# ------------------------------------
 # Include paths.
 
 # configure.ac has already set some of the include paths,
 # so here we just add all the extra ones we need.
 
-AM_CPPFLAGS := $(AM_CPPFLAGS)
-AM_CPPFLAGS += $(ASF_INCLUDES)
+jtagdue_elf_CPPFLAGS := $(AM_CPPFLAGS)
+jtagdue_elf_CPPFLAGS += $(ASF_INCLUDES)
+jtagdue_elf_CPPFLAGS += -I$(srcdir)/../AsfForJtagFirmware/ConfigFilesForAsf
 
-
-AM_CPPFLAGS += -I$(srcdir)/../AsfForJtagFirmware/ConfigFilesForAsf
-
-AM_CPPFLAGS += -I$(BARE_METAL_SUPPORT_DIR)/..  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
-                                               # does find the files in $(BARE_METAL_SUPPORT_DIR).
-                                               # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).
-AM_CPPFLAGS += $(CMSIS_INCLUDES)
+jtagdue_elf_CPPFLAGS += -I$(BARE_METAL_SUPPORT_DIR)/..  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
+                                                        # does find the files in $(BARE_METAL_SUPPORT_DIR).
+                                                        # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).
+jtagdue_elf_CPPFLAGS += $(CMSIS_INCLUDES)
 
 
 # ------------------------------------
@@ -69,10 +75,8 @@ jtagdue_elf_SOURCES += \
 
 
 # See the comments in the Bare Metal Support library's Makefile.am
-# for information about why these files are compiled here.
-
+# for information about why this file is compiled here.
 jtagdue_elf_SOURCES += $(BARE_METAL_SUPPORT_DIR)/NewlibSyscalls.cpp
-jtagdue_elf_SOURCES += $(BARE_METAL_SUPPORT_DIR)/crt0.cpp
 
 # Make all sources recompile if this makefile changes. This will undoubtedly recompile
 # too often, but it is the easiest and safest way I could find yet. Note that xxx_OBJECTS
@@ -88,9 +92,10 @@ LINKER_SCRIPT_FILENAME := $(BARE_METAL_SUPPORT_DIR)/flash.ld
 
 jtagdue_elf_LDADD := ../BareMetalSupport/libbare_metal_support.a \
                     ../AsfForJtagFirmware/libasfforjtagfirmware.a \
-                    ../CmsisMakefile/libcmsis.a
+                    ../CmsisMakefile/libcmsis.a \
+                      $(CRT0_O_FILENAME)
 
-jtagdue_elf_LDFLAGS :=
+jtagdue_elf_LDFLAGS := $(AM_LDFLAGS)
 
 jtagdue_elf_LDFLAGS += -Wl,-T$(LINKER_SCRIPT_FILENAME)
 

@@ -26,11 +26,23 @@ LT_INIT
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
 # According to the autoconf documentation, this is about the right place to define compiler flags:
+#
 #   If your package does not like this default, then it is acceptable to insert the line
 #  ': ${CXXFLAGS=""}' after AC_INIT and before AC_PROG_CXX to select an empty default instead.
-CXXFLAGS="-g -Wall"
-CFLAGS="-g -Wall"
-CCASFLAGS="-g -Wall"
+#
+# We are clearing these variables here because they are actually user variables and we want to reserve
+# them for the end user, so that he can add his own flags when invoking the generated makefiles.
+# Instead, we will be overriding AM_CFLAGS and friends below.
+#
+# The user will normally not modify important flags, but some of them, like "-fdiagnostics-color=always",
+# depend on factors outside of our control and should not be set by this configuration script.
+
+declare -a USER_VARIABLES=(CXXFLAGS CFLAGS CCASFLAGS LDFLAGS)
+
+for varName in "${USER_VARIABLES[[@]]}"  # Note that autoconf needs to escape brackets ('[[' instead of '[').
+do                                       # Alternatively, you can use trigraphs @<:@ and @>:@ .
+  eval "$varName=\"\""
+done
 
 AC_PROG_CC
 AC_PROG_CXX
@@ -66,12 +78,12 @@ else
     # One quick test I did showed these JTAG transfer speeds: with -Os: 25 KB/s
     #                                                         with -O3: 35 KB/s
     # The firmware did get somewhat bigger with -O3 though.
+    # It would probably be best to compile with -Os by default and mark some modules or functions for
+    # -O3 optimisation with GCC options "#pragma GCC optimize ("string"...)" and "attribute((optimize("STRING")))".
     DEBUG_FLAGS="-O3 -DNDEBUG"
 fi
 
-CXXFLAGS+=" $DEBUG_FLAGS"
-CFLAGS+=" $DEBUG_FLAGS"
-CCASFLAGS+=" $DEBUG_FLAGS"
+DEBUG_FLAGS+=" -g -Wall"
 
 
 # ----------- Path to the Atmel Software Framework -----------
@@ -194,11 +206,15 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_
 
 # --- Set the final variables.
 
-CXXFLAGS+=" $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
-CFLAGS+=" $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
-CCASFLAGS+=" $ARCH_FLAGS"
+AM_CPPFLAGS=" $EXTRA_CPP_FLAGS"
+AM_CFLAGS=" $DEBUG_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
+AM_CXXFLAGS=" $DEBUG_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
+AM_CCASFLAGS=" $DEBUG_FLAGS $ARCH_FLAGS"
 
-CPPFLAGS+=" $EXTRA_CPP_FLAGS"
+AC_SUBST(AM_CPPFLAGS)
+AC_SUBST(AM_CFLAGS)
+AC_SUBST(AM_CXXFLAGS)
+AC_SUBST(AM_CCASFLAGS)
 
 
 # ---  Include paths.
@@ -262,3 +278,11 @@ if $SHOW_AUTOTOOLS_VERSIONS; then
   TMP_TXT="$(automake --version)"
   head -n 1 - <<<"- $TMP_TXT"
 fi
+
+
+# Check that we did actually leave user variables to the end user.
+for varName in "${USER_VARIABLES[[@]]}"; do
+  if [[ ! -z "${!varName}" ]]; then
+    AC_MSG_ERROR([Variable $varName should be undefined or empty, because it is reserved for the end user. However, $varName has the following value: ${!varName}])
+  fi
+done

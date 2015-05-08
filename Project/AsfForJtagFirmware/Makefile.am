@@ -29,8 +29,10 @@ libasfforjtagfirmware_a_SOURCES := \
      $(LIBSAM_USB_UDI_CDC_DEVICE_DIR)/udi_cdc_desc.c \
      $(LIBSAM_USB_UDC_DIR)/udc.c
 
+libasfforjtagfirmware_a_CPPFLAGS := $(AM_CPPFLAGS)
+
 # This is the reason why we need a separate ASF library for the JtagFirmware variant: this config file is different.
-libasfforjtagfirmware_a_CPPFLAGS := -I$(srcdir)/ConfigFilesForAsf
+libasfforjtagfirmware_a_CPPFLAGS += -I$(srcdir)/ConfigFilesForAsf
 
 libasfforjtagfirmware_a_CPPFLAGS += $(CMSIS_INCLUDES)
 libasfforjtagfirmware_a_CPPFLAGS += $(ASF_INCLUDES)

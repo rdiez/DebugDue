@@ -14,4 +14,5 @@ lib_LIBRARIES := libcmsis.a
 libcmsis_a_SOURCES := \
     $(CMSIS_BASE_DIR)/source/templates/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
 
-libcmsis_a_CPPFLAGS := $(CMSIS_INCLUDES)
+libcmsis_a_CPPFLAGS := $(AM_CPPFLAGS)
+libcmsis_a_CPPFLAGS += $(CMSIS_INCLUDES)

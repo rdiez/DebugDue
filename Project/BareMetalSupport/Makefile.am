@@ -51,10 +51,13 @@ libbare_metal_support_a_SOURCES := \
 
 # About file crt0.cpp :
 #
-# File crt0.o gets automatically added to the list of object files to link, and
-# apparently it is not enough for file crt0.cpp to be in this library.
-# Therefore, your main project must compile crt0.cpp itself from this directory.
+# File "crt0.o" gets automatically added to the list of object files to link, but it is not
+# not enough for file crt0.cpp to be compiled in this library. First of all, I do not think
+# that the linker tries to find crt0.o in any user-supplied libraries. Secondly, by using
+# "libbare_metal_support_a_CPPFLAGS" instead of modifying the global AM_CPPFLAGS variable,
+# Automake adds a prefix to the resulting crt0.o file, so that it is no longer called
+# exactly "crt0.o". This is why the main project makefile compiles crt0.cpp by hand.
 
-
-libbare_metal_support_a_CPPFLAGS := $(CMSIS_INCLUDES)
+libbare_metal_support_a_CPPFLAGS := $(AM_CPPFLAGS)
+libbare_metal_support_a_CPPFLAGS += $(CMSIS_INCLUDES)
 libbare_metal_support_a_CPPFLAGS += $(ASF_INCLUDES)

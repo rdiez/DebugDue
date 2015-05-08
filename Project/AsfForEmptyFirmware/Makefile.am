@@ -16,8 +16,10 @@ libasfforemptyfirmware_a_SOURCES := \
      $(ASF_BASEDIR)/common/utils/interrupt/interrupt_sam_nvic.c \
      $(ASF_BASEDIR)/common/services/clock/sam3x/sysclk.c
 
+libasfforemptyfirmware_a_CPPFLAGS := $(AM_CPPFLAGS)
+
 # This is the reason why we need a separate ASF library for the EmptyFirmware variant: this config file is different.
-libasfforemptyfirmware_a_CPPFLAGS := -I$(srcdir)/ConfigFilesForAsf
+libasfforemptyfirmware_a_CPPFLAGS += -I$(srcdir)/ConfigFilesForAsf
 
 libasfforemptyfirmware_a_CPPFLAGS += $(CMSIS_INCLUDES)
 libasfforemptyfirmware_a_CPPFLAGS += $(ASF_INCLUDES)
