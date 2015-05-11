@@ -413,21 +413,40 @@ do_build ()
 
   local MAKE_CMD="make "
 
+  # Passing "V=1" in CPPFLAGS is not enough, you need to remove "-s" too.
   local SHOW_BUILD_COMMANDS=false
-
   if $SHOW_BUILD_COMMANDS; then
     MAKE_CMD+=" V=1"
   else
     MAKE_CMD+=" -s"
   fi
 
+
+  EXTRA_CPPFLAGS=""
+
   # If you are building from within emacs, GCC will not automatically turn the diagnostics colours on
   # because it is not running on a real console. You can overcome this by enabling colours in emacs'
   # build output window and then setting the following variable to 'true'.
+  # You do not actually need to enable this flag, you can just set CPPFLAGS before running this script.
   local FORCE_GCC_DIAGNOSTICS_COLOR=false
   if $FORCE_GCC_DIAGNOSTICS_COLOR; then
-    MAKE_CMD+=" CPPFLAGS=\"-fdiagnostics-color=always\""
+    EXTRA_CPPFLAGS+="-fdiagnostics-color=always "
   fi
+
+
+  # Show the path of all files #include'd during compilation. It often helps when debugging preprocessor problems.
+  # You do not actually need to enable this flag, you can just set CPPFLAGS before running this script.
+  local SHOW_INCLUDED_FILES=false
+  if $SHOW_INCLUDED_FILES; then
+    EXTRA_CPPFLAGS+="-H "
+  fi
+
+
+  if [[ $EXTRA_CPPFLAGS != "" ]]; then
+    # The user's CPPFLAGS comes at the end, so that the user always has the last word.
+    MAKE_CMD+=" CPPFLAGS=\"$EXTRA_CPPFLAGS${CPPFLAGS:-}\""
+  fi
+
 
   if $INSTALL_SPECIFIED; then
     local TARGET="install"
