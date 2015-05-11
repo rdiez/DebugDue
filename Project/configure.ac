@@ -262,7 +262,19 @@ BARE_METAL_SUPPORT_DIR="$(readlink -f "$srcdir/BareMetalSupport")"
 AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
 # If you update this line, please update SUBDIRS in Makefile.am too.
-AC_CONFIG_FILES([Makefile CmsisMakefile/Makefile BareMetalSupport/Makefile AsfForEmptyFirmware/Makefile EmptyFirmware/Makefile AsfForJtagFirmware/Makefile JtagFirmware/Makefile])
+#
+# I have not found a way to pass a variable to AC_CONFIG_FILES, as AC_CONFIG_FILES simply will not expand a shell variable.
+# Therefore, all possible makefiles are listed here, even if not all of them are compiled later (see Makefile.am).
+# As a potential work-around, autogen.sh could generate an .m4 file with the right (shorter) list, which would then be included here.
+AC_CONFIG_FILES(
+  Makefile
+  CmsisMakefile/Makefile
+  BareMetalSupport/Makefile
+  AsfForEmptyFirmware/Makefile
+  EmptyFirmware/Makefile
+  AsfForJtagFirmware/Makefile
+  JtagFirmware/Makefile
+)
 
 AC_OUTPUT
 
