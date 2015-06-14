@@ -3,7 +3,14 @@
 
 .DELETE_ON_ERROR:
 
-SHELL := bash  # This makefile has only been tested with bash.
+# This makefile has only been tested with bash.
+# Option 'pipefail' is necessary. Otherwise, piping to 'tee' would mask any errors on
+# the left side of the pipeline.
+SHELL := bash -o nounset -o pipefail
+# This way of passing shell options is only available in modern GNU Make versions,
+# and not in version 3.81 shipped with Ubuntu 14.04:
+#   .SHELLFLAGS := -o nounset -o pipefail -e -c
+
 
 # ------- User Configuration -------
 
@@ -71,7 +78,11 @@ TAR_FILES_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 
 # ------- Build directory definitions -------
 
-TOOLCHAIN_OBJ_DIR := $(THIS_MAKEFILE_DIR)/Tmp
+ifeq ($(origin CROSS_TOOLCHAIN_BUILD_DIR), undefined)
+  TOOLCHAIN_OBJ_DIR := $(THIS_MAKEFILE_DIR)/Tmp
+else
+  TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
+endif
 
 TOOLCHAIN_OBJ_DIR_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
 
@@ -116,9 +127,14 @@ endif
 
 # --- Target CPU.
 
-ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m3)
+FLAGS_NO_HARDWARE_FP := --without-fp --with-float=soft
+
+ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m0)
+  COMMON_CFLAGS += -mcpu=cortex-m0 -mthumb
+  GCC_FLOATING_POINT_FLAGS := $(FLAGS_NO_HARDWARE_FP)
+else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m3)
   COMMON_CFLAGS += -mcpu=cortex-m3 -mthumb
-  GCC_FLOATING_POINT_FLAGS := --without-fp --with-float=soft
+  GCC_FLOATING_POINT_FLAGS := $(FLAGS_NO_HARDWARE_FP)
 else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m4f)
   COMMON_CFLAGS += -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
   GCC_FLOATING_POINT_FLAGS := # No flags needed here.
@@ -538,11 +554,21 @@ $(TARGET_NAME_HELP):
 	@echo "   You can compile debug builds with a non-debug toolchain, but the libraries that the toolchain"
 	@echo "   provides (such as newlib) will be linked in as non-debug versions."
 	@echo
-	@echo "4) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
+	@echo "4) Optionally set variable CROSS_TOOLCHAIN_BUILD_DIR to some directory of your choice where"
+	@echo "   all source and object files will be generated during the toolchain build process."
+	@echo "   By default, these build files are placed in a subdirectory called \"Tmp\". That name is"
+	@echo "   intuitive enough. I normally have such \"Tmp\" directories listed in my .gitignore files,"
+	@echo "   and I tend to skip anything called \"Tmp\" when doing recursive greps."
+	@echo "   You may want to name this directory differently or to place it somewhere else,"
+	@echo "   perhaps next to the final toolchain bin (installation) directory. If you keep all sources"
+	@echo "   used to build the toolchain, you will be able to step into the C runtime library and so on"
+	@echo "   with a debugger like GDB."
+	@echo
+	@echo "5) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
 	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally "
 	@echo "   find such libraries in your Linux distribution's repository."
 	@echo
-	@echo "5) If you have already run this makefile in the past, you will have to delete or rename"
+	@echo "6) If you have already run this makefile in the past, you will have to delete or rename"
 	@echo "   the Tmp subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
 	@echo
 	@echo "The recommended way to run this makefile is:"
