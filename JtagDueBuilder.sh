@@ -227,6 +227,10 @@ do_autogen_if_necessary ()
     ./autogen.sh
     popd >/dev/null
 
+    if ! [ -f "$CONFIGURE_SCRIPT_PATH" ]; then
+      abort "File \"$CONFIGURE_SCRIPT_PATH\" is not where it is expected to be."
+    fi
+
     echo "Finished running the autotools."
   fi
 }
@@ -242,7 +246,7 @@ do_configure_if_necessary ()
 
     pushd "$PROJECT_OBJ_DIR" >/dev/null
 
-    local CONFIG_CMD="$PROJECT_SRC_DIR/configure"
+    local CONFIG_CMD="$CONFIGURE_SCRIPT_PATH"
     CONFIG_CMD+=" --prefix=\"$PROJECT_BIN_DIR\""
 
     if [[ $BUILD_TYPE = debug ]]; then
@@ -259,6 +263,10 @@ do_configure_if_necessary ()
 
     echo "$CONFIG_CMD"
     eval "$CONFIG_CMD"
+
+    if ! [ -f "$MAKEFILE_PATH" ]; then
+      abort "File \"$MAKEFILE_PATH\" is not where it is expected to be."
+    fi
 
     popd >/dev/null
 
