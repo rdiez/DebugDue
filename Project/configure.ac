@@ -196,7 +196,8 @@ EXTRA_C_FLAGS+=" -Wmissing-prototypes"
 EXTRA_C_FLAGS+=" -Wpointer-to-int-cast"
 
 # With -std=c++11 you do not get vsnprintf.
-EXTRA_CXX_FLAGS=" -std=gnu++11"
+EXTRA_C_FLAGS+=" -std=gnu11"
+EXTRA_CXX_FLAGS="-std=gnu++11"
 
 # Turn off warnings that occur too often in the libraries.
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
