@@ -13,6 +13,23 @@ AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C com
                    # see the toolchain makefile for more information about why this is needed. Short version:
                    # libgloss was not adapted for our board, so the toolchain alone cannot build executables.
 
+# You would normally want to use Automake's option "subdir-objects" below. However, there is a long-standing
+# bug regarding compilation of source files that live outside the normal source subdirectory, up to and
+# including Automake version 1.15.
+# You will find more information on this bug in this article:
+#   "Autotools build fails due to subdir-objects option in AM_INIT_AUTOMAKE"
+#    http://stackoverflow.com/questions/21609580/autotools-build-fails-due-to-subdir-objects-option-in-am-init-automake
+#
+# We reference out-of-tree source files in 2 places:
+# - The main project compiles NewlibSyscalls.cpp directly. However, this file lives somewhere else.
+# - Some libraries, like Atmel's ASF and ARM's CMSIS, live somewhere else but are referenced
+#   from our own Autoconf projects in order to build them in the same way as the rest of our firmware.
+#
+# All other libraries in this firmware that do not reference any out-of-tree source files
+# can be built with Automake's option "subdir-objects". For example, each library's Makefile.am
+# could have a line line this:
+#   AUTOMAKE_OPTIONS := foreign subdir-objects
+#
 AM_INIT_AUTOMAKE([-Wall])
 
 # Note that libtool (as of libtoolize 2.4.2) may generate spurious warning "configure: WARNING: using cross tools not prefixed with host triplet"
