@@ -32,7 +32,7 @@ static volatile uint32_t s_tickCount = 0;  // Access to this variable is protect
 
 // This routine can be called from within interrupt context.
 
-void WakeFromMainLoopSleep ( void )
+void WakeFromMainLoopSleep ( void ) throw()
 {
   if ( ENABLE_CPU_SLEEP )
   {
@@ -257,7 +257,7 @@ void MainLoopSleep ( void )
 
 // This routine can be called from within interrupt context.
 
-void CpuLoadStatsTick ( void )
+void CpuLoadStatsTick ( void ) throw()
 {
   if ( ENABLE_CPU_SLEEP )
   {

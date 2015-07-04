@@ -20,19 +20,17 @@
 
 #include <stdint.h>
 
-
+// Note that CPU load statistics are only available if CPU sleep support is disabled below.
+// An alternative implementation using a timer would not have this limitation.
+// Also, if you enable the CPU sleep feature, you may not be able to connect with the JTAG debugger.
 #define ENABLE_CPU_SLEEP  false
 
 
-void WakeFromMainLoopSleep   ( void );
+void WakeFromMainLoopSleep ( void ) throw();
 
 void MainLoopSleep ( void );
 
-
-// Note that CPU load statistics are only available if CPU sleep support is disabled, see ENABLE_CPU_SLEEP.
-// An alternative implementation using a timer would not have this limitation.
-
-void CpuLoadStatsTick ( void );
+void CpuLoadStatsTick ( void ) throw();
 
 void UpdateCpuLoadStats ( void );
 
