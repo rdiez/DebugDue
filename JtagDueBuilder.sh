@@ -93,6 +93,99 @@ delete_file_if_exists ()
 }
 
 
+get_uptime ()
+{
+  local PROC_UPTIME_STR  # Variable declared on a separate line, or it would mask any errors on the right part of the assignment.
+  PROC_UPTIME_STR="$(</proc/uptime)"
+
+  local PROC_UPTIME_COMPONENTS
+  # Split on blanks.
+  IFS=$' \t' PROC_UPTIME_COMPONENTS=($PROC_UPTIME_STR)
+  if [ ${#PROC_UPTIME_COMPONENTS[@]} -ne 2 ]; then
+    abort "Invalid /proc/uptime format."
+  fi
+
+  CURRENT_UPTIME="${PROC_UPTIME_COMPONENTS[0]}"
+}
+
+
+# WARNING: 32-bit versions of Bash will not be able to cope with elapsed times greater than 248 days.
+
+generate_elapsed_time_msg ()
+{
+  # Function argument $1 is the elapsed time in hundredths of seconds.
+  local -i ELAPSED_TIME="$1"
+
+  local sign
+
+  if [ $ELAPSED_TIME -lt 0 ]
+  then
+    ELAPSED_TIME=$((-ELAPSED_TIME))
+    sign="-"
+  else
+    sign=""
+  fi
+
+  local -i hundredths_of_seconds=$(( ELAPSED_TIME % 100 ))
+
+  local -i seconds=$(( ELAPSED_TIME / 100 ));
+  local -i weeks=0;
+  local -i days=0;
+  local -i hours=0;
+  local -i minutes=0;
+
+  if [ $seconds -gt 0 ]
+  then
+    minutes=$(( $seconds / 60 ))
+    seconds=$(( $seconds % 60 ))
+  fi
+
+  if [ $minutes -gt 0 ]
+  then
+    hours=$(( $minutes / 60 ))
+    minutes=$(( $minutes % 60 ))
+  fi
+
+  if [ $hours -gt 0 ]
+  then
+    days=$(( $hours / 24 ))
+    hours=$(( $hours % 24 ))
+  fi
+
+  if [ $days -gt 0 ]
+  then
+    weeks=$(( $days / 7 ))
+    days=$(( $days % 7 ))
+  fi
+
+
+  local res
+  printf -v res "%d.%02d s" $seconds $hundredths_of_seconds;
+
+  if [ $(( $minutes + $hours + $days + $weeks )) -gt 0 ]
+  then
+    printf -v res "%d min $res" $minutes
+  fi
+
+  if [ $(( $hours + $days + $weeks )) -gt 0 ]
+  then
+    printf -v res "%d hours $res" $hours
+  fi
+
+  if [ $(( $days + $weeks )) -gt 0 ]
+  then
+    printf -v res "%d days $res" $days
+  fi
+
+  if [ $weeks -gt 0 ]
+  then
+    printf -v res "%d weeks $res" $weeks
+  fi
+
+  ELAPSED_TIME_MSG="$sign$res"
+}
+
+
 display_help ()
 {
 cat - <<EOF
@@ -592,6 +685,9 @@ do_program_and_debug ()
 
 # ------- Entry point -------
 
+get_uptime
+UPTIME_BEGIN="$CURRENT_UPTIME"
+
 user_config
 
 TOOLCHAIN_DIR="$DEFAULT_TOOLCHAIN_DIR"
@@ -682,4 +778,21 @@ if $PROGRAM_SPECIFIED || $DEBUG_SPECIFIED; then
   do_program_and_debug
 fi
 
-echo "All $SCRIPT_NAME operations done."
+get_uptime
+
+# We are using here external tool 'bc' because Bash does not support floating-point numbers.
+# It is possible to write a pure-Bash implementation with a precision to the hundredth of a second,
+# but, if you are not careful, 32-bit versions of Bash could fail if the uptime is greater than 248 days.
+# I could not find the time to write such a careful implementation.
+#
+# Apparently, bc's variable 'scale' only works with division, for other operations the displayed precision
+# will depend on the operands. That is the reason why the result is divided by 1 at the end.
+#
+# At this point, we could try to find out the integer width of the current Bash version
+# and check that bc's result does not overflow it. If you have the time to implement it,
+# please drop me a line.
+ELAPSED_TIME="$(bc <<< "result = ($CURRENT_UPTIME - $UPTIME_BEGIN)*100; scale=0; result/1")"
+
+generate_elapsed_time_msg "$ELAPSED_TIME"
+
+echo "All $SCRIPT_NAME operations done in $ELAPSED_TIME_MSG."
