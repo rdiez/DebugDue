@@ -137,50 +137,68 @@ generate_elapsed_time_msg ()
 
   if [ $seconds -gt 0 ]
   then
-    minutes=$(( $seconds / 60 ))
-    seconds=$(( $seconds % 60 ))
+    minutes=$(( seconds / 60 ))
+    seconds=$(( seconds % 60 ))
   fi
 
   if [ $minutes -gt 0 ]
   then
-    hours=$(( $minutes / 60 ))
-    minutes=$(( $minutes % 60 ))
+    hours=$(( minutes / 60 ))
+    minutes=$(( minutes % 60 ))
   fi
 
   if [ $hours -gt 0 ]
   then
-    days=$(( $hours / 24 ))
-    hours=$(( $hours % 24 ))
+    days=$(( hours / 24 ))
+    hours=$(( hours % 24 ))
   fi
 
   if [ $days -gt 0 ]
   then
-    weeks=$(( $days / 7 ))
-    days=$(( $days % 7 ))
+    weeks=$(( days / 7 ))
+    days=$(( days % 7 ))
   fi
 
 
   local res
   printf -v res "%d.%02d s" $seconds $hundredths_of_seconds;
 
-  if [ $(( $minutes + $hours + $days + $weeks )) -gt 0 ]
+  if [ $(( minutes + hours + days + weeks )) -gt 0 ]
   then
-    printf -v res "%d min $res" $minutes
+    printf -v res "%d min %s" "$minutes" "$res"
   fi
 
-  if [ $(( $hours + $days + $weeks )) -gt 0 ]
+  if [ $(( hours + days + weeks )) -gt 0 ]
   then
-    printf -v res "%d hours $res" $hours
+    if [ $hours -eq 1 ]; then
+      local hour_str="hour"
+    else
+      local hour_str="hours"
+    fi
+
+    printf -v res "%d %s %s" "$hours" "$hour_str" "$res"
   fi
 
-  if [ $(( $days + $weeks )) -gt 0 ]
+  if [ $(( days + weeks )) -gt 0 ]
   then
-    printf -v res "%d days $res" $days
+    if [ $days -eq 1 ]; then
+      local day_str="day"
+    else
+      local day_str="days"
+    fi
+
+    printf -v res "%d %s %s" "$days" "$day_str" "$res"
   fi
 
   if [ $weeks -gt 0 ]
   then
-    printf -v res "%d weeks $res" $weeks
+    if [ $weeks -eq 1 ]; then
+      local week_str="week"
+    else
+      local week_str="weeks"
+    fi
+
+    printf -v res "%d %s %s" "$weeks" "$week_str" "$res"
   fi
 
   ELAPSED_TIME_MSG="$sign$res"
