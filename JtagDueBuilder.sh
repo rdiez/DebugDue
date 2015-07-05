@@ -128,7 +128,8 @@ generate_elapsed_time_msg ()
 
   local -i hundredths_of_seconds=$(( ELAPSED_TIME % 100 ))
 
-  local -i seconds=$(( ELAPSED_TIME / 100 ));
+  local -i total_seconds=$(( ELAPSED_TIME / 100 ));
+  local -i seconds=$total_seconds
   local -i weeks=0;
   local -i days=0;
   local -i hours=0;
@@ -183,6 +184,17 @@ generate_elapsed_time_msg ()
   fi
 
   ELAPSED_TIME_MSG="$sign$res"
+
+  # Every now and then, the user may want to compare elapsed times.
+  # For example, the last change may make the build 10% faster.
+  # It is hard to compare elapsed times if they have minutes, hours and so on.
+  # Therefore, append to the message the total number of seconds.
+  if [ $total_seconds -ge 60 ]
+  then
+    local tmp
+    printf -v tmp "%d.%02d s" $total_seconds $hundredths_of_seconds
+    ELAPSED_TIME_MSG+=" ($tmp)"
+  fi
 }
 
 
