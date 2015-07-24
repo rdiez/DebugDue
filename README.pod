@@ -394,7 +394,7 @@ you will have to make minimal modifications to routine I<< user_config() >>. For
 
 Try the modified script out with the following command:
 
-  ./JtagDueBuilder.sh --clean --build --program --debug
+  ./JtagDueBuilder.sh --clean --build --program-over-jtag --debug
 
 That should build the firmware from scratch, send it to the target device and start debugging it.
 
@@ -402,9 +402,9 @@ The idea is that, no matter what development environment you are using (Emacs, V
 you should configure the usual compile/run/etc. keys to run the script with different arguments. For example:
 
  F7 (compile):          ./JtagDueBuilder.sh --build
- F5 (run)    :          ./JtagDueBuilder.sh --build --program --debug --debugger-type=ddd
+ F5 (run)    :          ./JtagDueBuilder.sh --build --program-over-jtag --debug --debugger-type=ddd
  Ctrl+Alt+F7 (rebuild): ./JtagDueBuilder.sh --clean --build
- Ctrl+R (run to line):  ./JtagDueBuilder.sh --build --program --debug --add-breakpoint="Main.cpp:123"
+ Ctrl+R (run to line):  ./JtagDueBuilder.sh --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123"
 
 This way, you will not have to type any console commands in order to run or debug your firmware.
 You will not get the full comfort you are used to when writing standard PC applications,

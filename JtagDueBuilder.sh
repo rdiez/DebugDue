@@ -16,11 +16,19 @@ user_config ()
 
   DEFAULT_PATH_TO_OPENOCD="$HOME/SomeDir/openocd-0.8.0-bin/bin/openocd"
 
+  # This setting only matters when using the 'bossac' tool.
+  DEFAULT_PATH_TO_BOSSAC="bossac"
+
+  # This setting only matters when using the 'bossac' tool.
+  PROGRAMMING_USB_VIRTUAL_SERIAL_PORT="/dev/serial/by-id/usb-Arduino__www.arduino.cc__Arduino_Due_Prog._Port_7523230323535180A120-if00"
+
   JTAG_ADAPTER="JtagDue"
   # JTAG_ADAPTER="Flyswatter2"
   # JTAG_ADAPTER="Olimex-ARM-USB-OCD-H"
 
-  # This setting only matters when JTAG_ADAPTER="JtagDue".
+  # This setting only matters when JTAG_ADAPTER="JtagDue". This is the location of the
+  # 'native' USB virtual serial port of the Arduino Due that is acting as a JTAG adapter.
+  # OpenOCD will be told that this is where to find the (emulated) Bus Pirate.
   JTAGDUE_SERIAL_PORT="/dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"
 
   DEFAULT_BUILD_TYPE="debug"
@@ -36,7 +44,7 @@ user_config ()
 }
 
 
-VERSION_NUMBER="1.00"
+VERSION_NUMBER="1.02"
 SCRIPT_NAME="JtagDueBuilder.sh"
 
 
@@ -44,6 +52,24 @@ abort ()
 {
   echo >&2 && echo "Error in script \"$0\": $*" >&2
   exit 1
+}
+
+
+str_starts_with ()
+{
+  # $1 = string
+  # $2 = prefix
+
+  # From the bash manual, "Compound Commands" section, "[[ expression ]]" subsection:
+  #   "Any part of the pattern may be quoted to force the quoted portion to be matched as a string."
+  # Also, from the "Pattern Matching" section:
+  #   "The special pattern characters must be quoted if they are to be matched literally."
+
+  if [[ $1 == "$2"* ]]; then
+    return 0
+  else
+    return 1
+  fi
 }
 
 
@@ -254,7 +280,11 @@ Step 2, build operations:
   make sure that the existing binary matches the code on the target.
 
 Step 3, program operations:
-  --program  Transfers the firmware over JTAG to the target device.
+  --program-over-jtag  Transfers the firmware over JTAG to the target device.
+  --program-with-bossac  Transfers the firmware with 'bossac' to the target device.
+  --path-to-bossac="path/to/bossac"  The default is "bossac", which only works
+                                     if is is on the PATH. Under Ubuntu/Debian,
+                                     the package to install is called 'bossa-cli'.
 
 Step 4, debug operations:
   --debug  Starts the firmware under the debugger (GDB connected to
@@ -279,7 +309,7 @@ Examples:
     $SCRIPT_NAME --build --build-type="debug"
 
   At some point in time, you want to debug your firmware with:
-    $SCRIPT_NAME --build --build-type="debug" --program --debug
+    $SCRIPT_NAME --build --build-type="debug" --program-over-jtag --debug
 
 Exit status: 0 means success. Any other value means error.
 
@@ -425,7 +455,7 @@ read_command_line_switches ()
 
   # Use an associative array to declare how many arguments a long option expects.
   # Long options that aren't listed in this way will have zero arguments by default.
-  local -A MY_LONG_OPT_SPEC=([build-type]=1 [toolchain-dir]=1 [atmel-software-framework]=1 [openocd-path]=1 [debugger-type]=1 [add-breakpoint]=1)
+  local -A MY_LONG_OPT_SPEC=([build-type]=1 [toolchain-dir]=1 [atmel-software-framework]=1 [openocd-path]=1 [debugger-type]=1 [add-breakpoint]=1 [path-to-bossac]=1)
 
   # The first colon (':') means "use silent error reporting".
   # The "-:" means an option can start with '-', which helps parse long options which start with "--".
@@ -434,7 +464,8 @@ read_command_line_switches ()
   CLEAN_SPECIFIED=false
   BUILD_SPECIFIED=false
   INSTALL_SPECIFIED=false
-  PROGRAM_SPECIFIED=false
+  PROGRAM_OVER_JTAG_SPECIFIED=false
+  PROGRAM_WITH_BOSSAC_SPECIFIED=false
   DEBUG_SPECIFIED=false
   DEBUG_FROM_THE_START_SPECIFIED=false
   declare -ag BREAKPOINTS=()
@@ -471,9 +502,17 @@ read_command_line_switches ()
         clean) CLEAN_SPECIFIED=true;;
         build) BUILD_SPECIFIED=true;;
         install) INSTALL_SPECIFIED=true;;
-        program) PROGRAM_SPECIFIED=true;;
+        program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
+        program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
         debug) DEBUG_SPECIFIED=true;;
         debug-from-the-start) DEBUG_FROM_THE_START_SPECIFIED=true;;
+
+        path-to-bossac)
+            if [[ ${OPTARG:-} = "" ]]; then
+              abort "The --path-to-bossac option has an empty value."
+            fi
+            PATH_TO_BOSSAC="$OPTARG"
+            ;;
 
         toolchain-dir)
             if [[ ${OPTARG:-} = "" ]]; then
@@ -629,6 +668,85 @@ add_openocd_cmd_echo ()
 }
 
 
+do_bossac ()
+{
+  # Tool 'bossac' does not seem to give an intuitive error message if the port
+  # is not there at all (at least for versions up to 1.3a). The error message
+  # is the same whether the port is not present, or whether it is,
+  # but the SAM-BA bootloader is not running there.
+  # Therefore, manually check beforehand that the port is actually there,
+  # in order to generate a more helpful error message if it is not.
+  if [ ! -e "$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT" ]; then
+    abort "The Arduino Due's 'programming' USB virtual port is not at location \"$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT\""
+  fi
+
+  if ! type "$PATH_TO_BOSSAC" >/dev/null 2>&1 ;
+  then
+    abort "Could not find tool \"$PATH_TO_BOSSAC\"."
+  fi
+
+  local PREFIX="/dev/"
+  local -i PREFIX_LEN="${#PREFIX}"
+
+  if ! str_starts_with "$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT" "$PREFIX"; then
+    abort "Tool 'bossac' expects the port location to start with \"$PREFIX\", but it does not. The port location is: \"$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT\"."
+  fi
+
+  local PORT_WITHOUT_PREFIX="${PROGRAMMING_USB_VIRTUAL_SERIAL_PORT:$PREFIX_LEN}"
+
+  local SERIAL_PORT_CONFIG_CMD
+
+  # Trigger an erase first. Otherwise, the SAM-BA bootloader will probably not be present
+  # on the 'programming' USB virtual serial port and tool 'bossac' will fail.
+  SERIAL_PORT_CONFIG_CMD="stty -F \"$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT\" 1200"
+  echo "$SERIAL_PORT_CONFIG_CMD"
+  eval "$SERIAL_PORT_CONFIG_CMD"
+
+  local CMD
+  CMD="\"$PATH_TO_BOSSAC\" --port=\"$PORT_WITHOUT_PREFIX\""
+  # bossac's option "--force_usb_port" means "Enable  automatic detection of the target's USB port"
+  # and is turned on by default. We are specifying the exact path to the port,
+  # so we do not want any guessing.
+  CMD+=" --force_usb_port=false"
+
+  # If you suspect your target is not getting flashed correctly, you can
+  # turn verification on. It is normally disabled because it takes a long time.
+  if false; then
+    CMD+=" --verify"
+  fi
+
+  CMD+=" --write \"$BIN_FILEPATH\""
+  CMD+=" --boot=1"
+
+  # You could make the reset step optional, so that the new firmware does not start immediately.
+  if true; then
+   CMD+=" --reset"
+  fi
+
+  echo "$CMD"
+
+  set +o errexit
+  eval "$CMD"
+  local EXIT_CODE="$?"
+  set -o errexit
+
+  if [ $EXIT_CODE -ne 0 ]; then
+    local MSG
+    MSG+="Tool 'bossac' failed with exit code $EXIT_CODE. Troubleshooting hints are:"
+    MSG+=$'\n'
+    MSG+="1) Is the Arduino Due's 'programming' USB virtual serial port really at the following location?"
+    MSG+=$'\n'
+    MSG+="$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT"
+    MSG+=$'\n'
+    MSG+="2) Has some other application that port open at the same time? (It is possible under Linux)"
+    MSG+=$'\n'
+    MSG+="3) Is the Arduino Due's 'native' USB virtual serial port connected too? If so, disconnect it and try again."
+    printf "$MSG" >&2
+    exit $EXIT_CODE
+  fi
+}
+
+
 do_program_and_debug ()
 {
   local OPEN_OCD_CMD="\"$PATH_TO_OPENOCD\" "
@@ -670,7 +788,7 @@ do_program_and_debug ()
 
   add_openocd_cmd "init"
 
-  if $PROGRAM_SPECIFIED; then
+  if $PROGRAM_OVER_JTAG_SPECIFIED; then
     local FLASH_ADDR="0x00080000"
     add_openocd_cmd "my_reset_and_halt"
     add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
@@ -725,16 +843,24 @@ ASF_DIR="$DEFAULT_ASF_DIR"
 PATH_TO_OPENOCD="$DEFAULT_PATH_TO_OPENOCD"
 BUILD_TYPE="$DEFAULT_BUILD_TYPE"
 DEBUGGER_TYPE="$DEFAULT_DEBUGGER_TYPE"
+PATH_TO_BOSSAC="$DEFAULT_PATH_TO_BOSSAC"
 
 read_command_line_switches "$@"
 
-if $CLEAN_SPECIFIED || $BUILD_SPECIFIED || $INSTALL_SPECIFIED || $PROGRAM_SPECIFIED || $DEBUG_SPECIFIED; then
+if $CLEAN_SPECIFIED || \
+   $BUILD_SPECIFIED || \
+   $INSTALL_SPECIFIED || \
+   $PROGRAM_OVER_JTAG_SPECIFIED || \
+   $PROGRAM_WITH_BOSSAC_SPECIFIED || \
+   $DEBUG_SPECIFIED; then
   :
 else
   abort "No operation requested."
 fi
 
 check_only_one "Only one build operation can be specified." $BUILD_SPECIFIED $INSTALL_SPECIFIED
+
+check_only_one "Only one program operation can be specified." $PROGRAM_OVER_JTAG_SPECIFIED $PROGRAM_WITH_BOSSAC_SPECIFIED
 
 JTAGDUE_ROOT_DIR="$(readlink -f "$PWD")"
 PROJECT_SRC_DIR="$JTAGDUE_ROOT_DIR/Project"
@@ -804,8 +930,12 @@ fi
 
 # ---------  Step 3 and 4: Program and Debug ---------
 
-if $PROGRAM_SPECIFIED || $DEBUG_SPECIFIED; then
+if $PROGRAM_OVER_JTAG_SPECIFIED || $DEBUG_SPECIFIED; then
   do_program_and_debug
+fi
+
+if $PROGRAM_WITH_BOSSAC_SPECIFIED; then
+  do_bossac
 fi
 
 get_uptime
