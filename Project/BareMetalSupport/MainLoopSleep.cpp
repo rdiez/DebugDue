@@ -47,49 +47,48 @@ void WakeFromMainLoopSleep ( void ) throw()
 
 // A value of 0 in these tables means 0% CPU load, and a value of 255 means 100% CPU load.
 
-static uint8_t s_lastMinute[ CPU_LOAD_MINUTE_SLOT_COUNT ];
-static uint8_t s_lastMinuteIndex;
+static uint8_t s_lastLongPeriod[ CPU_LOAD_LONG_PERIOD_SLOT_COUNT ];
+static uint8_t s_lastLongPeriodIndex;
 
-static uint8_t s_lastSecond[ CPU_LOAD_SECOND_SLOT_COUNT ];
-static uint8_t s_lastSecondIndex;
+static uint8_t s_lastShortPeriod[ CPU_LOAD_SHORT_PERIOD_SLOT_COUNT ];
+static uint8_t s_lastShortPeriodIndex;
 
 static uint64_t s_sleepLoopCount;
 
 // The value below was calibrated by hand, see ENABLE_CALIBRATION_MODE.
 // Tips for calibrating this value are:
-// - Leave the "Native" USB interface unconnected for a short time, as there is less CPU load then.
+// - Leave any non-essential interfaces (like USB)  unconnected for a short time, as there is less CPU load then.
 // - Turn off the main loop wake-ups for time-out purposes.
-// - Compile with optimisation.
-//
+// - Run a release build (with compiler optimisations turned on).
 static const uint64_t CALIBRATED_MAX_LOOP_COUNT = 1049937;
 
 
 static bool ENABLE_CALIBRATION_MODE = false;
-static uint64_t s_maximumSleepLoopCount;  // Used only for calibration purposes.
+static uint64_t s_maximumSleepLoopCountForCalibration;
 
 
 static void ShiftSlot ( const uint8_t cpuLoad )
 {
-  s_lastSecond[ s_lastSecondIndex ] = cpuLoad;
+  s_lastShortPeriod[ s_lastShortPeriodIndex ] = cpuLoad;
 
-  ++s_lastSecondIndex;
+  ++s_lastShortPeriodIndex;
 
-  if ( s_lastSecondIndex == CPU_LOAD_SECOND_SLOT_COUNT )
+  if ( s_lastShortPeriodIndex == CPU_LOAD_SHORT_PERIOD_SLOT_COUNT )
   {
-    s_lastSecondIndex = 0;
+    s_lastShortPeriodIndex = 0;
 
     uint32_t average = 0;
 
-    for ( unsigned i = 0; i < CPU_LOAD_SECOND_SLOT_COUNT; ++i )
-      average += s_lastSecond[ i ];
+    for ( unsigned i = 0; i < CPU_LOAD_SHORT_PERIOD_SLOT_COUNT; ++i )
+      average += s_lastShortPeriod[ i ];
 
-    average /= CPU_LOAD_SECOND_SLOT_COUNT;
+    average /= CPU_LOAD_SHORT_PERIOD_SLOT_COUNT;
 
     assert( average <= 255 );
 
-    s_lastMinute[ s_lastMinuteIndex ] = uint8_t( average );
+    s_lastLongPeriod[ s_lastLongPeriodIndex ] = uint8_t( average );
 
-    s_lastMinuteIndex = ( s_lastMinuteIndex + 1 ) % CPU_LOAD_MINUTE_SLOT_COUNT;
+    s_lastLongPeriodIndex = ( s_lastLongPeriodIndex + 1 ) % CPU_LOAD_LONG_PERIOD_SLOT_COUNT;
   }
 }
 
@@ -99,8 +98,8 @@ static void ShiftSlot ( const uint8_t cpuLoad )
 
 void UpdateCpuLoadStats ( void )
 {
-  STATIC_ASSERT( CPU_LOAD_MINUTE_SLOT_COUNT < 255, "Index too small." );
-  STATIC_ASSERT( CPU_LOAD_SECOND_SLOT_COUNT < 255, "Index too small."  );
+  static_assert( CPU_LOAD_LONG_PERIOD_SLOT_COUNT < 255, "Index data type too small." );
+  static_assert( CPU_LOAD_LONG_PERIOD_SLOT_COUNT < 255, "Index data type too small." );
 
   if ( ENABLE_CPU_SLEEP )
     return;
@@ -108,10 +107,10 @@ void UpdateCpuLoadStats ( void )
   uint32_t capturedTickCount;
 
   { // Scope for interrupts disabled.
-      CAutoDisableInterrupts autoDisableInterrupts;
+    CAutoDisableInterrupts autoDisableInterrupts;
 
-      capturedTickCount = s_tickCount;
-      s_tickCount = 0;
+    capturedTickCount = s_tickCount;
+    s_tickCount = 0;
   }
 
   if ( capturedTickCount == 0 )
@@ -119,8 +118,8 @@ void UpdateCpuLoadStats ( void )
 
   if ( ENABLE_CALIBRATION_MODE )
   {
-    if ( s_sleepLoopCount > s_maximumSleepLoopCount )
-      s_maximumSleepLoopCount = s_sleepLoopCount;
+    if ( s_sleepLoopCount > s_maximumSleepLoopCountForCalibration )
+      s_maximumSleepLoopCountForCalibration = s_sleepLoopCount;
   }
 
 
@@ -130,7 +129,7 @@ void UpdateCpuLoadStats ( void )
 
   if ( s_sleepLoopCount > CALIBRATED_MAX_LOOP_COUNT )
   {
-    // If the manual callibration has been done correctly, this should never happen.
+    // If the manual calibration has been done correctly, this should never happen.
     if ( !ENABLE_CALIBRATION_MODE )
       assert( false );
 
@@ -234,13 +233,14 @@ static void CpuLoadAsmLoop ( volatile bool * const /* wasMainLoopEventTriggered 
 
 void MainLoopSleep ( void )
 {
-  // There are better ways to sleep and save energy.
+  // There are probably better ways to sleep and save energy.
   //
   // If we sleep with WFE, we will not be able to wake the CPU up with OpenOCD over JTAG.
   // For more information about this, see OpenOCD ticket #28, titled "Cortex not woken from sleep (ARM ADI v5)".
   //
-  // Alternatively, we could use the Sleep Manager here, function sleepmgr_enter_sleep(), see
-  // the Atmel Software Framework documentation.
+  // Alternatively, we could use the sleep functions that are usually present in
+  // the CPU manufacturer's library. For example, for Atmel chips, see the "Sleep Manager",
+  // function sleepmgr_enter_sleep(), in the Atmel Software Framework documentation.
 
   if ( ENABLE_CPU_SLEEP )
   {
@@ -273,12 +273,12 @@ void CpuLoadStatsTick ( void ) throw()
 
 
 // The caller must read the CPU load data starting from the given index and
-// incrementing it modulo CPU_LOAD_MINUTE_SLOTS or CPU_LOAD_SECOND_SLOTS.
+// incrementing it modulo CPU_LOAD_LONG_PERIOD_SLOT_COUNT or CPU_LOAD_SHORT_PERIOD_SLOT_COUNT.
 
-void GetCpuLoadStats ( const uint8_t ** const lastMinute,
-                       uint8_t  * const lastMinuteIndex,
-                       const uint8_t ** const lastSecond,
-                       uint8_t  * const lastSecondIndex )
+void GetCpuLoadStats ( const uint8_t ** const lastLongPeriod,
+                       uint8_t  * const lastLongPeriodIndex,
+                       const uint8_t ** const lastShortPeriod,
+                       uint8_t  * const lastShortPeriodIndex )
 {
   if ( ENABLE_CPU_SLEEP )
   {
@@ -286,13 +286,13 @@ void GetCpuLoadStats ( const uint8_t ** const lastMinute,
   }
   else
   {
-    *lastMinute      = s_lastMinute;
-    *lastMinuteIndex = s_lastMinuteIndex;
+    *lastLongPeriod      = s_lastLongPeriod;
+    *lastLongPeriodIndex = s_lastLongPeriodIndex;
 
-    *lastSecond      = s_lastSecond;
-    *lastSecondIndex = s_lastSecondIndex;
+    *lastShortPeriod      = s_lastShortPeriod;
+    *lastShortPeriodIndex = s_lastShortPeriodIndex;
 
     if ( ENABLE_CALIBRATION_MODE )
-      SerialPrintf( "Max loop count found: %llu\n" , s_maximumSleepLoopCount );
+      SerialPrintf( "Max loop count found: %llu\n" , s_maximumSleepLoopCountForCalibration );
   }
 }

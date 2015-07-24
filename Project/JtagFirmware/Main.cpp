@@ -355,8 +355,8 @@ void SysTick_Handler ( void )
 
   if ( !ENABLE_CPU_SLEEP )
   {
-    const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_MS = 1000 / CPU_LOAD_SECOND_SLOT_COUNT;
-    STATIC_ASSERT( 0 == ( 1000 % CPU_LOAD_SECOND_SLOT_COUNT ), "Cannot accurately calculate CPU load." );
+    const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_MS = 1000 / CPU_LOAD_SHORT_PERIOD_SLOT_COUNT;
+    STATIC_ASSERT( 0 == ( 1000 % CPU_LOAD_SHORT_PERIOD_SLOT_COUNT ), "Cannot accurately calculate CPU load." );
     const uint32_t MAINLOOP_WAKE_UP_CPU_LOAD_TICK_COUNT = MAINLOOP_WAKE_UP_CPU_LOAD_MS / SYSTEM_TICK_PERIOD_MS;
     STATIC_ASSERT( 0 == ( MAINLOOP_WAKE_UP_CPU_LOAD_MS % SYSTEM_TICK_PERIOD_MS ), "The CPU load statistics will jitter." );
 

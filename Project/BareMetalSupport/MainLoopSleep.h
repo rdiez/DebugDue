@@ -34,16 +34,17 @@ void CpuLoadStatsTick ( void ) throw();
 
 void UpdateCpuLoadStats ( void );
 
-#define CPU_LOAD_MINUTE_SLOT_COUNT 60  // Consumes one byte per slot.
+
+#define CPU_LOAD_LONG_PERIOD_SLOT_COUNT 60  // Consumes one byte per slot.
 
 // A value of 10 here means that the main loop will run once every 100 ms.
 // You need to call UpdateCpuLoadStats() in approximately 100 ms intervals then,
 // or the CPU load statistics will be inaccurate.
-#define CPU_LOAD_SECOND_SLOT_COUNT 10
+#define CPU_LOAD_SHORT_PERIOD_SLOT_COUNT 10
 
-void GetCpuLoadStats ( const uint8_t ** lastMinute,
-                             uint8_t  * lastMinuteIndex,
-                       const uint8_t ** lastSecond,
-                             uint8_t  * lastSecondIndex );
+void GetCpuLoadStats ( const uint8_t ** lastLongPeriod,
+                             uint8_t  * lastLongPeriodIndex,
+                       const uint8_t ** lastShortPeriod,
+                             uint8_t  * lastShortPeriodIndex );
 
 #endif  // Include this header file only once.

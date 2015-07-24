@@ -367,21 +367,21 @@ void CCommandProcessor::DisplayCpuLoad ( void )
 
   uint32_t minuteAverage = 0;
 
-  for ( unsigned j = 0; j < CPU_LOAD_MINUTE_SLOT_COUNT; ++j )
+  for ( unsigned j = 0; j < CPU_LOAD_LONG_PERIOD_SLOT_COUNT; ++j )
   {
-    const unsigned index = ( lastMinuteIndex + j ) % CPU_LOAD_MINUTE_SLOT_COUNT;
+    const unsigned index = ( lastMinuteIndex + j ) % CPU_LOAD_LONG_PERIOD_SLOT_COUNT;
 
     minuteAverage += lastMinute[ index ];
   }
 
-  minuteAverage = minuteAverage * 100 / ( CPU_LOAD_MINUTE_SLOT_COUNT * 255 );
+  minuteAverage = minuteAverage * 100 / ( CPU_LOAD_LONG_PERIOD_SLOT_COUNT * 255 );
   assert( minuteAverage <= 100 );
 
   PrintStr( "CPU load in the last 60 seconds (1 second intervals, oldest to newest):" EOL );
 
-  for ( unsigned j = 0; j < CPU_LOAD_MINUTE_SLOT_COUNT; ++j )
+  for ( unsigned j = 0; j < CPU_LOAD_LONG_PERIOD_SLOT_COUNT; ++j )
   {
-    const unsigned index = ( lastMinuteIndex + j ) % CPU_LOAD_MINUTE_SLOT_COUNT;
+    const unsigned index = ( lastMinuteIndex + j ) % CPU_LOAD_LONG_PERIOD_SLOT_COUNT;
 
     const uint32_t val = lastMinute[ index ] * 100 / 255;
 
@@ -393,22 +393,22 @@ void CCommandProcessor::DisplayCpuLoad ( void )
 
   uint32_t secondAverage = 0;
 
-  for ( unsigned j = 0; j < CPU_LOAD_SECOND_SLOT_COUNT; ++j )
+  for ( unsigned j = 0; j < CPU_LOAD_SHORT_PERIOD_SLOT_COUNT; ++j )
   {
-    const unsigned index = ( lastSecondIndex + j ) % CPU_LOAD_SECOND_SLOT_COUNT;
+    const unsigned index = ( lastSecondIndex + j ) % CPU_LOAD_SHORT_PERIOD_SLOT_COUNT;
 
     secondAverage += lastSecond[ index ];
   }
 
-  secondAverage = secondAverage * 100 / ( CPU_LOAD_SECOND_SLOT_COUNT * 255 );
+  secondAverage = secondAverage * 100 / ( CPU_LOAD_SHORT_PERIOD_SLOT_COUNT * 255 );
   assert( secondAverage <= 100 );
 
 
   PrintStr( "CPU load in the last second (50 ms intervals, oldest to newest):" EOL );
 
-  for ( unsigned j = 0; j < CPU_LOAD_SECOND_SLOT_COUNT; ++j )
+  for ( unsigned j = 0; j < CPU_LOAD_SHORT_PERIOD_SLOT_COUNT; ++j )
   {
-    const unsigned index = ( lastSecondIndex + j ) % CPU_LOAD_SECOND_SLOT_COUNT;
+    const unsigned index = ( lastSecondIndex + j ) % CPU_LOAD_SHORT_PERIOD_SLOT_COUNT;
 
     const uint32_t val = lastSecond[ index ] * 100 / 255;
 
