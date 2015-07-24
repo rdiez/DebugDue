@@ -40,6 +40,8 @@ The developer must manually call every library function and has therefore full c
 
 There are no OS background tasks or threads to worry about.
 
+=item * L<< C++11|https://en.wikipedia.org/wiki/C%2B%2B11 >>.
+
 =item * C++ exceptions.
 
 =item * Newlib with malloc support.
