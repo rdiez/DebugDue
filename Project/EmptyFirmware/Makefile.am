@@ -115,8 +115,18 @@ dist_data_DATA += emptydue.bin
 # ------------------------------------
 # Distribute the .map file too.
 
-%.map: %.elf
+$(MAP_FILENAME): $(ELF_FILENAME)
 	echo "This rule is empty, as the step to generate the .elf file also generates the map file." >/dev/null
 
 dist_data_DATA += $(MAP_FILENAME)
 
+
+# ------------------------------------
+# Create a list of objects in the ELF file sorted by size. It does not take long,
+# and it does help when trying to optimise the bin size.
+
+dist_data_DATA += emptydue-objects-sorted-by-size.map
+
+emptydue-objects-sorted-by-size.map: $(ELF_FILENAME)
+	echo "Generating \"$@\"..." && \
+        arm-none-eabi-nm --radix=d --demangle --size-sort "$<" >"$@"
