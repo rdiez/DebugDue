@@ -61,9 +61,11 @@ an indication that some text was lost at the position where the overflow occurre
 
 Most basic functions you need to get started have been implemented: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, a template-based circular buffer implementation, etc.
 
-=item * Start-up delay for easy JTAG debugging right after reset. This is useful for JTAG probes that do not support the RCLK signal (adaptive clock speed).
+=item * Short start-up delay for easy JTAG debugging right after reset. This is useful for JTAG probes that do not support the RCLK signal (adaptive clock speed).
 
 =item * Firmware cross-compiled with the standard GCC and autotools.
+
+=item * The build script can automatically start a debugger over a JTAG connection. Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
 =back
 
