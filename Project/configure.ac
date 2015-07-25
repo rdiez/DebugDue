@@ -68,6 +68,7 @@ AC_PROG_INSTALL
 
 AC_CONFIG_MACRO_DIR([m4])
 
+AM_EXTRA_RECURSIVE_TARGETS([disassemble])
 
 # ----------- Check whether debug or release build -----------
 

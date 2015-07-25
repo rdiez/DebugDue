@@ -275,6 +275,9 @@ Step 2, build operations:
              files beforehand if necessary.
   --install  Runs "make install". Normally not needed.
   --atmel-software-framework="<path>"  Directory where the ASF is installed.
+  --disassemble  Generate extra information files from the just-built ELF file:
+                 complete disassembly, list of objects sorted by size,
+                 sorted list of strings (with 'strings' command):
 
   The default is not to build anything. If you then debug your firmware,
   make sure that the existing binary matches the code on the target.
@@ -477,6 +480,7 @@ read_command_line_switches ()
   CLEAN_SPECIFIED=false
   BUILD_SPECIFIED=false
   INSTALL_SPECIFIED=false
+  DISASSEMBLE_SPECIFIED=false
   PROGRAM_OVER_JTAG_SPECIFIED=false
   PROGRAM_WITH_BOSSAC_SPECIFIED=false
   CACHE_PROGRAMMED_FILE_SPECIFIED=false
@@ -516,6 +520,7 @@ read_command_line_switches ()
         clean) CLEAN_SPECIFIED=true;;
         build) BUILD_SPECIFIED=true;;
         install) INSTALL_SPECIFIED=true;;
+        disassemble) DISASSEMBLE_SPECIFIED=true;;
         program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
         program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
         cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
@@ -632,16 +637,19 @@ do_build ()
     MAKE_CMD+=" CPPFLAGS=\"$EXTRA_CPPFLAGS${CPPFLAGS:-}\""
   fi
 
+  local TARGETS=""
 
   if $INSTALL_SPECIFIED; then
-    local TARGET="install"
-  else
-    local TARGET=""
+    TARGETS+=" install"
+  fi
+
+  if $DISASSEMBLE_SPECIFIED; then
+    TARGETS+=" disassemble"
   fi
 
   MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
 
-  MAKE_CMD+=" --no-builtin-rules  -j \"$MAKE_J_VAL\" $TARGET"
+  MAKE_CMD+=" --no-builtin-rules  -j \"$MAKE_J_VAL\" $TARGETS"
 
   echo "$MAKE_CMD"
   eval "$MAKE_CMD"

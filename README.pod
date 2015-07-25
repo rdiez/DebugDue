@@ -72,6 +72,8 @@ I have also added a few small and simple patches for GCC and newlib to further r
 
 =item * The build script can automatically start a debugger over a JTAG connection. Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
+=item * In order to help trim the firmware size, the build script can optionally generate a disassembly, an object list sorted by size and a list of all strings found in the final binary.
+
 =back
 
 =head2 About the JTAG Functionality

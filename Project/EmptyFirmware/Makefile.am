@@ -17,7 +17,9 @@
 AUTOMAKE_OPTIONS := foreign
 .DELETE_ON_ERROR:
 
-ELF_FILENAME := emptydue.elf
+ELF_BASENAME := emptydue
+
+ELF_FILENAME := emptydue.elf  # Here substitution $(ELF_BASENAME) does not work (!?).
 
 bin_PROGRAMS := $(ELF_FILENAME)
 
@@ -27,7 +29,7 @@ bin_PROGRAMS := $(ELF_FILENAME)
 
 dist_data_DATA :=  # See "dist_data_DATA += ..." statements below.
 
-MAP_FILENAME := emptydue.map
+MAP_FILENAME := $(ELF_BASENAME).map
 
 # ------------------------------------
 # Manually compile crt0.cpp to the exact name "crt0.o", so that later the linker finds it.
@@ -105,11 +107,11 @@ $(ELF_FILENAME): $(LINKER_SCRIPT_FILENAME)
 
 # I haven't found any way to build and install the .bin file to the bin directory,
 # but maybe the data dir is the 'right' place for it anyway.
-dist_data_DATA += emptydue.bin
+dist_data_DATA += $(ELF_BASENAME).bin
 
-%.bin: %.elf
-	echo "Generating binary file \"$@\"..." && \
-	arm-none-eabi-objcopy -O binary $< $@
+$(ELF_BASENAME).bin: $(ELF_FILENAME)
+	echo "Generating binary file \"$(abspath $@)\"..." && \
+	$(host)-objcopy -O binary "$<" "$@"
 
 
 # ------------------------------------
@@ -121,12 +123,22 @@ $(MAP_FILENAME): $(ELF_FILENAME)
 dist_data_DATA += $(MAP_FILENAME)
 
 
-# ------------------------------------
-# Create a list of objects in the ELF file sorted by size. It does not take long,
-# and it does help when trying to optimise the bin size.
+# POSSIBLE IMPROVEMENT: Automatically delete these files when recursive target "disassemble" is not specified.
+# Otherwise, the contents of these files may be stale.
+disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.map  $(ELF_BASENAME)-disassemble.asm  $(ELF_BASENAME)-sorted-strings.txt
 
-dist_data_DATA += emptydue-objects-sorted-by-size.map
+# Create a list of objects in the ELF file sorted by size, which helps when trying to optimise the bin size.
+$(ELF_BASENAME)-objects-sorted-by-size.map: $(ELF_FILENAME)
+	echo "Generating object list sorted by size to \"$(abspath $@)\"..." && \
+        $(host)-nm --radix=d --demangle --size-sort "$<" >"$@"
 
-emptydue-objects-sorted-by-size.map: $(ELF_FILENAME)
-	echo "Generating \"$@\"..." && \
-        arm-none-eabi-nm --radix=d --demangle --size-sort "$<" >"$@"
+$(ELF_BASENAME)-disassemble.asm: $(ELF_FILENAME)
+	echo "Disassembling to \"$(abspath $@)\"..." && \
+        $(host)-objdump --demangle --disassemble  "$<" >"$@"
+
+# Avoid using a pipe in the call to 'sort' below. Otherwise, we would have to enable bash option "set -o pipefail",
+# assuming that the shell is Bash.
+$(ELF_BASENAME)-sorted-strings.txt: $(ELF_BASENAME).bin
+	echo "Extracting strings to \"$(abspath $@)\"..." && \
+        $(host)-strings "$<" >"$(ELF_BASENAME)-unsorted-strings.txt" && \
+        sort "$(ELF_BASENAME)-unsorted-strings.txt" >"$@"
