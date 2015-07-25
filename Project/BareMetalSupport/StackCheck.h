@@ -21,14 +21,15 @@
 #include <stddef.h>  // For size_t.
 #include <stdint.h>
 
-uintptr_t GetStackStartAddr ( void );
-void SetStackSize ( size_t stackSize );
+uintptr_t GetStackStartAddr ( void ) throw();
+void SetStackSize ( size_t stackSize ) throw();
 
-uintptr_t GetHeapEndAddr ( void );
-void SetHeapEndAddr ( uintptr_t heapEndAddr );
+uintptr_t GetHeapEndAddr ( void ) throw();
+void SetHeapEndAddr ( uintptr_t heapEndAddr ) throw();
 
-void FillStackCanary ( void );
-bool CheckStackCanary ( size_t canarySize );
-size_t GetStackSizeUsageEstimate ( void );
+void FillStackCanary ( void ) throw();
+bool CheckStackCanary ( size_t canarySize ) throw();
+size_t GetStackSizeUsageEstimate ( void ) throw();
+size_t GetCurrentStackDepth ( void ) throw();
 
 #endif  // Include this header file only once.

@@ -41,28 +41,28 @@ static uintptr_t CalculateStackStartAddr ( const size_t stackSize )
 }
 
 
-uintptr_t GetStackStartAddr ( void )
+uintptr_t GetStackStartAddr ( void ) throw()
 {
     return CalculateStackStartAddr( s_stackSize );
 }
 
 
-void SetStackSize ( const size_t stackSize )
+void SetStackSize ( const size_t stackSize ) throw()
 {
     if ( s_heapEndAddr > CalculateStackStartAddr( stackSize ) )
         Panic("Heap/Stack collision.");
-         
+
     s_stackSize = stackSize;
 }
 
 
-uintptr_t GetHeapEndAddr ( void )
+uintptr_t GetHeapEndAddr ( void ) throw()
 {
     return s_heapEndAddr;
 }
 
 
-void SetHeapEndAddr ( const uintptr_t heapEndAddr )
+void SetHeapEndAddr ( const uintptr_t heapEndAddr ) throw()
 {
     if ( s_heapEndAddr > CalculateStackStartAddr( s_stackSize ) )
       Panic("Heap/Stack collision.");
@@ -73,7 +73,7 @@ void SetHeapEndAddr ( const uintptr_t heapEndAddr )
 
 static const uint8_t STACK_CANARY_VAL = 0xBA;
 
-void FillStackCanary ( void )
+void FillStackCanary ( void ) throw()
 {
     assert( !AreInterruptsEnabled() );
 
@@ -97,38 +97,46 @@ void FillStackCanary ( void )
 // Note that this check is not watertight, as writing exactly the STACK_CANARY_VAL value
 // will not be detected.
 
-bool CheckStackCanary ( const size_t canarySize )
+bool CheckStackCanary ( const size_t canarySize ) throw()
 {
     const char * p = (const char *) GetStackStartAddr();
-    
+
     for ( size_t i = 0; i < canarySize; ++i )
     {
         if ( *p != STACK_CANARY_VAL )
-        {   
+        {
             return false;
-        }        
+        }
         ++p;
     }
-    
+
     return true;
 }
 
 
-size_t GetStackSizeUsageEstimate ( void )
+size_t GetStackSizeUsageEstimate ( void ) throw()
 {
     const uint8_t * const startAddr = (const uint8_t *) GetStackStartAddr();
     const uint8_t * const endAddr   = (const uint8_t *) &_estack;
-    
+
     for ( const uint8_t * scan = startAddr;
           scan < endAddr;
           ++scan )
     {
         if ( *scan != STACK_CANARY_VAL )
-        {   
+        {
             return endAddr - scan;
         }
     }
-    
+
     assert( false );
     return endAddr - startAddr;
+}
+
+
+size_t GetCurrentStackDepth ( void ) throw()
+{
+    const uintptr_t currentStackPtr = uintptr_t( __builtin_frame_address(0) );
+    assert( currentStackPtr < uintptr_t( &_estack ) );
+    return uintptr_t( &_estack ) - currentStackPtr;
 }
