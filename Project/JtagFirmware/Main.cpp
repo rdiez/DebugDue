@@ -16,6 +16,7 @@
 
 #include <stdexcept>
 #include <assert.h>
+#include <inttypes.h>
 
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/BusyWait.h>
@@ -255,6 +256,15 @@ void StartOfUserCode ( void )
 
 
     // ------ Main loop ------
+
+    if ( IsDebugBuild() )
+    {
+      SerialPrintf( "Stack entering main loop: current depth: %" PRIuPTR ", estimated usage %" PRIuPTR ", max room %u bytes." EOL,
+                    uintptr_t( GetCurrentStackDepth() ),
+                    uintptr_t( GetStackSizeUsageEstimate() ),
+                    STACK_SIZE );
+
+    }
 
     SerialPrintStr( "Entering the main loop." EOL );
 
