@@ -38,6 +38,10 @@ endif
 # You could try storing only the code address, and then using addr2line in order to lookup the source code position.
 USE_SMALLER_ASSERT := 1
 
+REMOVE_STRERROR_MESSAGES := 1
+
+DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
+
 
 # ------- Miscellaneous definitions -------
 
@@ -176,7 +180,6 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 
 # ------- GCC flags -------
 
-# Tested with GCC version 4.8.3 too.
 GCC_VERSION := 4.9.3
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
@@ -202,7 +205,7 @@ COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 COMMON_GCC_OPTIONS += --target=$(ARM_TARGET)
 COMMON_GCC_OPTIONS += $(GCC_FLOATING_POINT_FLAGS)
 
-COMMON_GCC_OPTIONS += --disable-nls
+COMMON_GCC_OPTIONS += --disable-nls           # --enable-nls lets GCC output diagnostics in languages other than American English.
 COMMON_GCC_OPTIONS += --disable-shared
 COMMON_GCC_OPTIONS += --disable-libssp        # Stack Protection for security. The firmware would need to support it too.
 COMMON_GCC_OPTIONS += --disable-libgomp       # OpenMP support.
@@ -227,6 +230,8 @@ COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
 COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
 
+GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer.patch
+
 
 # ------- Newlib flags -------
 
@@ -242,6 +247,7 @@ NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREF
 NEWLIB_NEWLIB_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
 
 NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibSmallerAssert.patch
+NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibRemoveStrerrorMessages.patch
 
 # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS)
 NEWLIB_CFLAGS := $(COMMON_CFLAGS)
@@ -320,6 +326,12 @@ $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TAR_FILES_DIR)/$(GCC_TAR_FILE)" && \
 	popd >/dev/null && \
+	pushd "$(GCC_SRC_DIR)" >/dev/null && \
+	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
+	  echo "Applying patch \"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)\" ..." && \
+	  patch -p0 --forward <"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
+	fi && \
+	popd >/dev/null && \
 	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
 	echo "Unpacking GCC finished."
 
@@ -370,6 +382,10 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	  echo "Applying patch \"$(NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME)\" ..." && \
 	  patch -p0 --forward <"$(NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME)"; \
 	fi && \
+	if [ $(REMOVE_STRERROR_MESSAGES) -ne 0 ]; then \
+	  echo "Applying patch \"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)\" ..." && \
+	  patch -p0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
+	fi && \
 	popd >/dev/null && \
 	echo "Unpacking newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
 	echo "Unpacking newlib finished."
@@ -392,6 +408,8 @@ NEWLIB_CFG_FLAGS += --disable-newlib-mb
 NEWLIB_CFG_FLAGS += --disable-newlib-atexit-alloc
 NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
+NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc  # With newlib's standard malloc library, you get an array in RAM called __malloc_av_ that weighs 1032 bytes, at least on a Cortex-M3 CPU.
+NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io  # Warning: you lose support for printing 64-bit integers.
 
 # About --disable-libgloss and --disable-newlib-supplied-syscalls:
 #
@@ -417,15 +435,19 @@ NEWLIB_CFG_FLAGS += --disable-libgloss
 NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
 $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
-	echo "Configuring newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
+	echo "About to configure newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
 	mkdir -p "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
+	echo "Help text from 'configure' script for top-level newlib dir (see further below for newlib/ subdir):" && \
 	$(NEWLIB_SRC_DIR)/configure --help && \
+	echo "Help text from 'configure' script for newlib/ subdir:" && \
+	$(NEWLIB_SRC_DIR)/newlib/configure --help && \
+	echo "Configuring newlib:" && \
 	PATH=$(PATH_DIR):$$PATH \
-      CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
-      $(NEWLIB_SRC_DIR)/configure \
-        $(NEWLIB_CFG_FLAGS) && \
+          CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+          $(NEWLIB_SRC_DIR)/configure \
+            $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
 	echo "The binutils config has finished."
 
