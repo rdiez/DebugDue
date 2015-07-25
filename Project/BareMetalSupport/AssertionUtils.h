@@ -26,6 +26,22 @@
 #error "Either DEBUG or NDEBUG must be defined."
 #endif
 
+// You would normally use "#ifndef NDEBUG" in order to conditionally compile extra code in debug builds.
+// The drawback of using #ifdef is that the compiler completely skips compilation, which easily
+// leads to code rot, because any eventual syntax errors in the skipped parts will not be immediately
+// detected. Using normal 'if' statements with helper routine 'IsDebugBuild()' below solves that problem.
+#ifdef __cplusplus
+inline bool IsDebugBuild ( void ) throw()
+{
+  #ifndef NDEBUG
+    return true;
+  #else
+    return false;
+  #endif
+}
+#endif
+
+
 #include <assert.h>  //  For the assert() call in the VERIFY macro below.
 
 
