@@ -57,13 +57,18 @@ while the message characters are sent to the USB virtual serial port in the back
 If the background console output buffer overflows, console text will be lost, but the user will always see
 an indication that some text was lost at the position where the overflow occurred.
 
-=item * Library of common functions.
+=item * Library of common functions for embedded development.
 
 Most basic functions you need to get started have been implemented: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, a template-based circular buffer implementation, etc.
 
 =item * Short start-up delay for easy JTAG debugging right after reset. This is useful for JTAG probes that do not support the RCLK signal (adaptive clock speed).
 
 =item * Firmware cross-compiled with the standard GCC and autotools.
+
+=item * L<< LTO|https://en.wikipedia.org/wiki/Interprocedural_optimization >> release builds.
+
+The toolchain is built with newlib's --enable-newlib-nano-malloc and --enable-newlib-nano-formatted-io.
+I have also added a few small and simple patches for GCC and newlib to further reduce code and data sizes.
 
 =item * The build script can automatically start a debugger over a JTAG connection. Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
@@ -80,8 +85,8 @@ and I have obtained rates of around 84 KiB/s with an Atmel AT91SAM9G20-EK board 
 
 Note that I had to manually patch OpenOCD version 0.8.0 as of May 2013 in order
 for setting "buspirate_speed fast" to work with the Bus Pirate board, otherwise you have to revert back to "buspirate_speed normal",
-and then you get just 1 KiB/s when using the Bus Pirate as a JTAG adapter. If you modify OpenOCD in order to use bigger USB packets,
-you can reach slightly higher speeds with the JtagDue.
+and then you get just 1 KiB/s when using the Bus Pirate as a JTAG adapter. This should no longer be necessary for OpenOCD 0.9.0.
+If you modify OpenOCD in order to use bigger USB packets, you can reach slightly higher speeds with the JtagDue.
 
 There are some caveats when using the Arduino Due with the JtagDue firmware as a JTAG adapter:
 
