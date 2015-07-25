@@ -228,7 +228,11 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_list' has changed in GCC 4.4".
                                       # I do not know yet if this warning should be taken seriously.
 
-EXTRA_C_AND_CXX_FLAGS+=" -Wframe-larger-than=400"  # This limit of 300 bytes is rather arbitrary. But it helps.
+EXTRA_C_AND_CXX_FLAGS+=" -Wframe-larger-than=400"  # This limit of 400 bytes is rather arbitrary. But it helps.
+# Option -Wstack-usage is better, as it considers things like alloca() and variable-length arrays.
+# However, you then get the occasional warning "stack usage computation not supported for this target",
+# at least when using inline assembly.
+
 
 # --- Set the final variables.
 
