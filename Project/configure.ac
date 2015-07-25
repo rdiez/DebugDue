@@ -228,6 +228,8 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_list' has changed in GCC 4.4".
                                       # I do not know yet if this warning should be taken seriously.
 
+EXTRA_C_AND_CXX_FLAGS+=" -Wframe-larger-than=400"  # This limit of 300 bytes is rather arbitrary. But it helps.
+
 # --- Set the final variables.
 
 AM_CPPFLAGS=" $EXTRA_CPP_FLAGS"
