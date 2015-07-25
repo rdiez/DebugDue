@@ -282,6 +282,14 @@ Step 2, build operations:
 Step 3, program operations:
   --program-over-jtag  Transfers the firmware over JTAG to the target device.
   --program-with-bossac  Transfers the firmware with 'bossac' to the target device.
+  --cache-programmed-file  Programming a new binary takes time. If the binary has not
+                           changed, this option skips programming.
+                           Warning: This assumes exclusive access to a single device.
+                           If some other tool reprograms the Arduino Due, or it
+                           is swapped out for a different Arduino Due, it will confuse
+                           the build script. In this case, either re-run without
+                           this option or delete the cached binary file to force
+                           reprogramming.
   --path-to-bossac="path/to/bossac"  The default is "bossac", which only works
                                      if is is on the PATH. Under Ubuntu/Debian,
                                      the package to install is called 'bossa-cli'.
@@ -471,6 +479,7 @@ read_command_line_switches ()
   INSTALL_SPECIFIED=false
   PROGRAM_OVER_JTAG_SPECIFIED=false
   PROGRAM_WITH_BOSSAC_SPECIFIED=false
+  CACHE_PROGRAMMED_FILE_SPECIFIED=false
   DEBUG_SPECIFIED=false
   DEBUG_FROM_THE_START_SPECIFIED=false
   declare -ag BREAKPOINTS=()
@@ -509,6 +518,7 @@ read_command_line_switches ()
         install) INSTALL_SPECIFIED=true;;
         program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
         program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
+        cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
         debug) DEBUG_SPECIFIED=true;;
         debug-from-the-start) DEBUG_FROM_THE_START_SPECIFIED=true;;
 
@@ -697,6 +707,12 @@ do_bossac ()
     abort "Tool 'bossac' expects the port location to start with \"$PREFIX\", but it does not. The port location is: \"$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT\"."
   fi
 
+  if $SAME_FILE_THEREFORE_SKIP_PROGRAMMING; then
+    echo "Skipping programming, as it is the same binary file as the last time around. In order to force programming, delete the cached file:"
+    echo "  $CACHED_PROGRAMMED_FILE_FILENAME"
+    return
+  fi
+
   local PORT_WITHOUT_PREFIX="${PROGRAMMING_USB_VIRTUAL_SERIAL_PORT:$PREFIX_LEN}"
 
   local SERIAL_PORT_CONFIG_CMD
@@ -749,6 +765,11 @@ do_bossac ()
     printf "$MSG" >&2
     exit $EXIT_CODE
   fi
+
+  if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
+    echo "Keeping a copy of pogrammed file \"$BIN_FILEPATH\" at \"$CACHED_PROGRAMMED_FILE_FILENAME\" ..."
+    cp "$BIN_FILEPATH" "$CACHED_PROGRAMMED_FILE_FILENAME"
+   fi
 }
 
 
@@ -799,10 +820,21 @@ do_program_and_debug ()
   add_openocd_cmd "init"
 
   if $PROGRAM_OVER_JTAG_SPECIFIED; then
-    local FLASH_ADDR="0x00080000"
-    add_openocd_cmd "my_reset_and_halt"
-    add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
-    add_openocd_cmd "flash write_image erase $BIN_FILEPATH $FLASH_ADDR"
+
+    if $SAME_FILE_THEREFORE_SKIP_PROGRAMMING; then
+      add_openocd_cmd_echo "Skipping programming, as it is the same binary file as the last time around. In order to force programming, delete the cached file:"
+      add_openocd_cmd_echo "  $CACHED_PROGRAMMED_FILE_FILENAME"
+    else
+      local FLASH_ADDR="0x00080000"
+      add_openocd_cmd "my_reset_and_halt"
+      add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
+      add_openocd_cmd "flash write_image erase $BIN_FILEPATH $FLASH_ADDR"
+
+      if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
+        add_openocd_cmd_echo "Keeping a copy of programmed file \"$BIN_FILEPATH\" at \"$CACHED_PROGRAMMED_FILE_FILENAME\" ..."
+        add_openocd_cmd "file copy -force \"$BIN_FILEPATH\" \"$CACHED_PROGRAMMED_FILE_FILENAME\""
+      fi
+    fi
 
     if ! $DEBUG_SPECIFIED; then
       add_openocd_cmd "reset run"
@@ -865,7 +897,7 @@ if $CLEAN_SPECIFIED || \
    $DEBUG_SPECIFIED; then
   :
 else
-  abort "No operation requested."
+  abort "No operation requested. Specify --help for usage information."
 fi
 
 check_only_one "Only one build operation can be specified." $BUILD_SPECIFIED $INSTALL_SPECIFIED
@@ -884,6 +916,8 @@ esac
 
 PROJECT_OBJ_DIR="$OUTPUT_DIR/$PROJECT_NAME-obj-$PROJECT_OBJ_DIR_SUFFIX"
 PROJECT_BIN_DIR="$OUTPUT_DIR/$PROJECT_NAME-bin-$PROJECT_OBJ_DIR_SUFFIX"
+
+CACHED_PROGRAMMED_FILE_FILENAME="$OUTPUT_DIR/CachedProgrammedFile.bin"
 
 TARGET_ARCH="arm-none-eabi"
 
@@ -939,6 +973,29 @@ fi
 
 
 # ---------  Step 3 and 4: Program and Debug ---------
+
+SAME_FILE_THEREFORE_SKIP_PROGRAMMING=false
+
+if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
+
+  if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
+    if [ -e "$CACHED_PROGRAMMED_FILE_FILENAME" ]; then
+      set +o errexit
+      cmp --quiet "$CACHED_PROGRAMMED_FILE_FILENAME" "$BIN_FILEPATH"
+      CMP_EXIT_CODE="$?"
+      set -o errexit
+
+      case "$CMP_EXIT_CODE" in
+        0) SAME_FILE_THEREFORE_SKIP_PROGRAMMING=true;;
+        1) ;;
+        *) abort "Error comparing files \"$CACHED_PROGRAMMED_FILE_FILENAME\" and \"$BIN_FILEPATH\", cmp exited with a status code of $CMP_EXIT_CODE";;
+      esac
+    fi
+  else
+    delete_file_if_exists "$CACHED_PROGRAMMED_FILE_FILENAME"
+  fi
+
+fi
 
 if $PROGRAM_OVER_JTAG_SPECIFIED || $DEBUG_SPECIFIED; then
   do_program_and_debug

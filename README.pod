@@ -411,9 +411,9 @@ The idea is that, no matter what development environment you are using (Emacs, V
 you should configure the usual compile/run/etc. keys to run the script with different arguments. For example:
 
  F7 (compile):          ./JtagDueBuilder.sh --build
- F5 (run)    :          ./JtagDueBuilder.sh --build --program-over-jtag --debug --debugger-type=ddd
+ F5 (run)    :          ./JtagDueBuilder.sh --build --program-over-jtag --debug --debugger-type=ddd --cache-programmed-file
  Ctrl+Alt+F7 (rebuild): ./JtagDueBuilder.sh --clean --build
- Ctrl+R (run to line):  ./JtagDueBuilder.sh --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123"
+ Ctrl+R (run to line):  ./JtagDueBuilder.sh --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123" --cache-programmed-file
 
 This way, you will not have to type any console commands in order to run or debug your firmware.
 You will not get the full comfort you are used to when writing standard PC applications,
