@@ -414,6 +414,11 @@ do_configure_if_necessary ()
 
     CONFIG_CMD+=" --build=\"$($PROJECT_SRC_DIR/config.guess)\" --host=\"$TARGET_ARCH\""
 
+    # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
+    # they will complain about a missing plug-in to process object files compiled for LTO.
+    CONFIG_CMD+=" AR=\"$TARGET_ARCH-gcc-ar\""
+    CONFIG_CMD+=" RANLIB=\"$TARGET_ARCH-gcc-ranlib\""
+
     echo "$CONFIG_CMD"
     eval "$CONFIG_CMD"
 

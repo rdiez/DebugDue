@@ -98,6 +98,12 @@ else
     # It would probably be best to compile with -Os by default and mark some modules or functions for
     # -O3 optimisation with GCC options "#pragma GCC optimize ("string"...)" and "attribute((optimize("STRING")))".
     DEBUG_FLAGS="-O3 -DNDEBUG"
+
+    if true; then
+      # The GCC toolchain is built with --enable-lto. I hope that makes it build the C runtime library,
+      # libstdc++, etc. with -flto. We should probably build newlib with LTO enabled too.
+      DEBUG_FLAGS+=" -flto"
+    fi
 fi
 
 DEBUG_FLAGS+=" -g -Wall"
