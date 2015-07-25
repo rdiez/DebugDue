@@ -756,6 +756,11 @@ do_program_and_debug ()
 {
   local OPEN_OCD_CMD="\"$PATH_TO_OPENOCD\" "
 
+  if false; then
+    # The default is debug level 2. Level 3 is too verbose and slows execution down considerably.
+    add_openocd_arg "--debug=3 "
+  fi
+
   case "$JTAG_ADAPTER" in
     JtagDue)
       add_openocd_cmd "set JTAGDUE_SERIAL_PORT \"$JTAGDUE_SERIAL_PORT\""
