@@ -23,6 +23,7 @@
 #include "SerialPrint.h"
 #include "AssertionUtils.h"
 #include "Miscellaneous.h"
+#include "IntegerPrintUtils.h"
 
 
 static volatile bool s_wasMainLoopEventTriggered = false;
@@ -293,6 +294,9 @@ void GetCpuLoadStats ( const uint8_t ** const lastLongPeriod,
     *lastShortPeriodIndex = s_lastShortPeriodIndex;
 
     if ( ENABLE_CALIBRATION_MODE )
-      SerialPrintf( "Max loop count found: %llu\n" , s_maximumSleepLoopCountForCalibration );
+    {
+      char buffer[ CONVERT_TO_DEC_BUF_SIZE ];
+      SerialPrintf( "Max loop count found: %s\n", convert_unsigned_to_dec_th( s_maximumSleepLoopCountForCalibration, buffer, ',' ) );
+    }
   }
 }

@@ -15,6 +15,7 @@
 #include <BareMetalSupport/TextParsingUtils.h>
 #include <BareMetalSupport/BusyWait.h>
 #include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/IntegerPrintUtils.h>
 
 #include "Globals.h"
 #include "BusPirateOpenOcdMode.h"
@@ -554,7 +555,8 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_UPTIME, false, false, &extraParamsFound ) )
   {
-    Printf( "Uptime: %llu seconds." EOL, (long long)(GetUptime() / 1000) );
+    char buffer[ CONVERT_TO_DEC_BUF_SIZE ];
+    Printf( "Uptime: %s seconds." EOL, convert_unsigned_to_dec_th( GetUptime() / 1000, buffer, ',' ) );
     return;
   }
 

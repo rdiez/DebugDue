@@ -19,6 +19,9 @@
 #include "AssertionUtils.h"
 
 
+static const char NULL_CHAR = '\0';
+
+
 //------------------------------------------------------------------------
 // The buffer must be at least CONVERT_UINT32_TO_HEX_BUFSIZE bytes long.
 
@@ -43,4 +46,53 @@ void ConvertUint32ToHex ( const uint32_t val,
   assert( v == 0 );
 
   buffer[CHAR_COUNT] = '\0';
+}
+
+
+char * convert_unsigned_to_dec_th ( uint64_t val,
+                                    char * const buffer,
+                                    const char thousandSepChar )
+{
+  static_assert( sizeof(val) <= 8, "" );
+  // Sonst brauchen wir eine höhere Anzahl an Zeichen hier:
+  static_assert( CONVERT_TO_DEC_BUF_SIZE == 28, "" );
+
+
+  // Short-circuit 0, as it's a very common value.
+
+  if ( val == 0 )
+  {
+    buffer[0] = '0';
+    buffer[1] = NULL_CHAR;
+    return buffer;
+  }
+
+
+  // Start at the end of the buffer, fill the buffer backwards.
+
+  char * p = buffer + CONVERT_TO_DEC_BUF_SIZE - 1;
+
+  int i = 0;
+
+  *p = NULL_CHAR;
+
+  do
+  {
+    if ( i % 3 == 0 && i != 0 )
+    {
+      --p;
+      *p = thousandSepChar;
+    }
+
+    --p;
+    *p = char( '0' + val % 10 );
+    val /= 10;
+    ++i;
+  }
+  while ( val != 0 );
+
+
+  assert( p >= buffer );
+
+  return p;
 }

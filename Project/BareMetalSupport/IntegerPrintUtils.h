@@ -46,4 +46,27 @@ inline char ConvertDigitToHex ( const unsigned digitValue,
 
 void ConvertUint32ToHex ( uint32_t val, char * buffer, bool useLowercaseHexChars );
 
+
+//------------------------------------------------------------------------
+//
+// Converts an integer number to its shortest decimal representation.
+// It's of course faster than printf(), and also faster than itoa(),
+// because for some reason itoa() internally uses multithreaded locks.
+//
+// Pass in a buffer of at least size CONVERT_TO_DEC_BUF_SIZE.
+//
+// Returns the number of characters written to the buffer,
+// without taking into account the NULL character appended at the end.
+//
+
+#define CONVERT_TO_DEC_BUF_SIZE 28  // Max unsigned 64-bit number is 18446744073709551615 (20 digits), plus NULL terminator (1),
+                                    // negative '-' prefix if necessary for signed numbers (1) und thousand separators (6).
+
+// This version generates thousand separators.
+// Note that the number ends up at the end of the buffer, and not at the beginning.
+// Thefore, the pointer to the number's beginning is returned.
+char * convert_unsigned_to_dec_th ( uint64_t val,
+                                    char * buffer,
+                                    char thousandSepChar );
+
 #endif  // Include this header file only once.
