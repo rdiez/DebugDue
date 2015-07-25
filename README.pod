@@ -40,7 +40,7 @@ The developer must manually call every library function and has therefore full c
 
 There are no OS background tasks or threads to worry about.
 
-=item * L<< C++11|https://en.wikipedia.org/wiki/C%2B%2B11 >>.
+=item * L<< C++11|https://en.wikipedia.org/wiki/C%2B%2B11 >> support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
 
 =item * C++ exceptions.
 
