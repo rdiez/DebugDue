@@ -43,7 +43,7 @@ static void SetupCpuClock ( void )
 {
     // WARNING: This routine is called very early after a reset, so things
     // like the .data and .bss segments have probably not been initialised yet.
-  
+
     // NOTE about JTAG debugging:
     //   You may have trouble connecting with a JTAG debugger before the clock
     //   has been setup. After a hardware reset, the core runs at 4 MHz by default.
@@ -91,7 +91,7 @@ static void SetupCpuClock ( void )
     // and the crystal oscillator on the Arduino Due runs at 12 MHz. So we are running the CPU faster here,
     // assuming we came here after a hardware reset.
     PMC->CKGR_MOR = SYS_CKGR_MOR_KEY_VALUE |
-                    SYS_BOARD_OSCOUNT | 
+                    SYS_BOARD_OSCOUNT |
                     CKGR_MOR_MOSCRCEN |
                     CKGR_MOR_MOSCXTEN |
                     CKGR_MOR_MOSCSEL;
@@ -132,7 +132,7 @@ static void SetupCpuClock ( void )
     const uint32_t PLL_FACTOR = PMC_MCKR_PRES_CLK_2;  // 168 MHz / prescaler of 2 = our target core frequency of 84 MHz.
 
     PMC->PMC_MCKR = PLL_FACTOR | PMC_MCKR_CSS_MAIN_CLK;
-    
+
     // Wail until the PMC Status Register reports that the Master Clock is ready.
     while ( !(PMC->PMC_SR & PMC_SR_MCKRDY) )
     {
@@ -179,9 +179,9 @@ void RunUserCode ( void )
       }
 
     #else
-      
+
         StartOfUserCode();
-        
+
     #endif
 }
 
@@ -237,11 +237,11 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
         SCB->VTOR |= (1UL) << SCB_VTOR_TBLBASE_Pos;
     }
 
-    
+
     // The CPU starts at 4 MHz, and that should be the default value of variable SystemCoreClock.
     // We have set the CPU clock above, so update this variable here. Its value is needed
     // in order to calculate the clock delay to get the correct UART speed.
-    
+
     assert( SystemCoreClock == 4000000 );
 
     SystemCoreClockUpdate();
@@ -251,7 +251,7 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
       assert( SystemCoreClock == CHIP_FREQ_CPU_MAX );
     #endif
 
-  
+
     // Initialize the C/C++ support by calling all registered constructors.
     __libc_init_array();
 
@@ -261,7 +261,7 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
 
     // If you want to check for memory leaks and so on, you may need to call the destructors here:
     //   __libc_fini_array();
-    
+
     Panic("RunUserCode() returned unexpectedly.");
 }
 
@@ -392,7 +392,7 @@ static const DeviceVectors ExceptionTable =
 bool IsJtagTdoPullUpActive ( void )
 {
   Pio * const pioPtr = PIOB;
-    
+
   const uint8_t PIN_NUMBER = 30;
 
   // This pin is used for JTAG purposes and must not be controlled by the PIO Controller.
