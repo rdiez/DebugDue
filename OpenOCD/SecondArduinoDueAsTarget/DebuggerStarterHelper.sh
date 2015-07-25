@@ -184,6 +184,12 @@ else
   add_gdb_cmd "cont"
 fi
 
+# If GDB cannot find the .elf file, it will print an error, but it will not stop.
+# Therefore, manually check here whether the file does exist.
+if [ ! -f "$ELF_FILE_PATH" ]; then
+  abort "Cannot find the ELF file \"$ELF_FILE_PATH\"."
+fi
+
 add_gdb_arg "\"$ELF_FILE_PATH\""
 
 if [[ $DEBUGGER_TYPE = "ddd" ]]; then
