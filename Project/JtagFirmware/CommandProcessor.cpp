@@ -27,7 +27,7 @@
 static const char SPACE_AND_TAB[] = " \t";
 
 // This symbol is defined in the linker script file.
-extern uint32_t _end;
+extern "C" int _end;
 
 
 uint8_t g_usbSpeedTestBuffer[ 1000 ];

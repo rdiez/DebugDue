@@ -29,14 +29,14 @@
 #endif
 
 // These symbols are defined in the linker script file.
-extern uint32_t _sfixed;
-extern uint32_t _efixed;
-extern uint32_t _etext;
-extern uint32_t _srelocate;
-extern uint32_t _erelocate;
-extern uint32_t _szero;
-extern uint32_t _ezero;
-extern uint32_t _estack;
+extern "C" int _sfixed;
+extern "C" int _efixed;
+extern "C" int _etext;
+extern "C" int _srelocate;
+extern "C" int _erelocate;
+extern "C" int _szero;
+extern "C" int _ezero;
+extern "C" int _estack;
 
 
 static void SetupCpuClock ( void )
@@ -208,12 +208,12 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
 
     // Relocate the initialised data from flash to SRAM.
 
-    const uint32_t * relocSrc  = &_etext;
-          uint32_t * relocDest = &_srelocate;
+    const uint32_t * relocSrc  = (const uint32_t *)&_etext;
+          uint32_t * relocDest = (      uint32_t *)&_srelocate;
 
     if ( relocSrc != relocDest )
     {
-        while ( relocDest < &_erelocate )
+        while ( relocDest < (const uint32_t *) &_erelocate )
         {
             *relocDest++ = *relocSrc++;
         }
@@ -222,14 +222,14 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
 
     // Clear the zero segment (BSS).
 
-    for ( uint32_t * zeroSegPtr = &_szero;  zeroSegPtr < &_ezero;  ++zeroSegPtr )
+    for ( uint32_t * zeroSegPtr = (uint32_t *)&_szero;  zeroSegPtr < (const uint32_t *) &_ezero;  ++zeroSegPtr )
     {
       *zeroSegPtr = 0;
     }
 
 
     // Set the vector table base address.
-    const uint32_t * const pVecSrc = (uint32_t *) & _sfixed;
+    const uint32_t * const pVecSrc = (const uint32_t *) & _sfixed;
     SCB->VTOR = ((uint32_t) pVecSrc & SCB_VTOR_TBLOFF_Msk);
 
     if (((uint32_t) pVecSrc >= IRAM0_ADDR) && ((uint32_t) pVecSrc < NFC_RAM_ADDR))

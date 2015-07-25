@@ -230,12 +230,12 @@ static void PeriodicAction ( void )
 
 
 // These symbols are defined in the linker script file.
-extern uint32_t _sfixed;
-extern uint32_t _etext;
-extern uint32_t _sbss;
-extern uint32_t _ebss;
-extern uint32_t _srelocate;
-extern uint32_t _erelocate;
+extern "C" int _sfixed;
+extern "C" int _etext;
+extern "C" int _sbss;
+extern "C" int _ebss;
+extern "C" int _srelocate;
+extern "C" int _erelocate;
 
 
 void StartOfUserCode ( void )
