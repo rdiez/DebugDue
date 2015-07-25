@@ -47,8 +47,11 @@ caddr_t _sbrk ( const int incr )
     // but I have yet to see this in real life, because the default value of
     // newlib's M_TRIM_THRESHOLD is rather high, if not disabled altogether.
     static_assert( M_TRIM_THRESHOLD == -1, "" );
-    assert( incr > 0 );  // If the value does indeed go negative, we need to adjust
-                         // the code below (signed instead of unsigned integers and so on).
+    assert( incr >= 0 );  // If the value does indeed go negative, we need to adjust
+                          // the code below (signed instead of unsigned integers and so on).
+                          //
+                          // Note that, during start-up, newlib may call with incr == 0,
+                          // see sbrk_aligned() in newlib/libc/stdlib/nano-mallocr.c .
 
     const uintptr_t prevHeapEnd = GetHeapEndAddr();
 
@@ -56,7 +59,7 @@ caddr_t _sbrk ( const int incr )
     {
         Panic( "Out of heap memory." );
     }
-    
+
     SetHeapEndAddr( prevHeapEnd + incr );
 
     return caddr_t( prevHeapEnd );
@@ -144,7 +147,7 @@ extern "C" void __assert_func ( const char * const filename,
                                 const char * const failedexpr )
 {
   char buffer[ASSERT_MSG_BUFSIZE];
-  
+
   snprintf( buffer, sizeof(buffer),
             "\nAssertion \"%s\" failed at file %s, line %d%s%s.\n",
             failedexpr ? failedexpr : "<expr unavail>",
@@ -152,7 +155,7 @@ extern "C" void __assert_func ( const char * const filename,
             line,
             funcname ? ", function: " : "",
             funcname ? funcname : "" );
-    
+
   Panic( buffer );
 }
 
