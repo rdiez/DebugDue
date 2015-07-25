@@ -458,6 +458,17 @@ do_configure_if_necessary ()
     CONFIG_CMD+=" AR=\"$TARGET_ARCH-gcc-ar\""
     CONFIG_CMD+=" RANLIB=\"$TARGET_ARCH-gcc-ranlib\""
 
+    # At the moment, ccache detection (and warning if not found) is always enabled.
+    if true; then
+      CCACHE_NAME="ccache"
+      if type "$CCACHE_NAME" >/dev/null 2>&1 ; then
+        CONFIG_CMD+=" CC=\"$CCACHE_NAME $TARGET_ARCH-gcc\""
+        CONFIG_CMD+=" CXX=\"$CCACHE_NAME $TARGET_ARCH-g++\""
+      else
+        echo "Recommendation: Install '$CCACHE_NAME' in order to reduce compilation times."
+      fi
+    fi
+
     echo "$CONFIG_CMD"
     eval "$CONFIG_CMD"
 
