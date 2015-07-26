@@ -265,7 +265,7 @@ Information switches:
 All steps below are optional. The step number gives the order in which
 the steps are run if requested.
 
-Step 1, clean operations:
+Step 1, clean operation and configuration options:
   --clean  Deletes the -obj and -bin directories for the given build type
            and the 'configure' script, if they exist, so that the
            next build will start from scratch.
@@ -283,6 +283,10 @@ Step 1, clean operations:
            of using a local cache file, the given one will be used.
            The caller is then responsible for the lifetime of the supplied
            cache file, as this script will never drop it.
+  --enable-ccache   Uses 'ccache', which can possibly reduce compilation times.
+                    You can only enable ccache when configuring the project
+                    for the first time (or after cleaning it).
+                    See this script's source code for details about ccache.
 
 Step 2, build operations:
   --build    Runs "make" for the default target. Generates the autoconf
@@ -456,14 +460,31 @@ do_configure_if_necessary ()
     CONFIG_CMD+=" AR=\"$TARGET_ARCH-gcc-ar\""
     CONFIG_CMD+=" RANLIB=\"$TARGET_ARCH-gcc-ranlib\""
 
-    # At the moment, ccache detection (and warning if not found) is always enabled.
-    if true; then
+    if $ENABLE_CCACHE_SPECIFIED; then
+
+      # Do not turn ccache on unconditionally. The price of a cache miss in a normal
+      # compilation can be as high as 20 %. There are many more disk writes during
+      # compilation and pressure increases on the system's disk cache.
+      #
+      # Therefore, ccache only helps if you recompile often with the same results.
+      # For example, if you rebuild many times from scratch during testing of
+      # your application's build script. And you are always using the same compiler.
+      #
+      # It also helps if your changes end up generating the same preprocessor output
+      # for many of the recompiled files. For example, if you amend just comments,
+      # or you change something under #ifdef DEBUG in a header file included by many
+      # source files, but you are compiling a release build at the moment.
+      #
+      # Using ccache also means more admin work. You should check every now and then
+      # if your cache hits are high enough. Otherwise, you may have to increase
+      # your global cache size, or you'll be losing performance.
+
       CCACHE_NAME="ccache"
       if type "$CCACHE_NAME" >/dev/null 2>&1 ; then
         CONFIG_CMD+=" CC=\"$CCACHE_NAME $TARGET_ARCH-gcc\""
         CONFIG_CMD+=" CXX=\"$CCACHE_NAME $TARGET_ARCH-g++\""
       else
-        echo "Recommendation: Install '$CCACHE_NAME' in order to reduce compilation times."
+        abort "Tool '$CCACHE_NAME' not found."
       fi
     fi
 
@@ -518,6 +539,7 @@ read_command_line_switches ()
   ENABLE_CONFIGURE_CACHE_SPECIFIED=false
   CONFIGURE_CACHE_FILENAME=""
   BUILD_SPECIFIED=false
+  ENABLE_CCACHE_SPECIFIED=false
   INSTALL_SPECIFIED=false
   DISASSEMBLE_SPECIFIED=false
   PROGRAM_OVER_JTAG_SPECIFIED=false
@@ -569,6 +591,7 @@ read_command_line_switches ()
           ;;
 
         build) BUILD_SPECIFIED=true;;
+        enable-ccache) ENABLE_CCACHE_SPECIFIED=true;;
         install) INSTALL_SPECIFIED=true;;
         disassemble) DISASSEMBLE_SPECIFIED=true;;
         program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;

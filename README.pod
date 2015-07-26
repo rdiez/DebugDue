@@ -76,7 +76,7 @@ I have also added a few small and simple patches for GCC and newlib to further r
 
 =item * In order to help trim the firmware size, the build script can optionally generate a disassembly, an object list sorted by size and a list of all strings found in the final binary.
 
-=item * If L<< ccache|https://en.wikipedia.org/wiki/Ccache >> is detected, it will be used in order to reduce compilation times.
+=item * The build script can optionally use L<< ccache|https://en.wikipedia.org/wiki/Ccache >>, which can possibly reduce compilation times.
 
 =back
 
