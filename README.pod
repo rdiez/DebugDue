@@ -65,6 +65,8 @@ Most basic functions you need to get started have been implemented: Busy wait lo
 
 =item * Firmware cross-compiled with the standard GCC and autotools.
 
+You can also enable using a cache file when invoking autoconf's 'configure' script.
+
 =item * L<< LTO|https://en.wikipedia.org/wiki/Interprocedural_optimization >> release builds.
 
 The toolchain is built with newlib's --enable-newlib-nano-malloc and --enable-newlib-nano-formatted-io.

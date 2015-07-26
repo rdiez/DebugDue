@@ -55,12 +55,6 @@ abort ()
 }
 
 
-is_var_set ()
-{
-  if [ "${!1-first}" == "${!1-second}" ]; then return 0; else return 1; fi
-}
-
-
 str_starts_with ()
 {
   # $1 = string
@@ -275,16 +269,20 @@ Step 1, clean operations:
   --clean  Deletes the -obj and -bin directories for the given build type
            and the 'configure' script, if they exist, so that the
            next build will start from scratch.
-  --configure-cache[="optional filename"]  Enables the cache file when invoking
+  --enable-configure-cache  Enables the cache file when invoking
            autoconf's 'configure' script. This will save some time
            when rebuilding from scratch.
            You should not use a cache file if you are changing configure.ac
            or some other autoconf source file in this project. You should also
            drop the cache after changing your system's configuration,
            such as after installing a new software package.
-           If you do not specify a filename, a local cache file will be created.
-           The local cache file will be dropped if you run this script
+           The local cache file (if any) will be dropped if you run this script
            without enabling the cache.
+  --configure-cache-filename="filename"
+           This option triggers --enable-configure-cache, but, instead
+           of using a local cache file, the given one will be used.
+           The caller is then responsible for the lifetime of the supplied
+           cache file, as this script will never drop it.
 
 Step 2, build operations:
   --build    Runs "make" for the default target. Generates the autoconf
@@ -428,7 +426,7 @@ do_configure_if_necessary ()
 
     local CONFIG_CMD="$CONFIGURE_SCRIPT_PATH"
 
-    if $CONFIGURE_CACHE_SPECIFIED; then
+    if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
       echo "Using configure cache file \"$CONFIGURE_CACHE_FILENAME\"."
       CONFIG_CMD+=" --cache-file=\"$CONFIGURE_CACHE_FILENAME\""
     else
@@ -510,14 +508,15 @@ read_command_line_switches ()
 
   # Use an associative array to declare how many arguments a long option expects.
   # Long options that aren't listed in this way will have zero arguments by default.
-  local -A MY_LONG_OPT_SPEC=([build-type]=1 [toolchain-dir]=1 [atmel-software-framework]=1 [openocd-path]=1 [debugger-type]=1 [add-breakpoint]=1 [path-to-bossac]=1 [configure-cache]=1)
+  local -A MY_LONG_OPT_SPEC=([build-type]=1 [toolchain-dir]=1 [atmel-software-framework]=1 [openocd-path]=1 [debugger-type]=1 [add-breakpoint]=1 [path-to-bossac]=1 [configure-cache-filename]=1)
 
   # The first colon (':') means "use silent error reporting".
   # The "-:" means an option can start with '-', which helps parse long options which start with "--".
   local MY_OPT_SPEC=":-:"
 
   CLEAN_SPECIFIED=false
-  CONFIGURE_CACHE_SPECIFIED=false
+  ENABLE_CONFIGURE_CACHE_SPECIFIED=false
+  CONFIGURE_CACHE_FILENAME=""
   BUILD_SPECIFIED=false
   INSTALL_SPECIFIED=false
   DISASSEMBLE_SPECIFIED=false
@@ -559,11 +558,14 @@ read_command_line_switches ()
 
         clean) CLEAN_SPECIFIED=true;;
 
-        configure-cache)
-          CONFIGURE_CACHE_SPECIFIED=true
-          if [[ ${OPTARG:-} != "" ]]; then
-            CONFIGURE_CACHE_FILENAME="$OPTARG"
+        enable-configure-cache) ENABLE_CONFIGURE_CACHE_SPECIFIED=true;;
+
+        configure-cache-filename)
+          ENABLE_CONFIGURE_CACHE_SPECIFIED=true
+          if [[ ${OPTARG:-} = "" ]]; then
+            abort "Option --configure-cache-filename has an empty value."
           fi
+          CONFIGURE_CACHE_FILENAME="$OPTARG"
           ;;
 
         build) BUILD_SPECIFIED=true;;
@@ -977,8 +979,10 @@ CACHED_PROGRAMMED_FILE_FILENAME="$OUTPUT_DIR/CachedProgrammedFile.bin"
 
 DEFAULT_CONFIGURE_CACHE_FILENAME="$OUTPUT_DIR/config.cache"
 
-if ! is_var_set "CONFIGURE_CACHE_FILENAME"; then
-  CONFIGURE_CACHE_FILENAME="$DEFAULT_CONFIGURE_CACHE_FILENAME"
+if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
+  if [[ $CONFIGURE_CACHE_FILENAME = "" ]]; then
+    CONFIGURE_CACHE_FILENAME="$DEFAULT_CONFIGURE_CACHE_FILENAME"
+  fi
 fi
 
 TARGET_ARCH="arm-none-eabi"
