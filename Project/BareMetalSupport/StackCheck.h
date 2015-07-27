@@ -28,7 +28,7 @@ uintptr_t GetHeapEndAddr ( void ) throw();
 void SetHeapEndAddr ( uintptr_t heapEndAddr ) throw();
 
 void FillStackCanary ( void ) throw();
-bool CheckStackCanary ( size_t canarySize ) throw();
+bool CheckStackCanary ( size_t canarySize ) throw() __attribute__ ((optimize("O2")));
 size_t GetStackSizeUsageEstimate ( void ) throw();
 size_t GetCurrentStackDepth ( void ) throw();
 

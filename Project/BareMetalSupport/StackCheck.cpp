@@ -95,7 +95,9 @@ void FillStackCanary ( void ) throw()
 
 // Returns 'false' if the canary region is not intact any more.
 // Note that this check is not watertight, as writing exactly the STACK_CANARY_VAL value
-// will not be detected.
+// will not be detected. Therefore, use only for debug purposes!
+// NOTE: This routine is always optimised with "__attribute__ ((optimize("O2")))",
+//       even in debug builds.
 
 bool CheckStackCanary ( const size_t canarySize ) throw()
 {
