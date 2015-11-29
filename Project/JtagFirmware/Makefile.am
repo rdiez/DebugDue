@@ -137,16 +137,20 @@ dist_data_DATA += $(MAP_FILENAME)
 
 # POSSIBLE IMPROVEMENT: Automatically delete these files when recursive target "disassemble" is not specified.
 # Otherwise, the contents of these files may be stale.
-disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.map  $(ELF_BASENAME)-disassemble.asm  $(ELF_BASENAME)-sorted-strings.txt
+disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.map  $(ELF_BASENAME)-objdump-with-disassemble.asm  $(ELF_BASENAME)-sorted-strings.txt $(ELF_BASENAME)-readelf-dump.txt
 
 # Create a list of objects in the ELF file sorted by size, which helps when trying to optimise the bin size.
 $(ELF_BASENAME)-objects-sorted-by-size.map: $(ELF_FILENAME)
 	echo "Generating object list sorted by size to \"$(abspath $@)\"..." && \
         $(host)-nm --radix=d --demangle --size-sort "$<" >"$@"
 
-$(ELF_BASENAME)-disassemble.asm: $(ELF_FILENAME)
-	echo "Disassembling to \"$(abspath $@)\"..." && \
-        $(host)-objdump --demangle --disassemble  "$<" >"$@"
+$(ELF_BASENAME)-objdump-with-disassemble.asm: $(ELF_FILENAME)
+	echo "Dumping with disassemble to \"$(abspath $@)\"..." && \
+        $(host)-objdump --demangle --all-headers --disassemble --source --wide  "$<" >"$@"
+
+$(ELF_BASENAME)-readelf-dump.txt: $(ELF_FILENAME)
+	echo "Generating readelf dump to \"$(abspath $@)\"..." && \
+        $(host)-readelf --file-header --program-headers --section-headers --section-groups --section-details --symbols --version-info --arch-specific --wide  "$<" >"$@"
 
 # Avoid using a pipe in the call to 'sort' below. Otherwise, we would have to enable bash option "set -o pipefail",
 # assuming that the shell is Bash.
