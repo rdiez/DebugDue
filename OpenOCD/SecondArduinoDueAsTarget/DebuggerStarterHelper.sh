@@ -25,9 +25,9 @@ add_gdb_echo_cmd ()
 {
   local MSG="$1"
 
-  # We may have to do encoding here similar to this:
-  #  local QUOTED="$(printf "%q" "$MSG")"
-  add_gdb_arg "--eval-command=\"echo > $MSG\\n\""
+  local QUOTED
+  printf -v QUOTED "%q" "$MSG"
+  add_gdb_arg "--eval-command=\"echo > $QUOTED\\n\""
 }
 
 
@@ -36,7 +36,19 @@ add_gdb_cmd ()
   local CMD="$1"
 
   add_gdb_echo_cmd "$CMD"
-  add_gdb_arg "--eval-command=\"$CMD\""
+  local QUOTED
+  printf -v QUOTED "%q" "$CMD"
+  add_gdb_arg "--eval-command=$QUOTED"
+}
+
+
+add_gdb_cmd_no_echo ()
+{
+  local CMD="$1"
+
+  local QUOTED
+  printf -v QUOTED "%q" "$CMD"
+  add_gdb_arg "--eval-command=$QUOTED"
 }
 
 
