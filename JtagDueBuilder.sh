@@ -794,6 +794,11 @@ do_bossac ()
     return
   fi
 
+  # Delete the cached file in case programming fails, and you end up with a corrupt firmware on the target.
+  if $CACHE_FILE_EXISTS_BUT_DIFFERENT; then
+    rm "$CACHED_PROGRAMMED_FILE_FILENAME"
+  fi
+
   local PORT_WITHOUT_PREFIX="${PROGRAMMING_USB_VIRTUAL_SERIAL_PORT:$PREFIX_LEN}"
 
   local SERIAL_PORT_CONFIG_CMD
@@ -907,7 +912,15 @@ do_program_and_debug ()
       add_openocd_cmd_echo "  $CACHED_PROGRAMMED_FILE_FILENAME"
     else
       local FLASH_ADDR="0x00080000"
+
       add_openocd_cmd "my_reset_and_halt"
+
+      # Delete the old cached file in case programming fails, and you end up with a corrupt firmware on the target.
+      if $CACHE_FILE_EXISTS_BUT_DIFFERENT; then
+        add_openocd_cmd_echo "Deleting old bin cache file \"$CACHED_PROGRAMMED_FILE_FILENAME\"..."
+        add_open_cmd "file delete \"$CACHED_PROGRAMMED_FILE_FILENAME\""
+      fi
+
       add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
       add_openocd_cmd "flash write_image erase $BIN_FILEPATH $FLASH_ADDR"
 
@@ -1064,6 +1077,7 @@ fi
 # ---------  Step 3 and 4: Program and Debug ---------
 
 SAME_FILE_THEREFORE_SKIP_PROGRAMMING=false
+CACHE_FILE_EXISTS_BUT_DIFFERENT=false
 
 if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
 
@@ -1076,7 +1090,7 @@ if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
 
       case "$CMP_EXIT_CODE" in
         0) SAME_FILE_THEREFORE_SKIP_PROGRAMMING=true;;
-        1) ;;
+        1) CACHE_FILE_EXISTS_BUT_DIFFERENT=true;;
         *) abort "Error comparing files \"$CACHED_PROGRAMMED_FILE_FILENAME\" and \"$BIN_FILEPATH\", cmp exited with a status code of $CMP_EXIT_CODE";;
       esac
     fi
