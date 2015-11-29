@@ -91,6 +91,7 @@ then
     # We could use GCC 4.8's new optimisation level "-Og", but "-O0" still provides the most comfortable debugging experience.
     # Switch -fmerge-constants helps mainly reduce the code size of all possible assertion failed messages.
     DEBUG_FLAGS="-O0 -fmerge-constants -DDEBUG -g3"
+    IS_DEBUG_BUILD=true
 else
     AC_MSG_RESULT(no)
     # One quick test I did showed these JTAG transfer speeds: with -Os: 25 KB/s
@@ -105,6 +106,7 @@ else
       # libstdc++, etc. with -flto. We should probably build newlib with LTO enabled too.
       DEBUG_FLAGS+=" -flto"
     fi
+    IS_DEBUG_BUILD=false
 fi
 
 DEBUG_FLAGS+=" -g -Wall"
@@ -229,10 +231,15 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_list' has changed in GCC 4.4".
                                       # I do not know yet if this warning should be taken seriously.
 
-EXTRA_C_AND_CXX_FLAGS+=" -Wframe-larger-than=400"  # This limit of 400 bytes is rather arbitrary. But it helps.
-# Option -Wstack-usage is better, as it considers things like alloca() and variable-length arrays.
-# However, you then get the occasional warning "stack usage computation not supported for this target",
-# at least when using inline assembly.
+# This GCC option apparently does not work with LTO, at least with GCC 4.9.3:
+#   #pragma GCC diagnostic ignored "-Wframe-larger-than="
+# Therefore, enable this warning only in Debug-Builds:
+if $IS_DEBUG_BUILD; then
+  EXTRA_C_AND_CXX_FLAGS+=" -Wframe-larger-than=400"  # This limit of 400 bytes is rather arbitrary. But it helps.
+  # Option -Wstack-usage is better, as it considers things like alloca() and variable-length arrays.
+  # However, you then get the occasional warning "stack usage computation not supported for this target",
+  # at least when using inline assembly.
+fi
 
 
 # --- Set the final variables.
