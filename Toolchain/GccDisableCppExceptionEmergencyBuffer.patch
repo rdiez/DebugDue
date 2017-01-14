@@ -1,21 +1,21 @@
---- libstdc++-v3/libsupc++/eh_alloc.cc.old	2015-07-25 10:36:39.782135789 +0200
-+++ libstdc++-v3/libsupc++/eh_alloc.cc	2015-07-25 10:40:14.994136313 +0200
-@@ -72,6 +72,18 @@ using namespace __cxxabiv1;
- # define EMERGENCY_OBJ_COUNT	4
- #endif
- 
-+
+--- libstdc++-v3/libsupc++/eh_alloc.cc.orig	2017-01-14 17:35:23.000000000 +0100
++++ libstdc++-v3/libsupc++/eh_alloc.cc	2017-01-14 20:06:54.303104881 +0100
+@@ -61,8 +61,16 @@ using namespace __cxxabiv1;
+ # define EMERGENCY_OBJ_SIZE	128
+ # define EMERGENCY_OBJ_COUNT	16
+ #elif !defined (_GLIBCXX_LLP64) && LONG_MAX == 2147483647
+-# define EMERGENCY_OBJ_SIZE	512
+-# define EMERGENCY_OBJ_COUNT	32
 +// --------- Patched by rdiez ---------
 +// Reduce to almost 0 the amount of memory used by the static emergency pool.
 +// Note that this effectively disables it.
 +// Otherwise, you get a static array in RAM called "emergency_buffer" that
-+// weighs 2 KiB, at least on a Cortex-M3 CPU.
-+#undef  EMERGENCY_OBJ_SIZE
++// weighs 2 KiB, at least on a Cortex-M3 CPU with GCC 4.9.3 .
++// Original values:
++//  # define EMERGENCY_OBJ_SIZE  512
++//  # define EMERGENCY_OBJ_COUNT  32
 +#define EMERGENCY_OBJ_SIZE 8  // Less than 8 does not work, as it is less than the array alignment.
-+#undef  EMERGENCY_OBJ_COUNT
 +#define EMERGENCY_OBJ_COUNT 1
-+
-+
- #if INT_MAX == 32767 || EMERGENCY_OBJ_COUNT <= 32
- typedef unsigned int bitmask_type;
  #else
+ # define EMERGENCY_OBJ_SIZE	1024
+ # define EMERGENCY_OBJ_COUNT	64
