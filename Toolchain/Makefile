@@ -180,6 +180,19 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 
 # ------- GCC flags -------
 
+# This enables building a debug version of GCC in phase 2, instead of a release version,
+# which is only useful if you need to debug GCC itself.
+
+ifeq ($(origin GCC_ENABLE_DEBUG_BUILD), undefined)
+  GCC_ENABLE_DEBUG_BUILD := 0
+endif
+
+ifeq ($(GCC_ENABLE_DEBUG_BUILD),1)
+  GCC_DEBUG_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
+else
+  GCC_DEBUG_BUILD_FLAGS :=
+endif
+
 GCC_VERSION := 5.4.0
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
@@ -480,6 +493,7 @@ $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
     pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
     PATH=$(PATH_DIR):$$PATH \
       $(GCC_SRC_DIR)/configure \
+        $(GCC_DEBUG_BUILD_FLAGS) \
         --enable-languages=c,c++ \
         $(COMMON_GCC_OPTIONS) && \
     popd >/dev/null && \
@@ -509,6 +523,19 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 
 # ----------------- Build GDB -----------------
 
+# This enables building a debug version of GDB, instead of a release version,
+# which is only useful if you need to debug GDB itself.
+ifeq ($(origin GDB_ENABLE_DEBUG_BUILD), undefined)
+  GDB_ENABLE_DEBUG_BUILD := 0
+endif
+
+ifeq ($(GDB_ENABLE_DEBUG_BUILD),1)
+  # GDB is written in C only, so CXXFLAGS is not needed yet. But it might be necessary in the future.
+  GDB_DEBUG_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
+else
+  GDB_DEBUG_BUILD_FLAGS :=
+endif
+
 $(GDB_UNTAR_SENTINEL): $(GCC2_INSTALL_SENTINEL)
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
 	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf "$(GDB_SRC_DIR)"; fi && \
@@ -526,6 +553,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	$(GDB_SRC_DIR)/configure --help && \
 	PATH=$(PATH_DIR):$$PATH \
 	  $(GDB_SRC_DIR)/configure \
+	    $(GDB_DEBUG_BUILD_FLAGS) \
 	    --config-cache \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(ARM_TARGET) && \
