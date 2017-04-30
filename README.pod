@@ -18,8 +18,12 @@ However, the POD syntax is quite simple and can be edited with a standard text e
 
 =head1 JtagDue Project
 
-The main goal of this project is to provide an up-to-date, comfortable B<bare-metal C++
-programming environment> for the Arduino Due and, in the future, for similar boards.
+The main goal of this project is to provide an up-to-date, comfortable but fully-featured
+B<bare-metal C++ programming environment> for the Arduino Due and, in the future, for similar boards.
+
+The script that builds the B<GCC-based toolchain> is completely generic (it knows nothing about the Arduino Due),
+so that you can use it to create toolchains for other ARM Cortex microcontrollers, like the STM32 family.
+In fact, the toolchain builder script is probably the most valuable outcome of this project.
 
 A secondary goal is to convert the Arduino Due into a B<JTAG adapter>
 by emulating a I<Bus Pirate> from L<< Dangerous Prototypes|http://dangerousprototypes.com/ >>S< ,>
