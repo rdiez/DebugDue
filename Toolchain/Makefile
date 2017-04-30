@@ -14,8 +14,8 @@ SHELL := bash -o nounset -o pipefail
 
 # ------- User Configuration -------
 
-# Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG, which enables debug code at least
-# in newlib's malloc implementation, and probably in other places too.
+# Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
+# which enables debug code at least in newlib's malloc implementation, and probably in other places too.
 #
 # It would be best to build both the debug and non-debug library versions, and that's probably what
 # GCC's "multilib" support is all about, but I haven't figured it out yet.
@@ -167,7 +167,7 @@ COMMON_CFLAGS += -ffunction-sections  # Keeps functions in separate data section
 
 # ------- Binutils flags -------
 
-BINUTILS_VERSION := 2.25
+BINUTILS_VERSION := 2.25.1
 BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.bz2
@@ -180,7 +180,7 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 
 # ------- GCC flags -------
 
-GCC_VERSION := 4.9.3
+GCC_VERSION := 5.4.0
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -230,12 +230,12 @@ COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
 COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
 
-GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer.patch
+GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
 
 
 # ------- Newlib flags -------
 
-NEWLIB_VERSION := 2.2.0.20150423
+NEWLIB_VERSION := 2.2.0.20151023
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
@@ -259,7 +259,7 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 # ------- GDB flags -------
 
-GDB_VERSION := 7.9.1
+GDB_VERSION := 7.10.1
 GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz

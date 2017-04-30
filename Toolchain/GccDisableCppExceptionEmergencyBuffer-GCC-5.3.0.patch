@@ -1,0 +1,19 @@
+--- libstdc++-v3/libsupc++/eh_alloc.cc.orig	2015-12-09 09:10:13.846651186 +0100
++++ libstdc++-v3/libsupc++/eh_alloc.cc	2015-12-09 09:22:56.324814560 +0100
+@@ -73,6 +73,16 @@ using namespace __cxxabiv1;
+ # define EMERGENCY_OBJ_COUNT	4
+ #endif
+ 
++// --------- Patched by rdiez ---------
++// Reduce to almost 0 the amount of memory used by the static emergency pool.
++// Note that this effectively disables it.
++// Otherwise, you get a static array in RAM called "emergency_buffer" that
++// weighs 2 KiB, at least on a Cortex-M3 CPU with GCC 4.9.3 .
++#undef  EMERGENCY_OBJ_SIZE
++#define EMERGENCY_OBJ_SIZE 8  // Less than 8 does not work, as it is less than the array alignment.
++#undef  EMERGENCY_OBJ_COUNT
++#define EMERGENCY_OBJ_COUNT 1
++
+ 
+ namespace
+ {
