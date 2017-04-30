@@ -12,6 +12,17 @@ SHELL := bash -o nounset -o pipefail
 #   .SHELLFLAGS := -o nounset -o pipefail -e -c
 
 
+# ------- Common variables -------
+
+THIS_MAKEFILE_DIR := $(shell readlink -f "$(CURDIR)")
+
+ifeq ($(origin CROSS_TOOLCHAIN_BUILD_DIR), undefined)
+  TOOLCHAIN_OBJ_DIR := $(THIS_MAKEFILE_DIR)/Tmp
+else
+  TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
+endif
+
+
 # ------- User Configuration -------
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
@@ -29,6 +40,10 @@ endif
 
 ifeq ($(origin TOOLCHAIN_TARGET_CPU), undefined)
   TOOLCHAIN_TARGET_CPU := cortex-m3
+endif
+
+ifeq ($(origin CONFIGURE_CACHE_FILENAME), undefined)
+  CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-file.cache
 endif
 
 
@@ -76,17 +91,10 @@ ifeq ($(IS_BUILDING),1)
   PATH_DIR := $(CROSS_TOOLCHAIN_DIR)/bin
 endif
 
-THIS_MAKEFILE_DIR := $(shell readlink -f "$(CURDIR)")
 TAR_FILES_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 
 
 # ------- Build directory definitions -------
-
-ifeq ($(origin CROSS_TOOLCHAIN_BUILD_DIR), undefined)
-  TOOLCHAIN_OBJ_DIR := $(THIS_MAKEFILE_DIR)/Tmp
-else
-  TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
-endif
 
 TOOLCHAIN_OBJ_DIR_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
 
@@ -212,7 +220,7 @@ GCC_CFLAGS := $(COMMON_CFLAGS)
 # GCC_CFLAGS += -H  # Print the name of each header file included, useful during development of this makefile.
 
 COMMON_GCC_OPTIONS :=
-COMMON_GCC_OPTIONS += --config-cache
+COMMON_GCC_OPTIONS += --cache-file="$(CONFIGURE_CACHE_FILENAME)"
 COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 
 COMMON_GCC_OPTIONS += --target=$(ARM_TARGET)
@@ -309,7 +317,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
 	$(BINUTILS_SRC_DIR)/configure --help && \
 	$(BINUTILS_SRC_DIR)/configure \
-	  --config-cache \
+	  --cache-file="$(CONFIGURE_CACHE_FILENAME)"  \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --target=$(ARM_TARGET) \
 	  --disable-nls && \
@@ -407,7 +415,7 @@ NEWLIB_CFG_FLAGS :=
 
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(ARM_TARGET)
-NEWLIB_CFG_FLAGS += --config-cache
+NEWLIB_CFG_FLAGS += --cache-file="$(CONFIGURE_CACHE_FILENAME)"
 NEWLIB_CFG_FLAGS += --disable-libssp
 NEWLIB_CFG_FLAGS += --enable-newlib-reent-small
 NEWLIB_CFG_FLAGS += --disable-newlib-multithread
@@ -554,7 +562,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	PATH=$(PATH_DIR):$$PATH \
 	  $(GDB_SRC_DIR)/configure \
 	    $(GDB_DEBUG_BUILD_FLAGS) \
-	    --config-cache \
+	    --cache-file="$(CONFIGURE_CACHE_FILENAME)"  \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
