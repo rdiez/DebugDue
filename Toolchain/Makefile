@@ -67,11 +67,15 @@ ARM_TARGET := arm-none-eabi
 
 SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 
+ifeq ($(origin TARBALLS_DOWNLOAD_DIR), undefined)
+  TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
+endif
 
 # Targets 'help' and 'clean' do not build, all other targets (usually 'all') do build.
 TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
-TARGET_NAME_DOWNLOAD_TARBALLS := download-tarballs
+TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
+TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
 ifeq ($(strip $(MAKECMDGOALS)),)
   # The default target is 'help'
   IS_BUILDING := 0
@@ -79,8 +83,11 @@ else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
 else ifneq ($(filter $(TARGET_NAME_CLEAN), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS), $(MAKECMDGOALS)),)
+else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
+  $(call verify_variable_is_defined,PATH_TO_TARBALLS_ON_FILE_SERVER)
 else
   IS_BUILDING := 1
 endif
@@ -90,8 +97,6 @@ ifeq ($(IS_BUILDING),1)
   $(call verify_variable_is_defined,CROSS_TOOLCHAIN_DIR)
   PATH_DIR := $(CROSS_TOOLCHAIN_DIR)/bin
 endif
-
-TAR_FILES_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 
 
 # ------- Build directory definitions -------
@@ -305,7 +310,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(BINUTILS_TAR_FILE) ..." && \
 	if [ -d "$(BINUTILS_SRC_DIR)" ]; then rm -rf "$(BINUTILS_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TAR_FILES_DIR)/$(BINUTILS_TAR_FILE)" && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(BINUTILS_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
 	echo "Unpacking binutils finished."
@@ -345,7 +350,7 @@ $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(GCC_TAR_FILE) ..." && \
 	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf "$(GCC_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TAR_FILES_DIR)/$(GCC_TAR_FILE)" && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GCC_TAR_FILE)" && \
 	popd >/dev/null && \
 	pushd "$(GCC_SRC_DIR)" >/dev/null && \
 	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
@@ -396,7 +401,7 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(NEWLIB_TAR_FILE) ..." && \
 	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf "$(NEWLIB_UNTAR_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TAR_FILES_DIR)/$(NEWLIB_TAR_FILE)" && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(NEWLIB_TAR_FILE)" && \
 	popd >/dev/null && \
 	pushd "$(NEWLIB_SRC_DIR)" >/dev/null && \
 	if [ $(USE_SMALLER_ASSERT) -ne 0 ]; then \
@@ -548,7 +553,7 @@ $(GDB_UNTAR_SENTINEL): $(GCC2_INSTALL_SENTINEL)
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
 	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf "$(GDB_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TAR_FILES_DIR)/$(GDB_TAR_FILE)" && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GDB_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
 	echo "Unpacking GDB finished."
@@ -596,12 +601,14 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "Before building the toolchain with this makefile, you need to do the following:"
 	@echo
-	@echo "1) Run this makefile for target '$(TARGET_NAME_DOWNLOAD_TARBALLS)'. Alternatively,"
+	@echo "1) Run this makefile for target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET)'. Alternatively,"
 	@echo "   manually download the following files and place them in the Tarballs subdirectory:"
 	@echo "     $(BINUTILS_TAR_FILE)"
 	@echo "     $(GCC_TAR_FILE)"
 	@echo "     $(NEWLIB_TAR_FILE)"
 	@echo "     $(GDB_TAR_FILE)"
+	@echo "   A third option is to use target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)'"
+	@echo "   together with variable PATH_TO_TARBALLS_ON_FILE_SERVER."
 	@echo
 	@echo "2) Set variable CROSS_TOOLCHAIN_DIR to some target directory of your choice where"
 	@echo "   the toolchain will be placed. For example: export CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain\""
@@ -650,9 +657,19 @@ $(TARGET_NAME_CLEAN):
 
 GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
 
-$(TARGET_NAME_DOWNLOAD_TARBALLS):
-	./DownloadTarball.sh "$(GNU_MIRROR_BASE_URL)/binutils/$(BINUTILS_TAR_FILE)"           "$(TAR_FILES_DIR)"
-	./DownloadTarball.sh "$(GNU_MIRROR_BASE_URL)/gcc/gcc-$(GCC_VERSION)/$(GCC_TAR_FILE)"  "$(TAR_FILES_DIR)"
-	./DownloadTarball.sh "$(GNU_MIRROR_BASE_URL)/gdb/$(GDB_TAR_FILE)"                     "$(TAR_FILES_DIR)"
-	./DownloadTarball.sh "ftp://sourceware.org/pub/newlib/$(NEWLIB_TAR_FILE)"             "$(TAR_FILES_DIR)"
-	@echo "Finished downloading tarballs."
+DOWNLOAD_TARBALL_TOOL_PATH := ./DownloadTarball.sh
+
+$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/binutils/$(BINUTILS_TAR_FILE)"           "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gcc/gcc-$(GCC_VERSION)/$(GCC_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gdb/$(GDB_TAR_FILE)"                     "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "ftp://sourceware.org/pub/newlib/$(NEWLIB_TAR_FILE)"             "$(TARBALLS_DOWNLOAD_DIR)"
+	@echo "Finished downloading tarballs from the Internet."
+
+$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
+	mkdir --parents -- "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(BINUTILS_TAR_FILE)" "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GCC_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GDB_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"
+	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(NEWLIB_TAR_FILE)"   "$(TARBALLS_DOWNLOAD_DIR)"
+	@echo "Finished downloading tarballs from the file server."
