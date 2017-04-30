@@ -43,9 +43,17 @@ ifeq ($(origin TOOLCHAIN_TARGET_CPU), undefined)
 endif
 
 ifeq ($(origin CONFIGURE_CACHE_FILENAME), undefined)
+  # Not really used, see below for more information.
   CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-file.cache
 endif
 
+# I have decided not to share a common cache file. Reasons are:
+# 1) The 'configure' scripts from different projects are potentially called in parallel,
+#    and I am not sure that updating cache files in parallel is safe.
+# 2) Most projects create further "config.cache" files in their subprojects, so the caches
+#    do not seem to get reused much.
+#   CONFIG_CACHE_OPTION := --cache-file="$(CONFIGURE_CACHE_FILENAME)"
+CONFIG_CACHE_OPTION := --config-cache
 
 # Reduce the code size by removing the assert expressions and function names from the failed assertion messages.
 # If you need to further reduce the size of your debug build binaries, you could also remove
@@ -225,7 +233,7 @@ GCC_CFLAGS := $(COMMON_CFLAGS)
 # GCC_CFLAGS += -H  # Print the name of each header file included, useful during development of this makefile.
 
 COMMON_GCC_OPTIONS :=
-COMMON_GCC_OPTIONS += --cache-file="$(CONFIGURE_CACHE_FILENAME)"
+COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
 COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 
 COMMON_GCC_OPTIONS += --target=$(ARM_TARGET)
@@ -322,7 +330,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
 	$(BINUTILS_SRC_DIR)/configure --help && \
 	$(BINUTILS_SRC_DIR)/configure \
-	  --cache-file="$(CONFIGURE_CACHE_FILENAME)"  \
+	  $(CONFIG_CACHE_OPTION)  \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --target=$(ARM_TARGET) \
 	  --disable-nls && \
@@ -420,7 +428,7 @@ NEWLIB_CFG_FLAGS :=
 
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(ARM_TARGET)
-NEWLIB_CFG_FLAGS += --cache-file="$(CONFIGURE_CACHE_FILENAME)"
+NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
 NEWLIB_CFG_FLAGS += --disable-libssp
 NEWLIB_CFG_FLAGS += --enable-newlib-reent-small
 NEWLIB_CFG_FLAGS += --disable-newlib-multithread
@@ -567,7 +575,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	PATH=$(PATH_DIR):$$PATH \
 	  $(GDB_SRC_DIR)/configure \
 	    $(GDB_DEBUG_BUILD_FLAGS) \
-	    --cache-file="$(CONFIGURE_CACHE_FILENAME)"  \
+	    $(CONFIG_CACHE_OPTION)  \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
