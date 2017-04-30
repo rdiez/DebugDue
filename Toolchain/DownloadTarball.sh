@@ -8,7 +8,7 @@ set -o pipefail
 
 
 SCRIPT_NAME="DownloadTarball.sh"
-VERSION_NUMBER="1.0"
+VERSION_NUMBER="1.03"
 
 DOWNLOAD_IN_PROGRESS_SUBDIRNAME="download-in-progress"
 
@@ -68,9 +68,13 @@ Options:
  --help     displays this help text
  --version  displays the tool's version number (currently $VERSION_NUMBER)
  --license  prints license information
- --full-extraction  The integrity test extracts all files to a temporary directory
-                    created with 'mktemp'. Otherwise, "tar --to-stdout" is used,
-                    which should be just as reliable for test purposes.
+ --unpack-to="dest-dir"  Leaves the unpacked contents in the given directory.
+                         This option is incompatible with --test-with-full-extraction .
+                         Make sure tool "move-with-rsync.sh" is in your PATH.
+ --test-with-full-extraction  The integrity test extracts all files to a temporary directory
+                              created with 'mktemp'. Otherwise, "tar --to-stdout" is used,
+                              which should be just as reliable for test purposes.
+                              This option makes no difference for .zip files.
 
 Usage example:
   % mkdir somedir
@@ -114,25 +118,20 @@ EOF
 }
 
 
-
-
 # ----- Entry point -----
-
-
-# --------------------------------------------------
-
 
 # The way command-arguments are parsed below is described on this page:  http://mywiki.wooledge.org/ComplexOptionParsing
 
 # Use an associative array to declare how many arguments a long option expects.
 # Long options that aren't listed in this way will have zero arguments by default.
-declare -A MY_LONG_OPT_SPEC=()
+declare -A MY_LONG_OPT_SPEC=( [unpack-to]=1 )
 
 # The first colon (':') means "use silent error reporting".
 # The "-:" means an option can start with '-', which helps parse long options which start with "--".
 MY_OPT_SPEC=":-:"
 
-FULL_EXTRACTION=false
+TEST_WITH_FULL_EXTRACTION=false
+UNPACK_TO_DIR=""
 
 while getopts "$MY_OPT_SPEC" opt; do
   while true; do
@@ -162,8 +161,14 @@ while getopts "$MY_OPT_SPEC" opt; do
             display_license
             exit 0
             ;;
-        full-extraction)
-            FULL_EXTRACTION=true
+        unpack-to)
+          if [[ ${OPTARG:-} = "" ]]; then
+            abort "Option --unpack-to has an empty value.";
+          fi
+          UNPACK_TO_DIR="$OPTARG"
+          ;;
+        test-with-full-extraction)
+            TEST_WITH_FULL_EXTRACTION=true
             ;;
         *)
             if [[ ${opt} = "?" ]]; then
@@ -187,12 +192,11 @@ fi
 URL="$1"
 DESTINATION_DIR="$2"
 
+if ! [ -d "$DESTINATION_DIR" ]; then
+  abort "Destination directory \"$DESTINATION_DIR\" does not exist."
+fi
 
 DESTINATION_DIR_ABS="$(readlink -f "$DESTINATION_DIR")"
-
-if ! [ -d "$DESTINATION_DIR_ABS" ]; then
-  abort "Destination directory \"$DESTINATION_DIR_ABS\" does not exist."
-fi
 
 NAME_ONLY="${URL##*/}"
 
@@ -214,29 +218,92 @@ echo "Downloading URL \"$URL\"..."
 # Optional flags: --silent, --ftp-pasv, --ftp-method nocwd
 curl --location --show-error --url "$URL" --output "$TEMP_FILENAME"
 
+if [[ ${UNPACK_TO_DIR:-} != "" ]]; then
 
-if $FULL_EXTRACTION; then
-  echo "Testing with full extraction the downloaded tarball \"$TEMP_FILENAME\"..."
+    create_dir_if_not_exists "$UNPACK_TO_DIR"
 
-  TMP_DIRNAME="$(mktemp --directory --tmpdir "$SCRIPT_NAME.XXXXXXXXXX")"
+    TMP_DIRNAME="$(mktemp --directory --tmpdir "$SCRIPT_NAME.XXXXXXXXXX")"
 
-  pushd "$TMP_DIRNAME" >/dev/null
+    pushd "$TMP_DIRNAME" >/dev/null
 
-  set +o errexit
-  tar --extract --auto-compress --file "$TEMP_FILENAME"
-  TAR_EXIT_CODE="$?"
-  set -o errexit
+    case "$TEMP_FILENAME" in
+      *.zip)
+        echo "Extracting the downloaded zip file \"$TEMP_FILENAME\"..."
+        set +o errexit
+        unzip -q "$TEMP_FILENAME"
+        TAR_EXIT_CODE="$?"
+        set -o errexit
+        ;;
 
-  popd >/dev/null
+      *)
+        set +o errexit
+        tar --extract --auto-compress --file "$TEMP_FILENAME"
+        TAR_EXIT_CODE="$?"
+        set -o errexit
+        ;;
+    esac
 
-  rm -rf -- "$TMP_DIRNAME"
-else
-  echo "Testing the downloaded tarball \"$TEMP_FILENAME\"..."
+    popd >/dev/null
 
-  set +o errexit
-  tar --extract --auto-compress --to-stdout --file "$TEMP_FILENAME" >/dev/null
-  TAR_EXIT_CODE="$?"
-  set -o errexit
+    if [ $TAR_EXIT_CODE -ne 0 ]; then
+      rm -rf "$TMP_DIRNAME"
+      ERR_MSG="Error unpacking the downloaded file."
+      ERR_MSG="${ERR_MSG}The file may be corrupt, or curl may not have been able to follow a redirect properly. "
+      ERR_MSG="${ERR_MSG}Try downloading the archive file from another location or mirror. "
+      ERR_MSG="${ERR_MSG}You can inspect the corrupt file at \"$TEMP_FILENAME\"."
+      abort "$ERR_MSG"
+    fi
+
+    set +o errexit
+    move-with-rsync.sh "$TMP_DIRNAME/" "$UNPACK_TO_DIR"
+    EXIT_CODE="$?"
+    set -o errexit
+
+    if [ $EXIT_CODE -ne 0 ]; then
+      rm -rf "$TMP_DIRNAME"
+      ERR_MSG="Error moving the files from \"$TMP_DIRNAME/\" \"$UNPACK_TO_DIR\"."
+      abort "$ERR_MSG"
+    fi
+
+    rmdir "$TMP_DIRNAME"
+
+else  # Only test the tarball.
+
+  case "$TEMP_FILENAME" in
+    *.zip|*.jar)
+      echo "Testing the downloaded zip file \"$TEMP_FILENAME\"..."
+      set +o errexit
+      unzip -qt "$TEMP_FILENAME"
+      TAR_EXIT_CODE="$?"
+      set -o errexit
+      ;;
+
+    *)
+      if $TEST_WITH_FULL_EXTRACTION; then
+        echo "Testing with full extraction the downloaded tarball \"$TEMP_FILENAME\"..."
+
+        TMP_DIRNAME="$(mktemp --directory --tmpdir "$SCRIPT_NAME.XXXXXXXXXX")"
+
+        pushd "$TMP_DIRNAME" >/dev/null
+
+        set +o errexit
+        tar --extract --auto-compress --file "$TEMP_FILENAME"
+        TAR_EXIT_CODE="$?"
+        set -o errexit
+
+        popd >/dev/null
+
+        rm -rf -- "$TMP_DIRNAME"
+      else
+        echo "Testing the downloaded tarball \"$TEMP_FILENAME\"..."
+
+        set +o errexit
+        tar --extract --auto-compress --to-stdout --file "$TEMP_FILENAME" >/dev/null
+        TAR_EXIT_CODE="$?"
+        set -o errexit
+      fi
+  esac
+
 fi
 
 if [ $TAR_EXIT_CODE -ne 0 ]; then
