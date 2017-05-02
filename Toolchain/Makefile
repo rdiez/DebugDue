@@ -23,6 +23,32 @@ else
 endif
 
 
+verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
+verify_dir_does_not_exist = $(if $(shell if [ -d "$(1)" ]; then echo exists; fi),$(error Directory "$(1)" already exists, but it should not at this point.))
+
+
+# Targets 'help', 'clean' and download-tarballs-from-* do not build, all other targets (usually 'all') do build.
+TARGET_NAME_HELP := help
+TARGET_NAME_CLEAN := clean
+TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
+TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
+ifeq ($(strip $(MAKECMDGOALS)),)
+  # The default target is 'help'
+  IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_CLEAN), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
+else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
+  $(call verify_variable_is_defined,PATH_TO_TARBALLS_ON_FILE_SERVER)
+else
+  IS_BUILDING := 1
+endif
+
+
 # ------- User Configuration -------
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
@@ -68,36 +94,12 @@ DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
 
 # ------- Miscellaneous definitions -------
 
-verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
-verify_dir_does_not_exist = $(if $(shell if [ -d "$(1)" ]; then echo exists; fi),$(error Directory "$(1)" already exists, but it should not at this point.))
-
 ARM_TARGET := arm-none-eabi
 
 SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 
 ifeq ($(origin TARBALLS_DOWNLOAD_DIR), undefined)
   TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
-endif
-
-# Targets 'help' and 'clean' do not build, all other targets (usually 'all') do build.
-TARGET_NAME_HELP := help
-TARGET_NAME_CLEAN := clean
-TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
-TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
-ifeq ($(strip $(MAKECMDGOALS)),)
-  # The default target is 'help'
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_CLEAN), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-  $(call verify_variable_is_defined,PATH_TO_TARBALLS_ON_FILE_SERVER)
-else
-  IS_BUILDING := 1
 endif
 
 # Check if variable CROSS_TOOLCHAIN_DIR is set, but only if the user asked for a build.
