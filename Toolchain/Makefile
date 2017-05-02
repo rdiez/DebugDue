@@ -862,6 +862,7 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "The recommended way to run this makefile is:"
 	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  all"
+	@echo "For GNU Make version 4.0 or above, option '--output-sync=target' is recommended."
 	@echo "You can set optional variables inside the command above like this:"
 	@echo "  make  TOOLCHAIN_TARGET_CPU=cortex-m4f  ENABLE_DEBUG_TOOLCHAIN=1  ...etc..."
 	@echo
