@@ -111,6 +111,31 @@ else
 endif
 
 
+# If you are not calling recursive makefiles, but running other unrelated makefiles, you do not normally
+# want to pass the MAKEFLAGS you got. For example, the top-level makefile is often called with options
+# '--no-builtin-variables' and '--warn-undefined-variables', which could break other makefiles.
+# Therefore, we want to clean MAKEFLAGS beforehand.
+# However, we still want to pass on those flags related to GNU Make's job server. They look like this:
+# - In GNU Make version 3.81:  MAKEFLAGS: --jobserver-fds=3,4 -j -- SOMEVAR=SOMEVALUE ...
+# - In GNU Make version 4.2.1: MAKEFLAGS: -j3 --jobserver-auth=3,4 -- SOMEVAR=SOMEVALUE ...
+# On Microsoft Windows, you may see something like "--jobserver-auth=some-name".
+#
+# Note that any variables set in the command-line arguments passed to GNU Make appear
+# in MAKEFLAGS too after a '--' separator. Before filtering out the jobserver arguments,
+# we should remove anything after the "--" separator, but that is hard to do with GNU Make.
+# If you know how to code this, contributions are welcome. I have seen that you can use a recursive
+# function to find the index of a word like '--' in a list, and then you could probably
+# filter out the rest with built-in function 'wordlist'.
+#
+# We also want to pass flag '--output-sync=target' (aka '-Otarget'), if present.
+
+EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS = $(strip $(filter -j%,$(MAKEFLAGS)) \
+                                                $(filter --jobserver-fds=%,$(MAKEFLAGS)) \
+                                                $(filter --jobserver-auth=%,$(MAKEFLAGS)) \
+                                                $(filter -Otarget,$(MAKEFLAGS)))
+EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS)"
+
+
 # ------- Build directory definitions -------
 
 TOOLCHAIN_OBJ_DIR_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
@@ -404,14 +429,14 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 
 $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
 	echo "Building binutils ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
 	echo "The binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
 	echo "The binutils build has finished."
 
 $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo "Installing binutils ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" install && \
 	echo "The binutils install has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
 	echo "The binutils install has finished."
@@ -442,14 +467,14 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 
 $(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
 	echo "Building GMP ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GMP_OBJ_DIR)" && \
 	echo "The GMP build has finished." >"$(GMP_MAKE_SENTINEL)" && \
 	echo "The GMP build has finished."
 
 $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo "Installing GMP ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GMP_OBJ_DIR)" install && \
 	echo "The GMP install has finished." >"$(GMP_INSTALL_SENTINEL)" && \
 	echo "The GMP install has finished."
@@ -481,14 +506,14 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 
 $(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
 	echo "Building MPFR ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(MPFR_OBJ_DIR)" && \
 	echo "The MPFR build has finished." >"$(MPFR_MAKE_SENTINEL)" && \
 	echo "The MPFR build has finished."
 
 $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo "Installing MPFR ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(MPFR_OBJ_DIR)" install && \
 	echo "The MPFR install has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
 	echo "The MPFR install has finished."
@@ -521,14 +546,14 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 
 $(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
 	echo "Building MPC ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(MPC_OBJ_DIR)" && \
 	echo "The MPC build has finished." >"$(MPC_MAKE_SENTINEL)" && \
 	echo "The MPC build has finished."
 
 $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo "Installing MPC ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(MPC_OBJ_DIR)" install && \
 	echo "The MPC install has finished." >"$(MPC_INSTALL_SENTINEL)" && \
 	echo "The MPC install has finished."
@@ -575,7 +600,7 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 
 $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	echo "Building GCC phase 1 ..." && \
-    export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
     echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
@@ -583,7 +608,7 @@ $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 
 $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 	echo "Installing GCC phase 1 ..." && \
-    export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
     echo "The GCC phase 1 install has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
@@ -674,7 +699,7 @@ $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 
 $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
 	echo "Building newlib ..." && \
-    export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
     echo "The newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
@@ -682,7 +707,7 @@ $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
 
 $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	echo "Installing newlib ..." && \
-    export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" install && \
     echo "The newlib install has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
@@ -709,7 +734,7 @@ $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
 
 $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	echo "Building GCC phase 2 ..." && \
-    export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC2_OBJ_DIR)" \
         CFLAGS_FOR_TARGET="$(GCC_CFLAGS)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS)" && \
@@ -722,7 +747,7 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 
 $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo "Installing GCC phase 2 ..." && \
-    export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC2_OBJ_DIR)" install && \
     echo "The GCC phase 2 install has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
@@ -768,14 +793,14 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 
 $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	echo "Building GDB ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GDB_OBJ_DIR)" && \
 	echo "The GDB build has finished." >"$(GDB_MAKE_SENTINEL)" && \
 	echo "The GDB build has finished."
 
 $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "Installing GDB ..." && \
-	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GDB_OBJ_DIR)" install && \
 	echo "The GDB install has finished." >"$(GDB_INSTALL_SENTINEL)" && \
 	echo "The GDB install has finished."
