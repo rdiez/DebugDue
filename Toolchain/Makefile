@@ -16,11 +16,11 @@ SHELL := bash -o nounset -o pipefail
 
 THIS_MAKEFILE_DIR := $(shell readlink -f "$(CURDIR)")
 
-ifeq ($(origin CROSS_TOOLCHAIN_BUILD_DIR), undefined)
-  TOOLCHAIN_OBJ_DIR := $(THIS_MAKEFILE_DIR)/Tmp
-else
-  TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
-endif
+CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
+
+# The name above is documented in the help text. Alternatively, we could rename all occurences
+# of TOOLCHAIN_OBJ_DIR in this makefile to CROSS_TOOLCHAIN_BUILD_DIR:
+TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
 
 
 verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
