@@ -91,6 +91,11 @@ REMOVE_STRERROR_MESSAGES := 1
 
 DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
 
+# Recent GCC versions may require newer versions of the GMP, MPFR and MPC
+# libraries than the ones available in your linux distribution.
+# With this option you can choose whether to download a build these libraries too.
+BUILD_GMP_MPFR_MPC := 1
+
 
 # ------- Miscellaneous definitions -------
 
@@ -201,6 +206,45 @@ BINUTILS_MAKE_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSen
 BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)BinutilsInstallSentinel
 
 
+# ------- GMP lib flags -------
+
+GMP_VERSION := 6.1.2
+GMP_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gmp-$(GMP_VERSION)
+GMP_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gmp-$(GMP_VERSION)-obj
+GMP_TAR_FILE := gmp-$(GMP_VERSION).tar.bz2
+
+GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+GMP_MAKEFILE := $(GMP_OBJ_DIR)/Makefile
+GMP_MAKE_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
+GMP_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpInstallSentinel
+
+
+# ------- MPFR lib flags -------
+
+MPFR_VERSION := 3.1.5
+MPFR_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)
+MPFR_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)-obj
+MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
+
+MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+MPFR_MAKEFILE := $(MPFR_OBJ_DIR)/Makefile
+MPFR_MAKE_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
+MPFR_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrInstallSentinel
+
+
+# ------- MPC lib flags -------
+
+MPC_VERSION := 1.0.3
+MPC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)
+MPC_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)-obj
+MPC_TAR_FILE := mpc-$(MPC_VERSION).tar.gz
+
+MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+MPC_MAKEFILE := $(MPC_OBJ_DIR)/Makefile
+MPC_MAKE_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
+MPC_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcInstallSentinel
+
+
 # ------- GCC flags -------
 
 # This enables building a debug version of GCC in phase 2, instead of a release version,
@@ -253,6 +297,12 @@ COMMON_GCC_OPTIONS += --disable-fixed-point    # May not be necessary.
 COMMON_GCC_OPTIONS += --enable-threads=single
 
 COMMON_GCC_OPTIONS += --with-newlib
+
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  COMMON_GCC_OPTIONS += --with-gmp="$(CROSS_TOOLCHAIN_DIR)"
+  COMMON_GCC_OPTIONS += --with-mpfr="$(CROSS_TOOLCHAIN_DIR)"
+  COMMON_GCC_OPTIONS += --with-mpc="$(CROSS_TOOLCHAIN_DIR)"
+endif
 
 # The built-in C++ exception support code is often the only place that needs the standard file I/O
 # support from the C run-time library. By disabling this necessity with "--disable-libstdcxx-verbose",
@@ -354,6 +404,123 @@ $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo "The binutils install has finished."
 
 
+# ----------------- Build GMP -----------------
+
+$(GMP_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
+	echo "Unpacking $(GMP_TAR_FILE) ..." && \
+	if [ -d "$(GMP_SRC_DIR)" ]; then rm -rf "$(GMP_SRC_DIR)"; fi && \
+	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GMP_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking GMP finished." >"$(GMP_UNTAR_SENTINEL)" && \
+	echo "Unpacking GMP finished."
+
+$(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
+	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)" && \
+	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf "$(GMP_OBJ_DIR)"; fi && \
+	mkdir -p "$(GMP_OBJ_DIR)" && \
+	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
+	$(GMP_SRC_DIR)/configure --help && \
+	$(GMP_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
+	popd >/dev/null && \
+	echo "The GMP config has finished."
+
+$(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
+	echo "Building GMP ..." && \
+	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" && \
+	echo "The GMP build has finished." >"$(GMP_MAKE_SENTINEL)" && \
+	echo "The GMP build has finished."
+
+$(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
+	echo "Installing GMP ..." && \
+	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" install && \
+	echo "The GMP install has finished." >"$(GMP_INSTALL_SENTINEL)" && \
+	echo "The GMP install has finished."
+
+
+# ----------------- Build MPFR -----------------
+
+$(MPFR_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
+	echo "Unpacking $(MPFR_TAR_FILE) ..." && \
+	if [ -d "$(MPFR_SRC_DIR)" ]; then rm -rf "$(MPFR_SRC_DIR)"; fi && \
+	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPFR_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking MPFR finished." >"$(MPFR_UNTAR_SENTINEL)" && \
+	echo "Unpacking MPFR finished."
+
+$(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
+	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)" && \
+	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf "$(MPFR_OBJ_DIR)"; fi && \
+	mkdir -p "$(MPFR_OBJ_DIR)" && \
+	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
+	$(MPFR_SRC_DIR)/configure --help && \
+	$(MPFR_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
+	popd >/dev/null && \
+	echo "The MPFR config has finished."
+
+$(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
+	echo "Building MPFR ..." && \
+	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" && \
+	echo "The MPFR build has finished." >"$(MPFR_MAKE_SENTINEL)" && \
+	echo "The MPFR build has finished."
+
+$(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
+	echo "Installing MPFR ..." && \
+	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" install && \
+	echo "The MPFR install has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
+	echo "The MPFR install has finished."
+
+
+# ----------------- Build MPC -----------------
+
+$(MPC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
+	echo "Unpacking $(MPC_TAR_FILE) ..." && \
+	if [ -d "$(MPC_SRC_DIR)" ]; then rm -rf "$(MPC_SRC_DIR)"; fi && \
+	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPC_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking MPC finished." >"$(MPC_UNTAR_SENTINEL)" && \
+	echo "Unpacking MPC finished."
+
+$(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
+	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)" && \
+	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf "$(MPC_OBJ_DIR)"; fi && \
+	mkdir -p "$(MPC_OBJ_DIR)" && \
+	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
+	$(MPC_SRC_DIR)/configure --help && \
+	$(MPC_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
+	popd >/dev/null && \
+	echo "The MPC config has finished."
+
+$(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
+	echo "Building MPC ..." && \
+	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" && \
+	echo "The MPC build has finished." >"$(MPC_MAKE_SENTINEL)" && \
+	echo "The MPC build has finished."
+
+$(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
+	echo "Installing MPC ..." && \
+	export MAKEFLAGS="$(filter --jobserver-fds=%,$(MAKEFLAGS)) $(filter -j,$(MAKEFLAGS))" && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" install && \
+	echo "The MPC install has finished." >"$(MPC_INSTALL_SENTINEL)" && \
+	echo "The MPC install has finished."
+
+
 # ----------------- GCC phase 1 -----------------
 
 $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
@@ -374,6 +541,11 @@ $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 # Note that GCC's ./configure script will find at least some of
 # the binutils tools under the --prefix directory,
 # even if the PATH is not set.
+
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  $(GCC1_MAKEFILE): $(MPC_INSTALL_SENTINEL)
+endif
+
 $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)" && \
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf "$(GCC1_OBJ_DIR)"; fi && \
@@ -617,6 +789,11 @@ $(TARGET_NAME_HELP):
 	@echo "     $(GCC_TAR_FILE)"
 	@echo "     $(NEWLIB_TAR_FILE)"
 	@echo "     $(GDB_TAR_FILE)"
+	@if [ $(BUILD_GMP_MPFR_MPC) -ne 0 ]; then \
+	echo "     $(GMP_TAR_FILE)" && \
+	echo "     $(MPFR_TAR_FILE)" && \
+	echo "     $(MPC_TAR_FILE)" ; \
+	fi
 	@echo "   A third option is to use target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)'"
 	@echo "   together with variable PATH_TO_TARBALLS_ON_FILE_SERVER."
 	@echo
@@ -674,6 +851,11 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gcc/gcc-$(GCC_VERSION)/$(GCC_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gdb/$(GDB_TAR_FILE)"                     "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "ftp://sourceware.org/pub/newlib/$(NEWLIB_TAR_FILE)"             "$(TARBALLS_DOWNLOAD_DIR)"
+	if [ $(BUILD_GMP_MPFR_MPC) -ne 0 ]; then \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gmp/$(GMP_TAR_FILE)"    "$(TARBALLS_DOWNLOAD_DIR)" && \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/mpfr/$(MPFR_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)" && \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/mpc/$(MPC_TAR_FILE)"    "$(TARBALLS_DOWNLOAD_DIR)" ; \
+	fi
 	@echo "Finished downloading tarballs from the Internet."
 
 $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
@@ -682,4 +864,9 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GCC_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GDB_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(NEWLIB_TAR_FILE)"   "$(TARBALLS_DOWNLOAD_DIR)"
+	if [ $(BUILD_GMP_MPFR_MPC) -ne 0 ]; then \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GMP_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)" && \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(MPFR_TAR_FILE)"     "$(TARBALLS_DOWNLOAD_DIR)" && \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(MPC_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)" ; \
+	fi
 	@echo "Finished downloading tarballs from the file server."
