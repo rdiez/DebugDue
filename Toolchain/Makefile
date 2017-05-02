@@ -318,7 +318,25 @@ COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
 COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
 
-GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
+
+ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
+
+  IS_GCC_4_9_X := $(filter 4.9.%,$(GCC_VERSION))
+  IS_GCC_5_X   := $(filter 5.%,$(GCC_VERSION))
+  IS_GCC_6_X   := $(filter 6.%,$(GCC_VERSION))
+
+  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X))" ""
+    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x.
+    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
+  else
+    $(error Unknown GCC version)
+  endif
+
+else
+
+  GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := this-patch-filename-should-not-be-used
+
+endif
 
 
 # ------- Newlib flags -------
