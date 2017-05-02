@@ -791,8 +791,9 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "Before building the toolchain with this makefile, you need to do the following:"
 	@echo
-	@echo "1) Run this makefile for target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET)'. Alternatively,"
-	@echo "   manually download the following files and place them in the Tarballs subdirectory:"
+	@echo "1) Run this makefile for target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET)' like this:"
+	@echo "     make $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET)"
+	@echo "   Alternatively, manually download the following files and place them in the Tarballs subdirectory:"
 	@echo "     $(BINUTILS_TAR_FILE)"
 	@echo "     $(GCC_TAR_FILE)"
 	@echo "     $(NEWLIB_TAR_FILE)"
@@ -832,8 +833,8 @@ $(TARGET_NAME_HELP):
 	@echo "   the Tmp subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
 	@echo
 	@echo "The recommended way to run this makefile is:"
-	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))  all"
-	@echo "You can set optional variables like this:"
+	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  all"
+	@echo "You can set optional variables inside the command above like this:"
 	@echo "  make  TOOLCHAIN_TARGET_CPU=cortex-m4f  ENABLE_DEBUG_TOOLCHAIN=1  ...etc..."
 	@echo
 
