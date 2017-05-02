@@ -60,18 +60,12 @@ endif
 # but that only applies to the libstdc++. I also don't know yet how to link against those debug versions
 # instead of the normal ones.
 
-ifeq ($(origin ENABLE_DEBUG_TOOLCHAIN), undefined)
-  ENABLE_DEBUG_TOOLCHAIN := 0
-endif
+ENABLE_DEBUG_TOOLCHAIN := 0
 
-ifeq ($(origin TOOLCHAIN_TARGET_CPU), undefined)
-  TOOLCHAIN_TARGET_CPU := cortex-m3
-endif
+TOOLCHAIN_TARGET_CPU := cortex-m3
 
-ifeq ($(origin CONFIGURE_CACHE_FILENAME), undefined)
-  # Not really used, see below for more information.
-  CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-file.cache
-endif
+# Not really used, see below for more information.
+CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-file.cache
 
 # I have decided not to share a common cache file. Reasons are:
 # 1) The 'configure' scripts from different projects are potentially called in parallel,
@@ -105,9 +99,7 @@ ARM_TARGET := arm-none-eabi
 
 SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 
-ifeq ($(origin TARBALLS_DOWNLOAD_DIR), undefined)
-  TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
-endif
+TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 
 # Check if variable CROSS_TOOLCHAIN_DIR is set, but only if the user asked for a build.
 ifeq ($(IS_BUILDING),1)
@@ -252,9 +244,7 @@ MPC_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcIns
 # This enables building a debug version of GCC in phase 2, instead of a release version,
 # which is only useful if you need to debug GCC itself.
 
-ifeq ($(origin GCC_ENABLE_DEBUG_BUILD), undefined)
-  GCC_ENABLE_DEBUG_BUILD := 0
-endif
+GCC_ENABLE_DEBUG_BUILD := 0
 
 ifeq ($(GCC_ENABLE_DEBUG_BUILD),1)
   GCC_DEBUG_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
@@ -740,9 +730,7 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 
 # This enables building a debug version of GDB, instead of a release version,
 # which is only useful if you need to debug GDB itself.
-ifeq ($(origin GDB_ENABLE_DEBUG_BUILD), undefined)
-  GDB_ENABLE_DEBUG_BUILD := 0
-endif
+GDB_ENABLE_DEBUG_BUILD := 0
 
 ifeq ($(GDB_ENABLE_DEBUG_BUILD),1)
   # GDB is written in C only, so CXXFLAGS is not needed yet. But it might be necessary in the future.
