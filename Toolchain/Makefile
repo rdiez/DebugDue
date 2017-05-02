@@ -96,6 +96,8 @@ DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
 # With this option you can choose whether to download a build these libraries too.
 BUILD_GMP_MPFR_MPC := 1
 
+SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE := 1
+
 
 # ------- Miscellaneous definitions -------
 
@@ -175,7 +177,7 @@ else
 endif
 
 ifeq ($(IS_BUILDING),1)
-  $(info Building toolchain for CPU: $(TOOLCHAIN_TARGET_CPU).)
+  $(info Building toolchain for CPU "$(TOOLCHAIN_TARGET_CPU)".)
 endif
 
 
@@ -830,7 +832,10 @@ $(TARGET_NAME_HELP):
 	@echo
 
 all: $(GDB_INSTALL_SENTINEL)
-	@echo "Toolchain installed in $(CROSS_TOOLCHAIN_DIR)"
+	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"."
+	@if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
+	echo "WARNING: After a toolchain change you should rebuild all target software from scratch." ; \
+	fi
 
 # This 'clean' rule does not delete the toolchain bin directory (variable CROSS_TOOLCHAIN_DIR),
 # the user has to delete it manually. I'm not sure whether that is a good idea or not,
