@@ -105,6 +105,9 @@ TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 ifeq ($(IS_BUILDING),1)
   $(call verify_variable_is_defined,CROSS_TOOLCHAIN_DIR)
   PATH_DIR := $(CROSS_TOOLCHAIN_DIR)/bin
+else
+  # Prevent some warnings when not building and using '--warn-undefined-variables'.
+  CROSS_TOOLCHAIN_DIR := this-value-should-not-be-used
 endif
 
 
