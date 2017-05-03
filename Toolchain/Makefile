@@ -823,8 +823,9 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 
 $(TARGET_NAME_HELP):
 	@echo
-	@echo "This makefile builds a GCC/newlib toolchain for a 'bare metal' programming environment for the Arduino Due."
-	@echo "Other CPUs are supported, search for TOOLCHAIN_TARGET_CPU in the makefile for details."
+	@echo "This makefile builds a GCC/newlib toolchain for a 'bare metal' programming environment"
+	@echo "for an ARM Cortex-M3 microcontroller. Other CPUs are supported, search for"
+	@echo "TOOLCHAIN_TARGET_CPU in the makefile for details."
 	@echo
 	@echo "Before building the toolchain with this makefile, you need to do the following:"
 	@echo
@@ -843,37 +844,39 @@ $(TARGET_NAME_HELP):
 	@echo "   A third option is to use target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)'"
 	@echo "   together with variable PATH_TO_TARBALLS_ON_FILE_SERVER."
 	@echo
-	@echo "2) Set variable CROSS_TOOLCHAIN_DIR to some target directory of your choice where"
-	@echo "   the toolchain will be placed. For example: export CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain\""
-	@echo "   Alternatively, you can set this variable as a make argument, see below for an example."
+	@echo "2) Think about a target directory of your choice for variable CROSS_TOOLCHAIN_DIR where"
+	@echo "   the toolchain will be placed. For example: CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\""
 	@echo
-	@echo "3) Optionally set variable ENABLE_DEBUG_TOOLCHAIN to '1' in order to build a debug toolchain."
+	@echo "3) Consider setting variable ENABLE_DEBUG_TOOLCHAIN to '1' in order to build a debug toolchain."
 	@echo "   This enables debug code in newlib's malloc implementation, for example."
-	@echo "   You can compile debug builds with a non-debug toolchain, but the libraries that the toolchain"
-	@echo "   provides (such as newlib) will be linked in as non-debug versions."
+	@echo "   You can compile debug builds of your software with a non-debug toolchain, but the libraries"
+	@echo "   that the toolchain provides (such as newlib) will be linked in as non-debug versions."
+	@echo "   Note that your final binary will be bigger and perform more slowly, so you should use a normal"
+	@echo "   (non-debug) toolchain when building a public release of your software."
 	@echo
-	@echo "4) Optionally set variable CROSS_TOOLCHAIN_BUILD_DIR to some directory of your choice where"
+	@echo "4) Consider setting variable CROSS_TOOLCHAIN_BUILD_DIR to some directory of your choice where"
 	@echo "   all source and object files will be generated during the toolchain build process."
+	@echo "   For example: CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-build\""
 	@echo "   By default, these build files are placed in a subdirectory called \"Tmp\". That name is"
 	@echo "   intuitive enough. I normally have such \"Tmp\" directories listed in my .gitignore files,"
 	@echo "   and I tend to skip anything called \"Tmp\" when doing recursive greps."
-	@echo "   You may want to name this directory differently or to place it somewhere else,"
-	@echo "   perhaps next to the final toolchain bin (installation) directory. If you keep all sources"
-	@echo "   used to build the toolchain, you will be able to step into the C runtime library and so on"
-	@echo "   with a debugger like GDB."
+	@echo "   The build directory can be discarded after the toolchain has been installed to the"
+	@echo "   CROSS_TOOLCHAIN_DIR directory you chose further above. However, if you keep it, you will be"
+	@echo "   able to step into the C runtime library and so on when debugging your software with GDB."
 	@echo
 	@echo "5) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
 	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally "
-	@echo "   find such libraries in your Linux distribution's repository."
+	@echo "   find such libraries in your Linux distribution's repository. Note that this makefile"
+	@echo "   can build GMP, MPFR and MPC itself, but you will probably need other libraries too."
+	@echo "   Consult GCC's documentation for details."
 	@echo
 	@echo "6) If you have already run this makefile in the past, you will have to delete or rename"
-	@echo "   the Tmp subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
+	@echo "   the build subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
 	@echo
 	@echo "The recommended way to run this makefile is:"
-	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
+	@echo "  make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\" ...other variables... \\"
+	@echo "    --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
 	@echo "For GNU Make version 4.0 or above, option '--output-sync=target' is recommended."
-	@echo "You can set optional variables inside the command above like this:"
-	@echo "  make  TOOLCHAIN_TARGET_CPU=cortex-m4f  ENABLE_DEBUG_TOOLCHAIN=1  ...etc..."
 	@echo
 
 $(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)
