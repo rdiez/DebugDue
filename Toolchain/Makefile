@@ -28,6 +28,7 @@ verify_dir_does_not_exist = $(if $(shell if [ -d "$(1)" ]; then echo exists; fi)
 
 
 # Targets 'help', 'clean' and download-tarballs-from-* do not build, all other targets (usually 'all') do build.
+TARGET_NAME_ALL := all
 TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
@@ -808,7 +809,8 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 
 # --------------- Top-level rules ---------------
 
-.PHONY: all clean help
+.PHONY: $(TARGET_NAME_ALL) $(TARGET_NAME_HELP) $(TARGET_NAME_CLEAN) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)
+
 
 .DEFAULT_GOAL := help
 
@@ -861,13 +863,13 @@ $(TARGET_NAME_HELP):
 	@echo "   the Tmp subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
 	@echo
 	@echo "The recommended way to run this makefile is:"
-	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  all"
+	@echo "  make  --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
 	@echo "For GNU Make version 4.0 or above, option '--output-sync=target' is recommended."
 	@echo "You can set optional variables inside the command above like this:"
 	@echo "  make  TOOLCHAIN_TARGET_CPU=cortex-m4f  ENABLE_DEBUG_TOOLCHAIN=1  ...etc..."
 	@echo
 
-all: $(GDB_INSTALL_SENTINEL)
+$(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)
 	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"."
 	@if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
 	echo "WARNING: After a toolchain change you should rebuild all target software from scratch." ; \
