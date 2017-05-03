@@ -1,5 +1,8 @@
 
 # Run "make help" for information about how to use this makefile.
+#
+# Copyright (c) 2013-2017 R. Diez - Licensed under the GNU AGPLv3.
+
 
 .DELETE_ON_ERROR:
 
@@ -33,6 +36,8 @@ TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
+TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
+
 ifeq ($(strip $(MAKECMDGOALS)),)
   # The default target is 'help'
   IS_BUILDING := 0
@@ -45,6 +50,8 @@ else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET), $(MAKECMDGO
 else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
   $(call verify_variable_is_defined,PATH_TO_TARBALLS_ON_FILE_SERVER)
+else ifneq ($(filter $(TARGET_NAME_TEST_MAKEFLAGS), $(MAKECMDGOALS)),)
+  IS_BUILDING := 0
 else
   IS_BUILDING := 1
 endif
@@ -809,7 +816,7 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 
 # --------------- Top-level rules ---------------
 
-.PHONY: $(TARGET_NAME_ALL) $(TARGET_NAME_HELP) $(TARGET_NAME_CLEAN) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)
+.PHONY: $(TARGET_NAME_ALL) $(TARGET_NAME_HELP) $(TARGET_NAME_CLEAN) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER) $(TARGET_NAME_TEST_MAKEFLAGS)
 
 
 .DEFAULT_GOAL := help
@@ -914,3 +921,6 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
 	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(MPC_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)" ; \
 	fi
 	@echo "Finished downloading tarballs from the file server."
+
+$(TARGET_NAME_TEST_MAKEFLAGS):
+	@$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && echo "MAKEFLAGS passed in the environment: $$MAKEFLAGS"
