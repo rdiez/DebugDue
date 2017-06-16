@@ -126,7 +126,7 @@ get_uptime ()
 
   local PROC_UPTIME_COMPONENTS
   # Split on blanks.
-  IFS=$' \t' PROC_UPTIME_COMPONENTS=($PROC_UPTIME_STR)
+  IFS=$' \t' read -r -a PROC_UPTIME_COMPONENTS <<< "$PROC_UPTIME_STR"
   if [ ${#PROC_UPTIME_COMPONENTS[@]} -ne 2 ]; then
     abort "Invalid /proc/uptime format."
   fi
@@ -144,7 +144,7 @@ generate_elapsed_time_msg ()
 
   local sign
 
-  if [ $ELAPSED_TIME -lt 0 ]
+  if [ "$ELAPSED_TIME" -lt 0 ]
   then
     ELAPSED_TIME=$((-ELAPSED_TIME))
     sign="-"
@@ -420,7 +420,6 @@ do_autogen_if_necessary ()
 
 do_configure_if_necessary ()
 {
-  local RUN_CONFIGURE=false
   local MAKEFILE_PATH="$PROJECT_OBJ_DIR/Makefile"
 
   if ! [ -f "$MAKEFILE_PATH" ]; then
@@ -727,7 +726,8 @@ do_build ()
   echo "$MAKE_CMD"
   eval "$MAKE_CMD"
 
-  local PROG_SIZE="$(stat -c%s $BIN_FILEPATH)"
+  local PROG_SIZE
+  PROG_SIZE="$(stat -c%s "$BIN_FILEPATH")"
 
   printf "Resulting binary: \"$BIN_FILEPATH\", size: %'d bytes.\n" "$PROG_SIZE"
 
@@ -750,7 +750,8 @@ add_openocd_cmd ()
   # I have not found a better way yet to achieve this.
   TCL_SUPPRESS_PRINTING_RESULT_SUFFIX="; list"
 
-  local QUOTED="$(printf "%q" "$1 $TCL_SUPPRESS_PRINTING_RESULT_SUFFIX")"
+  local QUOTED
+  printf -v QUOTED "%q" "$1 $TCL_SUPPRESS_PRINTING_RESULT_SUFFIX"
 
   add_openocd_arg "--command $QUOTED"
 }
@@ -758,7 +759,8 @@ add_openocd_cmd ()
 
 add_openocd_cmd_echo ()
 {
-  local QUOTED="$(printf "%q" "$1")"
+  local QUOTED
+  printf -v QUOTED "%q" "$1"
 
   add_openocd_cmd "echo $QUOTED"
 }
@@ -848,7 +850,7 @@ do_bossac ()
     MSG+="2) Has some other application that port open at the same time? (It is possible under Linux)"
     MSG+=$'\n'
     MSG+="3) Is the Arduino Due's 'native' USB virtual serial port connected too? If so, disconnect it and try again."
-    printf "$MSG" >&2
+    printf "%s" "$MSG" >&2
     exit $EXIT_CODE
   fi
 
@@ -954,7 +956,8 @@ do_program_and_debug ()
 
     BASH_CMD+=" \"$TOOLCHAIN_DIR\" \"$ELF_FILEPATH\" \"$DEBUGGER_TYPE\""
 
-    local EXEC_CMD="$(printf "bash -c %q" "$BASH_CMD")"
+    local EXEC_CMD
+    printf -v EXEC_CMD "bash -c %q" "$BASH_CMD"
     add_openocd_cmd_echo "Running command in background: $EXEC_CMD"
     add_openocd_cmd "exec $EXEC_CMD &"
 

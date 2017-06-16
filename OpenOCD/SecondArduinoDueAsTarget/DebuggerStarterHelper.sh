@@ -113,7 +113,7 @@ read_command_line_switches ()
   if false; then
     echo "Arguments:"
     for i; do 
-      echo $i 
+      echo "$i"
    done
   fi
 
