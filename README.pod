@@ -180,7 +180,22 @@ Change to the 'Toolchain' subdirectory and type "make help" for more information
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 
-I have tested against ASF version 3.19.0.95.
+I have tested against ASF versions 3.19.0.95 and 3.34.2.53. You will probably have to manually edit file
+F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with I<< #ifndef __cplusplus >>S< ,>
+so that they look like this:
+
+  #ifndef __cplusplus
+   #define min(a, b)   Min(a, b)
+  #endif
+
+  ...
+
+  #ifndef __cplusplus
+  #define max(a, b)   Max(a, b)
+  #endif
+
+Without this amendment, compiling your C++ projects will probably fail later on with an error message related to I<< min >> or I<< max >>.
+This kind of fix is in place for F<< sam0/utils/compiler.h >>S< ,> but not for F<< sam/utils/compiler.h >>S< ,> at least for ASF S<version 3.34.2.53>.
 
 =item 3) Build the JtagDue firmware for the Arduino Due like most Autotools projects:
 
@@ -193,7 +208,7 @@ by verifying that this command works:
 
  arm-none-eabi-gcc --version
 
-=item b) Run autogen.sh in the 'Project' subdirectory in order to generate the F<< configure >> script.
+=item b) Run I<< autogen.sh >> in the 'Project' subdirectory in order to generate the F<< configure >> script.
 
 =item c) Build the firmware. It is best to build out of the source tree like this:
 
@@ -253,7 +268,7 @@ The JtagDue firmware does not implement the usual command-line editing comfort f
 command history and all the standard cursor key movements.
 
 Due to a protocol limitation, there is no welcome banner. Press the Enter key at least once
-to see the cursor ('>'), or type "help" for a list of available commands.
+to see the cursor ('E<lt>'), or type "help" for a list of available commands.
 
 =item 6) Find a way to address the JtagDue USB virtual serial port comfortably.
 
