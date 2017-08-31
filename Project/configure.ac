@@ -123,10 +123,11 @@ if test "x$with_atmel_software_framework" == x; then
 fi
 
 ASF_BASEDIR="$(readlink -f "$with_atmel_software_framework")"
+SAM_DIR="$ASF_BASEDIR/sam"
 
-if ! test -d "${ASF_BASEDIR}/sam"; then
+if ! test -d "$SAM_DIR"; then
   # If the path is completely wrong, "readlink -f" can fail. Therefore, we must not use its result in the error message.
-  AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at "$with_atmel_software_framework".])
+  AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at "$with_atmel_software_framework" (directory "$SAM_DIR" not found).])
 fi
 
 AC_SUBST(ASF_BASEDIR)
