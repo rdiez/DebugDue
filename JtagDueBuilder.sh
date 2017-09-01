@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2014 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
+# Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
 # set -x  # Enable tracing of this script.
+
 
 user_config ()
 {
@@ -44,14 +45,17 @@ user_config ()
 }
 
 
-VERSION_NUMBER="1.02"
+VERSION_NUMBER="1.03"
 SCRIPT_NAME="JtagDueBuilder.sh"
+
+declare -r EXIT_CODE_SUCCESS=0
+declare -r EXIT_CODE_ERROR=1
 
 
 abort ()
 {
   echo >&2 && echo "Error in script \"$0\": $*" >&2
-  exit 1
+  exit $EXIT_CODE_ERROR
 }
 
 
@@ -247,7 +251,7 @@ display_help ()
 cat - <<EOF
 
 $SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014 R. Diez - Licensed under the GNU AGPLv3
+Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3
 
 Overview:
 
@@ -352,7 +356,7 @@ display_license()
 {
 cat - <<EOF
 
-Copyright (c) 2014 R. Diez
+Copyright (c) 2014-2017 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
@@ -520,152 +524,202 @@ add_toolchain_dir_to_path ()
 }
 
 
-read_command_line_switches ()
+process_command_line_argument ()
 {
-  # The way command-line arguments are parsed below was originally described on the following page,
-  # although I had to make a couple of amendments myself:
-  #   http://mywiki.wooledge.org/ComplexOptionParsing
+  case "$OPTION_NAME" in
+    help)
+        display_help
+        exit $EXIT_CODE_SUCCESS
+        ;;
+    version)
+        echo "$VERSION_NUMBER"
+        exit $EXIT_CODE_SUCCESS
+        ;;
+    license)
+        display_license
+        exit $EXIT_CODE_SUCCESS
+        ;;
 
-  # Use an associative array to declare how many arguments a long option expects.
-  # Long options that aren't listed in this way will have zero arguments by default.
-  local -A MY_LONG_OPT_SPEC=([build-type]=1 [toolchain-dir]=1 [atmel-software-framework]=1 [openocd-path]=1 [debugger-type]=1 [add-breakpoint]=1 [path-to-bossac]=1 [configure-cache-filename]=1)
+    clean) CLEAN_SPECIFIED=true;;
+
+    enable-configure-cache) ENABLE_CONFIGURE_CACHE_SPECIFIED=true;;
+
+    configure-cache-filename)
+      ENABLE_CONFIGURE_CACHE_SPECIFIED=true
+      if [[ $OPTARG = "" ]]; then
+        abort "Option --configure-cache-filename has an empty value."
+      fi
+      CONFIGURE_CACHE_FILENAME="$OPTARG"
+      ;;
+
+    build) BUILD_SPECIFIED=true;;
+    enable-ccache) ENABLE_CCACHE_SPECIFIED=true;;
+    install) INSTALL_SPECIFIED=true;;
+    disassemble) DISASSEMBLE_SPECIFIED=true;;
+    program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
+    program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
+    cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
+    debug) DEBUG_SPECIFIED=true;;
+    debug-from-the-start) DEBUG_FROM_THE_START_SPECIFIED=true;;
+
+    path-to-bossac)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --path-to-bossac option has an empty value."
+        fi
+        PATH_TO_BOSSAC="$OPTARG"
+        ;;
+
+    toolchain-dir)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --toolchain-dir option has an empty value."
+        fi
+        TOOLCHAIN_DIR="$OPTARG"
+        ;;
+
+    atmel-software-framework)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --atmel-software-framework option has an empty value."
+        fi
+        ASF_DIR="$OPTARG"
+        ;;
+
+    build-type)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --build-type option has an empty value."
+        fi
+        BUILD_TYPE="$OPTARG"
+        ;;
+
+    debugger-type)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --debugger-type option has an empty value."
+        fi
+        DEBUGGER_TYPE="$OPTARG"
+        ;;
+
+    add-breakpoint)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --add-breakpoint option has an empty value."
+        fi
+        BREAKPOINTS+=("$OPTARG")
+        ;;
+
+    openocd-path)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --openocd-path option has an empty value."
+        fi
+        PATH_TO_OPENOCD="$OPTARG"
+        ;;
+
+    *)  # We should actually never land here, because parse_command_line_arguments() already checks if an option is known.
+        abort "Unknown command-line option \"--${OPTION_NAME}\".";;
+  esac
+}
+
+
+parse_command_line_arguments ()
+{
+  # The way command-line arguments are parsed below was originally described on the following page:
+  #   http://mywiki.wooledge.org/ComplexOptionParsing
+  # But over the years I have rewritten or amended most of the code myself.
+
+  if false; then
+    echo "USER_SHORT_OPTIONS_SPEC: $USER_SHORT_OPTIONS_SPEC"
+    echo "Contents of USER_LONG_OPTIONS_SPEC:"
+    for key in "${!USER_LONG_OPTIONS_SPEC[@]}"; do
+      printf -- "- %s=%s\n" "$key" "${USER_LONG_OPTIONS_SPEC[$key]}"
+    done
+  fi
 
   # The first colon (':') means "use silent error reporting".
   # The "-:" means an option can start with '-', which helps parse long options which start with "--".
-  local MY_OPT_SPEC=":-:"
+  local MY_OPT_SPEC=":-:$USER_SHORT_OPTIONS_SPEC"
 
-  CLEAN_SPECIFIED=false
-  ENABLE_CONFIGURE_CACHE_SPECIFIED=false
-  CONFIGURE_CACHE_FILENAME=""
-  BUILD_SPECIFIED=false
-  ENABLE_CCACHE_SPECIFIED=false
-  INSTALL_SPECIFIED=false
-  DISASSEMBLE_SPECIFIED=false
-  PROGRAM_OVER_JTAG_SPECIFIED=false
-  PROGRAM_WITH_BOSSAC_SPECIFIED=false
-  CACHE_PROGRAMMED_FILE_SPECIFIED=false
-  DEBUG_SPECIFIED=false
-  DEBUG_FROM_THE_START_SPECIFIED=false
-  declare -ag BREAKPOINTS=()
+  local OPTION_NAME
+  local OPT_ARG_COUNT
+  local OPTARG  # This is a standard variable in Bash. Make it local just in case.
+  local OPTARG_AS_ARRAY
 
-  while getopts "$MY_OPT_SPEC" opt; do
-    while true; do
-      case "${opt}" in
-        -)  # OPTARG is name-of-long-option or name-of-long-option=value
-            if [[ "${OPTARG}" =~ .*=.* ]]  # With this --key=value format, only one argument is possible. See also below.
-            then
-                opt=${OPTARG/=*/}
-                OPTARG=${OPTARG#*=}
-                ((OPTIND--))
-            else  # With this --key value1 value2 format, multiple arguments are possible.
-                opt="$OPTARG"
-                OPTARG=(${@:OPTIND:$((MY_LONG_OPT_SPEC[$opt]))})
-            fi
-            ((OPTIND+=MY_LONG_OPT_SPEC[$opt]))
-            continue  # Now that opt/OPTARG are set, we can process them as if getopts would have given us long options.
-            ;;
-        help)
-            display_help
-            exit 0
-            ;;
-        version)
-            echo "$VERSION_NUMBER"
-            exit 0
-            ;;
-        license)
-            display_license
-            exit 0
-            ;;
+  while getopts "$MY_OPT_SPEC" OPTION_NAME; do
 
-        clean) CLEAN_SPECIFIED=true;;
+    case "$OPTION_NAME" in
 
-        enable-configure-cache) ENABLE_CONFIGURE_CACHE_SPECIFIED=true;;
+      -) # This case triggers for options beginning with a double hyphen ('--').
+         # If the user specified "--longOpt"   , OPTARG is then "longOpt".
+         # If the user specified "--longOpt=xx", OPTARG is then "longOpt=xx".
 
-        configure-cache-filename)
-          ENABLE_CONFIGURE_CACHE_SPECIFIED=true
-          if [[ ${OPTARG:-} = "" ]]; then
-            abort "Option --configure-cache-filename has an empty value."
-          fi
-          CONFIGURE_CACHE_FILENAME="$OPTARG"
-          ;;
+         if [[ "$OPTARG" =~ .*=.* ]]  # With this --key=value format, only one argument is possible.
+         then
 
-        build) BUILD_SPECIFIED=true;;
-        enable-ccache) ENABLE_CCACHE_SPECIFIED=true;;
-        install) INSTALL_SPECIFIED=true;;
-        disassemble) DISASSEMBLE_SPECIFIED=true;;
-        program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
-        program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
-        cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
-        debug) DEBUG_SPECIFIED=true;;
-        debug-from-the-start) DEBUG_FROM_THE_START_SPECIFIED=true;;
+           OPTION_NAME=${OPTARG/=*/}
+           OPTARG=${OPTARG#*=}
+           OPTARG_AS_ARRAY=("")
 
-        path-to-bossac)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --path-to-bossac option has an empty value."
-            fi
-            PATH_TO_BOSSAC="$OPTARG"
-            ;;
+           if ! test "${USER_LONG_OPTIONS_SPEC[$OPTION_NAME]+string_returned_if_exists}"; then
+             abort "Unknown command-line option \"--$OPTION_NAME\"."
+           fi
 
-        toolchain-dir)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --toolchain-dir option has an empty value."
-            fi
-            TOOLCHAIN_DIR="$OPTARG"
-            ;;
+           # Retrieve the number of arguments for this option.
+           OPT_ARG_COUNT=${USER_LONG_OPTIONS_SPEC[$OPTION_NAME]}
 
-        atmel-software-framework)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --atmel-software-framework option has an empty value."
-            fi
-            ASF_DIR="$OPTARG"
-            ;;
+           if (( OPT_ARG_COUNT != 1 )); then
+             abort "Command-line option \"--$OPTION_NAME\" does not take 1 argument."
+           fi
 
-        build-type)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --build-type option has an empty value."
-            fi
-            BUILD_TYPE="$OPTARG"
-            ;;
+           process_command_line_argument
 
-        debugger-type)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --debugger-type option has an empty value."
-            fi
-            DEBUGGER_TYPE="$OPTARG"
-            ;;
+         else  # With this format, multiple arguments are possible, like in "--key value1 value2".
 
-        add-breakpoint)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --add-breakpoint option has an empty value."
-            fi
-            BREAKPOINTS+=("$OPTARG")
-            ;;
+           OPTION_NAME="$OPTARG"
 
-        openocd-path)
-            if [[ ${OPTARG:-} = "" ]]; then
-              abort "The --openocd-path option has an empty value."
-            fi
-            PATH_TO_OPENOCD="$OPTARG"
-            ;;
+           if ! test "${USER_LONG_OPTIONS_SPEC[$OPTION_NAME]+string_returned_if_exists}"; then
+             abort "Unknown command-line option \"--$OPTION_NAME\"."
+           fi
 
-        *)
-            if [[ ${opt} = "?" ]]; then
-              abort "Unknown command-line option \"$OPTARG\"."
-            else
-              abort "Unknown command-line option \"${opt}\"."
-            fi
-            ;;
-      esac
+           # Retrieve the number of arguments for this option.
+           OPT_ARG_COUNT=${USER_LONG_OPTIONS_SPEC[$OPTION_NAME]}
 
-      break
-    done
+           if (( OPT_ARG_COUNT == 0 )); then
+             OPTARG=""
+             OPTARG_AS_ARRAY=("")
+             process_command_line_argument
+           elif (( OPT_ARG_COUNT == 1 )); then
+             OPTARG="${!OPTIND}"
+             OPTARG_AS_ARRAY=("")
+             process_command_line_argument
+           else
+             OPTARG=""
+             # OPTARG_AS_ARRAY is not standard in Bash. I have introduced it to make it clear that
+             # arguments are passed as an array in this case. It also prevents many Shellcheck warnings.
+             OPTARG_AS_ARRAY=("${@:OPTIND:OPT_ARG_COUNT}")
+
+             if [ ${#OPTARG_AS_ARRAY[@]} -ne "$OPT_ARG_COUNT" ]; then
+               abort "Command-line option \"--$OPTION_NAME\" needs $OPT_ARG_COUNT arguments."
+             fi
+
+             process_command_line_argument
+           fi;
+
+           ((OPTIND+=OPT_ARG_COUNT))
+         fi
+         ;;
+
+      *) # This processes only single-letter options.
+         # getopts knows all valid single-letter command-line options, see USER_SHORT_OPTIONS_SPEC above.
+         # If it encounters an unknown one, it returns an option name of '?'.
+         if [[ "$OPTION_NAME" = "?" ]]; then
+           abort "Unknown command-line option \"$OPTARG\"."
+         else
+           # Process a valid single-letter option.
+           OPTARG_AS_ARRAY=("")
+           process_command_line_argument
+         fi
+         ;;
+    esac
   done
 
   shift $((OPTIND-1))
-
-  if [ $# -ne 0 ]; then
-    abort "Invalid number of command-line arguments. Run this script without arguments for help."
-  fi
+  ARGS=("$@")
 }
 
 
@@ -984,7 +1038,55 @@ BUILD_TYPE="$DEFAULT_BUILD_TYPE"
 DEBUGGER_TYPE="$DEFAULT_DEBUGGER_TYPE"
 PATH_TO_BOSSAC="$DEFAULT_PATH_TO_BOSSAC"
 
-read_command_line_switches "$@"
+
+USER_SHORT_OPTIONS_SPEC=""
+
+# Use an associative array to declare how many arguments every long option expects.
+# All known options must be listed, even those with 0 arguments.
+declare -A USER_LONG_OPTIONS_SPEC
+USER_LONG_OPTIONS_SPEC+=( [help]=0 )
+USER_LONG_OPTIONS_SPEC+=( [version]=0 )
+USER_LONG_OPTIONS_SPEC+=( [license]=0 )
+USER_LONG_OPTIONS_SPEC+=( [clean]=0 )
+USER_LONG_OPTIONS_SPEC+=( [enable-configure-cache]=0 )
+USER_LONG_OPTIONS_SPEC+=( [build]=0 )
+USER_LONG_OPTIONS_SPEC+=( [enable-ccache]=0 )
+USER_LONG_OPTIONS_SPEC+=( [install]=0 )
+USER_LONG_OPTIONS_SPEC+=( [disassemble]=0 )
+USER_LONG_OPTIONS_SPEC+=( [program-over-jtag]=0 )
+USER_LONG_OPTIONS_SPEC+=( [program-with-bossac]=0 )
+USER_LONG_OPTIONS_SPEC+=( [cache-programmed-file]=0 )
+USER_LONG_OPTIONS_SPEC+=( [debug]=0 )
+USER_LONG_OPTIONS_SPEC+=( [debug-from-the-start]=0 )
+USER_LONG_OPTIONS_SPEC+=( [build-type]=1 )
+USER_LONG_OPTIONS_SPEC+=( [toolchain-dir]=1 )
+USER_LONG_OPTIONS_SPEC+=( [atmel-software-framework]=1 )
+USER_LONG_OPTIONS_SPEC+=( [openocd-path]=1 )
+USER_LONG_OPTIONS_SPEC+=( [debugger-type]=1 )
+USER_LONG_OPTIONS_SPEC+=( [add-breakpoint]=1 )
+USER_LONG_OPTIONS_SPEC+=( [path-to-bossac]=1 )
+USER_LONG_OPTIONS_SPEC+=( [configure-cache-filename]=1 )
+
+CLEAN_SPECIFIED=false
+ENABLE_CONFIGURE_CACHE_SPECIFIED=false
+CONFIGURE_CACHE_FILENAME=""
+BUILD_SPECIFIED=false
+ENABLE_CCACHE_SPECIFIED=false
+INSTALL_SPECIFIED=false
+DISASSEMBLE_SPECIFIED=false
+PROGRAM_OVER_JTAG_SPECIFIED=false
+PROGRAM_WITH_BOSSAC_SPECIFIED=false
+CACHE_PROGRAMMED_FILE_SPECIFIED=false
+DEBUG_SPECIFIED=false
+DEBUG_FROM_THE_START_SPECIFIED=false
+declare -ag BREAKPOINTS=()
+
+parse_command_line_arguments "$@"
+
+if [ ${#ARGS[@]} -ne 0 ]; then
+  abort "Invalid number of command-line arguments. Run this script without arguments for help."
+fi
+
 
 if $CLEAN_SPECIFIED || \
    $BUILD_SPECIFIED || \
