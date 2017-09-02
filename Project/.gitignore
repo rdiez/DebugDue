@@ -11,3 +11,6 @@ install-sh
 ltmain.sh
 missing
 compile
+
+# Symbolic link that gets created automatically.
+AsfSrc

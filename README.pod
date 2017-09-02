@@ -214,7 +214,7 @@ by verifying that this command works:
 
   mkdir obj
   cd obj
-  ../Project/configure --prefix=/some/bin/directory --with-atmel-software-framework=<directory where the ASF is>
+  ../Project/configure --prefix=/some/bin/directory --with-project="JtagDue" --host="arm-none-eabi" --with-target-arch="arm-none-eabi" --with-atmel-software-framework=<directory where the ASF is>
   make  --no-builtin-rules  -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
   make install
 
@@ -465,6 +465,8 @@ on reconstruct the call stack, if the .elf file with debug information is availa
 
 =head1 Changelog
 
+This changelog only covers the released binary files for the JtagDue firmware.
+
 =over
 
 =item * Version 1.0.0, released on 11 may 2013, git tag "v1.0.0". First public version.
@@ -481,7 +483,7 @@ The project's official web site is L<< https://github.com/rdiez/JtagDue >>
 
 =head1 License
 
-Copyright (C) R. Diez 2012,  rdiezmail-arduino at yahoo.de
+Copyright (C) R. Diez 2012-2017,  rdiezmail-arduino at yahoo.de
 
 The source code is released under the AGPL 3 license.
 

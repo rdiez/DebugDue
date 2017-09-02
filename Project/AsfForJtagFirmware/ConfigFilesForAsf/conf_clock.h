@@ -1,3 +1,0 @@
- 
-#define CONFIG_USBCLK_SOURCE  USBCLK_SRC_UPLL
-#define CONFIG_USBCLK_DIV           1

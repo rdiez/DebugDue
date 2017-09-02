@@ -32,16 +32,13 @@ user_config ()
   # OpenOCD will be told that this is where to find the (emulated) Bus Pirate.
   JTAGDUE_SERIAL_PORT="/dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"
 
+  DEFAULT_PROJECT="JtagDue"
+
   DEFAULT_BUILD_TYPE="debug"
 
   DEFAULT_DEBUGGER_TYPE="gdb"
 
   OUTPUT_DIR="$(readlink -f "BuildOutput")"
-
-  # Possible Project names are "JtagDue" or "EmptyFirmware".
-  # At the moment, both projects are always built together,
-  # so this option only has an effect when programming or debugging.
-  PROJECT_NAME="EmptyFirmware"
 }
 
 
@@ -329,6 +326,7 @@ Step 4, debug operations:
   --openocd-path="openocd-0.8.0/bin/openocd"  Path to the OpenOCD executable.
 
 Global options:
+  --project="<project name>"  Specify 'JtagDue' (the default) or 'EmptyFirmware'.
   --toolchain-dir="<path>"
   --build-type="<type>"  Build types are "debug" and "release".
 
@@ -455,13 +453,20 @@ do_configure_if_necessary ()
     fi
 
     CONFIG_CMD+=" --with-atmel-software-framework=\"$ASF_DIR\""
+    CONFIG_CMD+=" --with-project=\"$PROJECT_NAME\""
 
-    CONFIG_CMD+=" --build=\"$($PROJECT_SRC_DIR/config.guess)\" --host=\"$TARGET_ARCH\""
+    CONFIG_CMD+=" --host=\"$TARGET_ARCH\""
+    # I have not figured out yet how to get the value passed as --host to configure.ac ,
+    # so I am passing it again in a separate command-line option.
+    CONFIG_CMD+=" --with-target-arch=\"$TARGET_ARCH\""
 
     # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
     # they will complain about a missing plug-in to process object files compiled for LTO.
-    CONFIG_CMD+=" AR=\"$TARGET_ARCH-gcc-ar\""
-    CONFIG_CMD+=" RANLIB=\"$TARGET_ARCH-gcc-ranlib\""
+    # These are however no longer needed, because we are not using libtool anymore.
+    if false; then
+      CONFIG_CMD+=" AR=\"$TARGET_ARCH-gcc-ar\""
+      CONFIG_CMD+=" RANLIB=\"$TARGET_ARCH-gcc-ranlib\""
+    fi
 
     if $ENABLE_CCACHE_SPECIFIED; then
 
@@ -609,6 +614,10 @@ process_command_line_argument ()
           abort "The --openocd-path option has an empty value."
         fi
         PATH_TO_OPENOCD="$OPTARG"
+        ;;
+
+    project)
+        PROJECT="$OPTARG"
         ;;
 
     *)  # We should actually never land here, because parse_command_line_arguments() already checks if an option is known.
@@ -776,6 +785,9 @@ do_build ()
   MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
 
   MAKE_CMD+=" --no-builtin-rules  -j \"$MAKE_J_VAL\" $TARGETS"
+
+  # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment this line out:
+  MAKE_CMD+=" --output-sync=recurse"
 
   echo "$MAKE_CMD"
   eval "$MAKE_CMD"
@@ -1066,6 +1078,7 @@ USER_LONG_OPTIONS_SPEC+=( [debugger-type]=1 )
 USER_LONG_OPTIONS_SPEC+=( [add-breakpoint]=1 )
 USER_LONG_OPTIONS_SPEC+=( [path-to-bossac]=1 )
 USER_LONG_OPTIONS_SPEC+=( [configure-cache-filename]=1 )
+USER_LONG_OPTIONS_SPEC+=( [project]=1 )
 
 CLEAN_SPECIFIED=false
 ENABLE_CONFIGURE_CACHE_SPECIFIED=false
@@ -1079,6 +1092,7 @@ PROGRAM_WITH_BOSSAC_SPECIFIED=false
 CACHE_PROGRAMMED_FILE_SPECIFIED=false
 DEBUG_SPECIFIED=false
 DEBUG_FROM_THE_START_SPECIFIED=false
+PROJECT="$DEFAULT_PROJECT"
 declare -ag BREAKPOINTS=()
 
 parse_command_line_arguments "$@"
@@ -1113,6 +1127,15 @@ case "${BUILD_TYPE}" in
 esac
 
 
+PROJECT_NAME_LOWERCASE="${PROJECT,,}"
+
+case "${PROJECT_NAME_LOWERCASE}" in
+  jtagdue)       PROJECT_NAME="JtagDue" ;;
+  emptyfirmware) PROJECT_NAME="EmptyFirmware" ;;
+  *) abort "Invalid project name of \"$PROJECT\"." ;;
+esac
+
+
 PROJECT_OBJ_DIR="$OUTPUT_DIR/$PROJECT_NAME-obj-$PROJECT_OBJ_DIR_SUFFIX"
 PROJECT_BIN_DIR="$OUTPUT_DIR/$PROJECT_NAME-bin-$PROJECT_OBJ_DIR_SUFFIX"
 
@@ -1144,14 +1167,7 @@ CONFIGURE_SCRIPT_PATH="$PROJECT_SRC_DIR/configure"
 # Convert to lowercase.
 DEBUGGER_TYPE="${DEBUGGER_TYPE,,}"
 
-# Convert to lowercase.
-PROJECT_NAME="${PROJECT_NAME,,}"
-
-case "${PROJECT_NAME}" in
-  jtagdue)       BIN_FILENAME="JtagFirmware/jtagdue" ;;
-  emptyfirmware) BIN_FILENAME="EmptyFirmware/emptydue" ;;
-  *) abort "Invalid project name of \"$PROJECT_NAME\"." ;;
-esac
+BIN_FILENAME="firmware"
 
 BIN_FILEPATH="$PROJECT_OBJ_DIR/$BIN_FILENAME.bin"
 ELF_FILEPATH="$PROJECT_OBJ_DIR/$BIN_FILENAME.elf"

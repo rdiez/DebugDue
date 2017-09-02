@@ -1,5 +1,5 @@
 
-# Copyright (C) 2012-2014 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2012-2017 R. Diez - see the JtagDue project for licensing information.
 
 # By default, if you change the firmware version number below, the next 'make' invocation
 # will rebuild the 'configure' script. This script will have the updated version number
@@ -13,31 +13,8 @@ AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C com
                    # see the toolchain makefile for more information about why this is needed. Short version:
                    # libgloss was not adapted for our board, so the toolchain alone cannot build executables.
 
-# You would normally want to use Automake's option "subdir-objects" below. However, there is a long-standing
-# bug regarding compilation of source files that live outside the normal source subdirectory, up to and
-# including Automake version 1.15.
-# You will find more information on this bug in this article:
-#   "Autotools build fails due to subdir-objects option in AM_INIT_AUTOMAKE"
-#    http://stackoverflow.com/questions/21609580/autotools-build-fails-due-to-subdir-objects-option-in-am-init-automake
-#
-# We reference out-of-tree source files in 2 places:
-# - The main project compiles NewlibSyscalls.cpp directly. However, this file lives somewhere else.
-# - Some libraries, like Atmel's ASF and ARM's CMSIS, live somewhere else but are referenced
-#   from our own Autoconf projects in order to build them in the same way as the rest of our firmware.
-#
-# All other libraries in this firmware that do not reference any out-of-tree source files
-# can be built with Automake's option "subdir-objects". For example, each library's Makefile.am
-# could have a line line this:
-#   AUTOMAKE_OPTIONS := foreign subdir-objects
-#
 AM_INIT_AUTOMAKE([-Wall])
 
-# Note that libtool (as of libtoolize 2.4.2) may generate spurious warning "configure: WARNING: using cross tools not prefixed with host triplet"
-# if you have a tool called "mt" on your system (which probably gets installed with Ubuntu package 'cpio').
-# I have reported this on the libtool mailing list:
-#   Thread title: "configure: WARNING: using cross tools not prefixed with host triplet"
-#   Thread URL:   http://lists.gnu.org/archive/html/libtool/2014-09/msg00008.html
-LT_INIT
 
 # Use "make V=1" (and remove the '-s' flag) in order to see the GCC command lines during compilation.
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
@@ -130,7 +107,53 @@ if ! test -d "$SAM_DIR"; then
   AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at "$with_atmel_software_framework" (directory "$SAM_DIR" not found).])
 fi
 
-AC_SUBST(ASF_BASEDIR)
+# Create or update the symbolic link to the ASF.
+# Using a symbolic link is the only way I found that works well with Automake's option 'subdir-objects'.
+# Otherwise, trying to compile files that live out of the source tree will give you strange warnings at the very least.
+ASF_LINK="$srcdir/AsfSrc"
+ln --symbolic --no-dereference --force -- "$ASF_BASEDIR" "$ASF_LINK"
+
+
+# ----------- target arch -----------
+
+# I have not figured out yet how to get the value passed as --host,
+# so I am passing it again in a separate command-line option.
+
+AC_ARG_WITH(target-arch,
+[AS_HELP_STRING([--with-target-arch=arch],
+		[specify the same architecture as argument -host.])])
+
+if test "x$with_target_arch" == x; then
+  AC_MSG_ERROR([Please specify the --with-target-arch=arch configuration switch.])
+fi
+
+TARGET_ARCH="$with_target_arch"
+AC_SUBST(TARGET_ARCH)
+
+
+# ----------- project name -----------
+
+AC_ARG_WITH(project,
+[AS_HELP_STRING([--with-project=project-name],
+		[specify 'JtagDue' or 'EmptyFirmware'.])])
+
+if test "x$with_project" == x; then
+  AC_MSG_ERROR([Please specify the --with-project=project-name configuration switch.])
+fi
+
+PROJECT_NAME_LOWERCASE="${with_project,,}"
+
+IS_EMPTY_FIRMWARE=false
+IS_JTAG_DUE=false
+
+case "$PROJECT_NAME_LOWERCASE" in
+  jtagdue)       IS_JTAG_DUE=true ;;
+  emptyfirmware) IS_EMPTY_FIRMWARE=true ;;
+  *) AC_MSG_ERROR([Invalid project name of "$with_project".]) ;;
+esac
+
+AM_CONDITIONAL([IS_EMPTY_FIRMWARE], [test $IS_EMPTY_FIRMWARE = true])
+AM_CONDITIONAL([IS_JTAG_DUE], [test $IS_JTAG_DUE = true])
 
 
 # ----------------------------------------
@@ -255,46 +278,6 @@ AC_SUBST(AM_CFLAGS)
 AC_SUBST(AM_CXXFLAGS)
 AC_SUBST(AM_CCASFLAGS)
 
-
-# ---  Include paths.
-
-# ASF
-
-ASF_INCLUDES=""
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/pmc"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/pio"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/rstc"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/wdt"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/adc"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/drivers/uart"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/sam/boards"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/boards"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/clock"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/sleepmgr"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb/class/cdc"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb/class/cdc/device"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb/udc"
-ASF_INCLUDES+=" -I$ASF_BASEDIR/common/services/usb"
-
-AC_SUBST(ASF_INCLUDES)
-
-
-# CMSIS
-
-CMSIS_BASE_DIR="$ASF_BASEDIR/sam/utils/cmsis/sam3x"
-AC_SUBST(CMSIS_BASE_DIR)
-
-CMSIS_INCLUDES=""
-CMSIS_INCLUDES+=" -I$CMSIS_BASE_DIR/include"
-CMSIS_INCLUDES+=" -I$CMSIS_BASE_DIR/source/templates"
-CMSIS_INCLUDES+=" -I$ASF_BASEDIR/thirdparty/CMSIS/Include"
-CMSIS_INCLUDES+=" -I$ASF_BASEDIR/sam/utils"
-CMSIS_INCLUDES+=" -I$ASF_BASEDIR/sam/utils/preprocessor"
-CMSIS_INCLUDES+=" -I$ASF_BASEDIR/sam/utils/header_files"
-CMSIS_INCLUDES+=" -I$ASF_BASEDIR/common/utils"
-AC_SUBST(CMSIS_INCLUDES)
-
-
 # ----------------------------------------
 
 BARE_METAL_SUPPORT_DIR="$(readlink -f "$srcdir/BareMetalSupport")"
@@ -307,12 +290,6 @@ AC_SUBST(BARE_METAL_SUPPORT_DIR)
 # As a potential work-around, autogen.sh could generate an .m4 file with the right (shorter) list, which would then be included here.
 AC_CONFIG_FILES(
   Makefile
-  CmsisMakefile/Makefile
-  BareMetalSupport/Makefile
-  AsfForEmptyFirmware/Makefile
-  EmptyFirmware/Makefile
-  AsfForJtagFirmware/Makefile
-  JtagFirmware/Makefile
 )
 
 AC_OUTPUT
