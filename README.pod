@@ -280,7 +280,8 @@ it is desirable that the assigned device name is always the same.
 The easiest way is to look under F<< /dev/serial/by-id >>. Normally, when running the JtagDue
 firmware, you will automatically get a link like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00 >>,
 but the exact name may be different on your system. This link will stay the same even if you
-connect the Arduino Due to another USB port.
+connect the Arduino Due to another USB port. Alternatively, you could use script
+L<< FindUsbSerialPort.sh|https://github.com/rdiez/Tools/tree/master/FindUsbSerialPort >>C< >.
 
 If you want to address your devices based on the USB port they are connected to, look under
 F<< /dev/serial/by-path >>.
