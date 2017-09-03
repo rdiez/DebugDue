@@ -1,12 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2014 R. Diez - Licensed under the GNU AGPLv3 - see companion script JtagDueBuilder.sh for more information.
+# Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3 - see companion script JtagDueBuilder.sh for more information.
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
 # set -x  # Enable tracing of this script.
+
 
 abort ()
 {
@@ -209,9 +210,9 @@ if [[ $DEBUGGER_TYPE = "ddd" ]]; then
   eval "$GDB_CMD &"
 else
   NEW_CONSOLE_CMD="./run-in-new-console.sh"
-  NEW_CONSOLE_CMD+=" --konsole-discard-stderr"
-  NEW_CONSOLE_CMD+=" --konsole-icon=kcmkwm"
-  NEW_CONSOLE_CMD+=" --konsole-title=\"Arduino Due GDB\""
+  NEW_CONSOLE_CMD+=" --console-discard-stderr"
+  NEW_CONSOLE_CMD+=" --console-icon=kcmkwm"
+  NEW_CONSOLE_CMD+=" --console-title=\"Arduino Due GDB\""
   NEW_CONSOLE_CMD+=" --"
   NEW_CONSOLE_CMD+=" $(printf "%q" "$GDB_CMD")"
 
