@@ -204,7 +204,13 @@ firmware_elf_LDFLAGS := $(AM_LDFLAGS)
 firmware_elf_LDFLAGS += -Wl,-T$(LINKER_SCRIPT_FILENAME)
 
 firmware_elf_LDFLAGS += -Wl,--gc-sections
-firmware_elf_LDFLAGS += -Wl,--warn-common -Wl,--warn-section-align
+firmware_elf_LDFLAGS += -Wl,--warn-common
+
+if !USE_GOLD_LINKER
+  # The Gold linker does not support --warn-section-align , at least in Gold version 1.14 (bundled with GNU Binutils 2.28).
+  firmware_elf_LDFLAGS += -Wl,--warn-section-align
+endif
+
 firmware_elf_LDFLAGS += -Wl,-Map,$(MAP_FILENAME)
 firmware_elf_LDFLAGS += -Wl,--cref  # Output a cross reference table, which will land in the map file.
 
@@ -212,6 +218,10 @@ firmware_elf_LDFLAGS += -Wl,--cref  # Output a cross reference table, which will
 # The entry point is used by GDB. Note that the CPU itself only looks at the vector table,
 # so the entry point should match the reset vector.
 firmware_elf_LDFLAGS += -Wl,--entry=BareMetalSupport_Reset_Handler
+
+if USE_GOLD_LINKER
+  firmware_elf_LDFLAGS += -fuse-ld=gold
+endif
 
 $(ELF_FILENAME): $(LINKER_SCRIPT_FILENAME)
 

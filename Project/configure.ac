@@ -280,6 +280,8 @@ AC_SUBST(AM_CCASFLAGS)
 
 # ----------------------------------------
 
+AM_CONDITIONAL([USE_GOLD_LINKER], [false])
+
 BARE_METAL_SUPPORT_DIR="$(readlink -f "$srcdir/BareMetalSupport")"
 AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
