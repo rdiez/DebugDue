@@ -230,6 +230,7 @@ BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.bz2
 
+# Option --enable-plugins is necessary for Gold to understand the --plugin command-line switch that the GCC driver passes.
 BINUTILS_GOLD_CONFIGURE_OPTIONS := --enable-gold=yes --enable-plugins
 
 BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
