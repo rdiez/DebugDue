@@ -738,6 +738,19 @@ do_build ()
 
   local MAKE_CMD="make "
 
+  if false; then
+    # Possible flags:
+    #   a for all
+    #   b for basic debugging
+    #   v for more verbose basic debugging
+    #   i for showing implicit rules
+    #   j for details on invocation of commands
+    #   m for debugging while remaking makefiles.
+    local DEBUG_FLAGS="a"
+    MAKE_CMD+=" --debug=$DEBUG_FLAGS"
+  fi
+
+  # Normally, the build commands are not shown, see AM_SILENT_RULES in configure.ac .
   # Passing "V=1" in CPPFLAGS is not enough, you need to remove "-s" too.
   local SHOW_BUILD_COMMANDS=false
   if $SHOW_BUILD_COMMANDS; then
@@ -767,6 +780,19 @@ do_build ()
   fi
 
 
+  # Generate the assembly files from the source files.
+  # Due to the command-line arguments passed to GCC, .s output files end up actually with
+  # file extension .o, like object files are named.
+  # Unfortunately, this option does not generate the real object files, so the build does not complete.
+  # Use -save-temps instead, see file configure.ac .
+  # I have verified that option -fverbose-asm does generate extra comments in
+  # the assembly files (which actually have file extension .o, see above).
+  local GENERATE_ASSEMBLY_FILES=false
+  if $GENERATE_ASSEMBLY_FILES; then
+    EXTRA_CPPFLAGS+="-S -fverbose-asm "
+  fi
+
+
   if [[ $EXTRA_CPPFLAGS != "" ]]; then
     # The user's CPPFLAGS comes at the end, so that the user always has the last word.
     MAKE_CMD+=" CPPFLAGS=\"$EXTRA_CPPFLAGS${CPPFLAGS:-}\""
@@ -782,9 +808,12 @@ do_build ()
     TARGETS+=" disassemble"
   fi
 
-  MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+  MAKE_CMD+=" --no-builtin-rules"
 
-  MAKE_CMD+=" --no-builtin-rules  -j \"$MAKE_J_VAL\" $TARGETS"
+  MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+  MAKE_CMD+=" -j \"$MAKE_J_VAL\""
+
+  MAKE_CMD+=" $TARGETS"
 
   # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment this line out:
   MAKE_CMD+=" --output-sync=recurse"
