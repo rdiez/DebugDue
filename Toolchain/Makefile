@@ -135,12 +135,12 @@ endif
 # function to find the index of a word like '--' in a list, and then you could probably
 # filter out the rest with built-in function 'wordlist'.
 #
-# We also want to pass flag '--output-sync=target' (aka '-Otarget'), if present.
+# We also want to pass flag '--output-sync=xxx' (aka '-Oxxx'), if present.
 
 EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS = $(strip $(filter -j%,$(MAKEFLAGS)) \
                                                 $(filter --jobserver-fds=%,$(MAKEFLAGS)) \
                                                 $(filter --jobserver-auth=%,$(MAKEFLAGS)) \
-                                                $(filter -Otarget,$(MAKEFLAGS)))
+                                                $(filter -O%,$(MAKEFLAGS)))
 EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS)"
 
 
@@ -880,7 +880,7 @@ $(TARGET_NAME_HELP):
 	@echo "The recommended way to run this makefile is:"
 	@echo "  make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\" ...other variables... \\"
 	@echo "    --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
-	@echo "For GNU Make version 4.0 or above, option '--output-sync=target' is recommended."
+	@echo "For GNU Make version 4.0 or above, option '--output-sync=recurse' is recommended."
 	@echo
 
 $(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)
