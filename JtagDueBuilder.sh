@@ -56,6 +56,12 @@ abort ()
 }
 
 
+is_var_set ()
+{
+  if [ "${!1-first}" == "${!1-second}" ]; then return 0; else return 1; fi
+}
+
+
 str_starts_with ()
 {
   # $1 = string
@@ -732,6 +738,33 @@ parse_command_line_arguments ()
 }
 
 
+add_make_parallel_jobs_flag ()
+{
+  local SHOULD_ADD_PARALLEL_FLAG=true
+
+  if is_var_set "MAKEFLAGS"
+  then
+
+    if false; then
+      echo "MAKEFLAGS: $MAKEFLAGS"
+    fi
+
+    # The following string search is not 100 % watertight, as MAKEFLAGS can have further arguments at the end like " -- VAR1=VALUE1 VAR2=VALUE2 ...".
+    if [[ $MAKEFLAGS =~ --jobserver-fds= || $MAKEFLAGS =~ --jobserver-auth= ]]
+    then
+      # echo "Called from a makefile with parallel jobs enabled."
+      SHOULD_ADD_PARALLEL_FLAG=false
+    fi
+  fi
+
+  if $SHOULD_ADD_PARALLEL_FLAG; then
+    local MAKE_J_VAL
+    MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+    MAKE_CMD+=" -j \"$MAKE_J_VAL\""
+  fi
+}
+
+
 do_build ()
 {
   pushd "$PROJECT_OBJ_DIR" >/dev/null
@@ -798,6 +831,13 @@ do_build ()
     MAKE_CMD+=" CPPFLAGS=\"$EXTRA_CPPFLAGS${CPPFLAGS:-}\""
   fi
 
+  MAKE_CMD+=" --no-builtin-rules"
+
+  # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment this line out:
+  MAKE_CMD+=" --output-sync=recurse"
+
+  add_make_parallel_jobs_flag
+
   local TARGETS=""
 
   if $INSTALL_SPECIFIED; then
@@ -808,15 +848,7 @@ do_build ()
     TARGETS+=" disassemble"
   fi
 
-  MAKE_CMD+=" --no-builtin-rules"
-
-  MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
-  MAKE_CMD+=" -j \"$MAKE_J_VAL\""
-
   MAKE_CMD+=" $TARGETS"
-
-  # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment this line out:
-  MAKE_CMD+=" --output-sync=recurse"
 
   echo "$MAKE_CMD"
   eval "$MAKE_CMD"
