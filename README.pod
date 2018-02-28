@@ -32,6 +32,8 @@ so that it is compatible with L<< OpenOCD|http://openocd.sourceforge.net/ >>S< .
 This means that you can use an Arduino Due (acting as a JTAG adapter) in order to debug with GDB
 your own code running on a second Arduino Due.
 
+You will find more information about the Arduino Due on my wiki page at L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >>S< .>
+
 =head2 About the Bare Metal C++ Environment
 
 The bare metal programming environment has the following features:
