@@ -16,6 +16,15 @@ AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C com
 AM_INIT_AUTOMAKE([-Wall])
 
 
+if ! test set = "${BASH_VERSION+set}"; then
+  # How to test this error path:
+  #    CONFIG_SHELL=/bin/sh ./configure
+  # The following will not work, as the generated 'configure' script seems to change the shell automatically:
+  #   /bin/sh ./configure
+  AC_MSG_ERROR([Please run this 'configure' script with Bash, as it uses Bash-only features, and has only been tested against Bash. Start it like this: CONFIG_SHELL=/bin/bash ./configure])
+fi
+
+
 # Use "make V=1" (and remove the '-s' flag) in order to see the GCC command lines during compilation.
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 
