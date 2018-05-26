@@ -9,5 +9,5 @@ set -o nounset
 # However, this feature is still marked as experimental in automake's 1.15 manual.
 
 CMD="autoreconf --warnings=all --install"
-printf "$CMD\n\n"
+printf "%s\\n\\n" "$CMD"
 eval "$CMD"

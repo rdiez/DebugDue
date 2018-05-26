@@ -203,7 +203,7 @@ parse_command_line_arguments ()
     echo "USER_SHORT_OPTIONS_SPEC: $USER_SHORT_OPTIONS_SPEC"
     echo "Contents of USER_LONG_OPTIONS_SPEC:"
     for key in "${!USER_LONG_OPTIONS_SPEC[@]}"; do
-      printf -- "- %s=%s\n" "$key" "${USER_LONG_OPTIONS_SPEC[$key]}"
+      printf -- "- %s=%s\\n" "$key" "${USER_LONG_OPTIONS_SPEC[$key]}"
     done
   fi
 
