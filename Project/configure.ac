@@ -74,7 +74,7 @@ then
     # in the general debug information.
     # We could use GCC 4.8's new optimisation level "-Og", but "-O0" still provides the most comfortable debugging experience.
     # Switch -fmerge-constants helps mainly reduce the code size of all possible assertion failed messages.
-    DEBUG_FLAGS="-O0 -fmerge-constants -DDEBUG -g3"
+    BUILD_FLAGS="-O0 -fmerge-constants -DDEBUG -g3"
     IS_DEBUG_BUILD=true
 else
     AC_MSG_RESULT(no)
@@ -83,17 +83,18 @@ else
     # The firmware did get somewhat bigger with -O3 though.
     # It would probably be best to compile with -Os by default and mark some modules or functions for
     # -O3 optimisation with GCC options "#pragma GCC optimize ("string"...)" and "attribute((optimize("STRING")))".
-    DEBUG_FLAGS="-O3 -DNDEBUG"
+    BUILD_FLAGS="-O3 -DNDEBUG -g3"
 
     if true; then
       # The GCC toolchain is built with --enable-lto. I hope that makes it build the C runtime library,
       # libstdc++, etc. with -flto. We should probably build newlib with LTO enabled too.
-      DEBUG_FLAGS+=" -flto"
+      BUILD_FLAGS+=" -flto"
     fi
+
     IS_DEBUG_BUILD=false
 fi
 
-DEBUG_FLAGS+=" -g -Wall"
+BUILD_FLAGS+=" -Wall"
 
 
 # ----------- Path to the Atmel Software Framework -----------
@@ -276,9 +277,9 @@ fi
 # --- Set the final variables.
 
 AM_CPPFLAGS=" $EXTRA_CPP_FLAGS"
-AM_CFLAGS=" $DEBUG_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
-AM_CXXFLAGS=" $DEBUG_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
-AM_CCASFLAGS=" $DEBUG_FLAGS $ARCH_FLAGS"
+AM_CFLAGS=" $BUILD_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
+AM_CXXFLAGS=" $BUILD_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
+AM_CCASFLAGS=" $BUILD_FLAGS $ARCH_FLAGS"
 
 AC_SUBST(AM_CPPFLAGS)
 AC_SUBST(AM_CFLAGS)
