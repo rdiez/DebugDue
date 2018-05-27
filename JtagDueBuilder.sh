@@ -435,7 +435,10 @@ do_configure_if_necessary ()
 
     pushd "$PROJECT_OBJ_DIR" >/dev/null
 
-    local CONFIG_CMD="$CONFIGURE_SCRIPT_PATH"
+    local CONFIG_CMD
+
+    CONFIG_CMD+="CONFIG_SHELL=/bin/bash"
+    CONFIG_CMD+=" $CONFIGURE_SCRIPT_PATH"
 
     if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
       echo "Using configure cache file \"$CONFIGURE_CACHE_FILENAME\"."
