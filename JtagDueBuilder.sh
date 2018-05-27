@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
+# Copyright (c) 2014-2018 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
 
 set -o errexit
 set -o nounset
@@ -42,7 +42,7 @@ user_config ()
 }
 
 
-VERSION_NUMBER="1.03"
+VERSION_NUMBER="1.04"
 SCRIPT_NAME="JtagDueBuilder.sh"
 
 declare -r EXIT_CODE_SUCCESS=0
@@ -1047,7 +1047,7 @@ do_program_and_debug ()
       # Delete the old cached file in case programming fails, and you end up with a corrupt firmware on the target.
       if $CACHE_FILE_EXISTS_BUT_DIFFERENT; then
         add_openocd_cmd_echo "Deleting old bin cache file \"$CACHED_PROGRAMMED_FILE_FILENAME\"..."
-        add_open_cmd "file delete \"$CACHED_PROGRAMMED_FILE_FILENAME\""
+        add_openocd_cmd "file delete \"$CACHED_PROGRAMMED_FILE_FILENAME\""
       fi
 
       add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
