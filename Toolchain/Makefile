@@ -225,10 +225,10 @@ COMMON_CFLAGS += -ffunction-sections  # Keeps functions in separate data section
 
 # ------- Binutils flags -------
 
-BINUTILS_VERSION := 2.28
+BINUTILS_VERSION := 2.30
 BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
-BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.bz2
+BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.xz
 
 # Option --enable-plugins is necessary for Gold to understand the --plugin command-line switch that the GCC driver passes.
 BINUTILS_GOLD_CONFIGURE_OPTIONS := --enable-gold=yes --enable-plugins
@@ -254,7 +254,9 @@ GMP_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpIns
 
 # ------- MPFR lib flags -------
 
-MPFR_VERSION := 3.1.5
+# Version 4.0.x has been released in the meantime.
+# Older versions are still available on the website under "history", or on ftp://ftp.gnu.org/gnu/mpfr/ .
+MPFR_VERSION := 3.1.6
 MPFR_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)
 MPFR_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)-obj
 MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
@@ -267,6 +269,7 @@ MPFR_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrI
 
 # ------- MPC lib flags -------
 
+# Version 1.1.0 has been released in the meantime, so that it builds against MPFR 4.0.x .
 MPC_VERSION := 1.0.3
 MPC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)
 MPC_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)-obj
@@ -291,9 +294,9 @@ else
   GCC_DEBUG_BUILD_FLAGS :=
 endif
 
-GCC_VERSION := 6.3.0
+GCC_VERSION := 7.3.0
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
-GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.bz2
+GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.xz
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 
 GCC1_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)-obj-phase1
@@ -353,9 +356,10 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   IS_GCC_4_9_X := $(filter 4.9.%,$(GCC_VERSION))
   IS_GCC_5_X   := $(filter 5.%,$(GCC_VERSION))
   IS_GCC_6_X   := $(filter 6.%,$(GCC_VERSION))
+  IS_GCC_7_X   := $(filter 7.%,$(GCC_VERSION))
 
-  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X))" ""
-    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x.
+  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X)), $(IS_GCC_7_X))" ""
+    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x.
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
     $(error Unknown GCC version)
@@ -370,7 +374,7 @@ endif
 
 # ------- Newlib flags -------
 
-NEWLIB_VERSION := 2.5.0.20170421
+NEWLIB_VERSION := 3.0.0.20180226
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
@@ -394,7 +398,7 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 # ------- GDB flags -------
 
-GDB_VERSION := 7.12.1
+GDB_VERSION := 8.1
 GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz

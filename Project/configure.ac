@@ -246,6 +246,8 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated-declarations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdiv-by-zero"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"
+# This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
+EXTRA_C_AND_CXX_FLAGS+=" -Wno-expansion-to-defined"
 
 EXTRA_C_FLAGS=""
 EXTRA_C_FLAGS+=" -Wc++-compat"

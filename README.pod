@@ -182,7 +182,7 @@ Change to the 'Toolchain' subdirectory and type "make help" for more information
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 
-I have tested against ASF versions 3.19.0.95 and 3.35.1.54. You will probably have to manually edit file
+I have tested against ASF versions 3.19.0.95, 3.35.1.54 and 3.40.0. You will probably have to manually edit file
 F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with I<< #ifndef __cplusplus >>S< ,>
 so that they look like this:
 
