@@ -54,6 +54,27 @@ AC_PROG_INSTALL
 
 AM_EXTRA_RECURSIVE_TARGETS([disassemble])
 
+
+# ----------- Check GCC version number -----------
+
+if test "x$GCC" != "xyes"; then
+  AC_MSG_ERROR([GCC is the only supported compiler at the moment.])
+fi
+
+AX_COMPILER_VERSION
+
+# For some reason, variable ax_cv_cxx_compiler_version for the C++ compiler version
+# does not work for me.
+if false; then
+  if test "x$ax_cv_c_compiler_version" != "x$ax_cv_cxx_compiler_version"; then
+    AC_MSG_ERROR([The gcc and g++ versions do not match.])
+  fi
+fi
+
+IS_GCC_7_OR_LATER=false
+AS_VERSION_COMPARE( [$ax_cv_c_compiler_version], [7], [], [], [IS_GCC_7_OR_LATER=true] )
+
+
 # ----------- Check whether debug or release build -----------
 
 AC_MSG_CHECKING(whether to generate a debug build)
@@ -246,8 +267,11 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated-declarations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdiv-by-zero"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"
-# This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
-EXTRA_C_AND_CXX_FLAGS+=" -Wno-expansion-to-defined"
+
+if $IS_GCC_7_OR_LATER; then
+  # This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
+  EXTRA_C_AND_CXX_FLAGS+=" -Wno-expansion-to-defined"
+fi
 
 EXTRA_C_FLAGS=""
 EXTRA_C_FLAGS+=" -Wc++-compat"
