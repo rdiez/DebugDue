@@ -17,7 +17,7 @@ SHELL := bash -o nounset -o pipefail
 
 # ------- Common variables -------
 
-THIS_MAKEFILE_DIR := $(shell readlink -f "$(CURDIR)")
+THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
 
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
 

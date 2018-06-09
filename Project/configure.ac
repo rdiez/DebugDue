@@ -128,11 +128,11 @@ if test "x$with_atmel_software_framework" == x; then
   AC_MSG_ERROR([Please specify the --with-atmel-software-framework=PATH configuration switch])
 fi
 
-ASF_BASEDIR="$(readlink -f "$with_atmel_software_framework")"
+ASF_BASEDIR="$(readlink --verbose --canonicalize -- "$with_atmel_software_framework")"
 SAM_DIR="$ASF_BASEDIR/sam"
 
 if ! test -d "$SAM_DIR"; then
-  # If the path is completely wrong, "readlink -f" can fail. Therefore, we must not use its result in the error message.
+  # If the path is completely wrong, 'readlink' can fail. Therefore, we must not use its result in the error message.
   AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at "$with_atmel_software_framework" (directory "$SAM_DIR" not found).])
 fi
 
@@ -316,7 +316,9 @@ AC_SUBST(AM_CCASFLAGS)
 
 AM_CONDITIONAL([USE_GOLD_LINKER], [false])
 
-BARE_METAL_SUPPORT_DIR="$(readlink -f "$srcdir/BareMetalSupport")"
+ABS_SRCDIR="$(readlink --verbose --canonicalize -- "$srcdir")"
+
+BARE_METAL_SUPPORT_DIR="$ABS_SRCDIR/BareMetalSupport"
 AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
 # If you update this line, please update SUBDIRS in Makefile.am too.

@@ -129,7 +129,7 @@ then
   abort "Invalid number of command-line arguments, see the script source code for help."
 fi
 
-DIRNAME="$(readlink -f "$1")"
+DIRNAME="$(readlink --verbose --canonicalize -- "$1")"
 START_ADDR="$2"
 BYTE_COUNT="$3"
 TEST_REPEAT_COUNT="$4"

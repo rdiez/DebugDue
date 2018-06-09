@@ -38,7 +38,7 @@ user_config ()
 
   DEFAULT_DEBUGGER_TYPE="gdb"
 
-  OUTPUT_DIR="$(readlink -f "BuildOutput")"
+  OUTPUT_DIR="$(readlink --verbose --canonicalize -- "BuildOutput")"
 }
 
 
@@ -1181,7 +1181,7 @@ check_only_one "Only one build operation can be specified." $BUILD_SPECIFIED $IN
 
 check_only_one "Only one program operation can be specified." $PROGRAM_OVER_JTAG_SPECIFIED $PROGRAM_WITH_BOSSAC_SPECIFIED
 
-JTAGDUE_ROOT_DIR="$(readlink -f "$PWD")"
+JTAGDUE_ROOT_DIR="$(readlink --verbose --canonicalize -- "$PWD")"
 PROJECT_SRC_DIR="$JTAGDUE_ROOT_DIR/Project"
 
 case "${BUILD_TYPE}" in
