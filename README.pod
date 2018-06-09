@@ -186,13 +186,13 @@ I have tested against ASF versions 3.19.0.95, 3.35.1.54 and 3.40.0. You will pro
 F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with I<< #ifndef __cplusplus >>S< ,>
 so that they look like this:
 
-  #ifndef __cplusplus
+  #ifndef __cplusplus  // The user added this to avoid a clash with std::min when compiling C++ sources.
    #define min(a, b)   Min(a, b)
   #endif
 
   ...
 
-  #ifndef __cplusplus
+  #ifndef __cplusplus  // The user added this to avoid a clash with std::max when compiling C++ sources.
   #define max(a, b)   Max(a, b)
   #endif
 
