@@ -1,0 +1,10 @@
+--- newlib/libc/include/assert.h.old	2018-06-09 20:44:02.869099874 +0200
++++ newlib/libc/include/assert.h	2018-06-09 20:44:09.437006898 +0200
+@@ -48,3 +48,7 @@
+ #ifdef __cplusplus
+ }
+ #endif
++
++#ifdef INCLUDE_USER_IMPLEMENTATION_OF_ASSERT
++  #include <UserImplementationOfAssert.h>
++#endif

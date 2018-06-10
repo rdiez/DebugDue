@@ -50,6 +50,8 @@ firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
 firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
 firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/utils
 
+firmware_elf_CPPFLAGS += -I$(srcdir)/UserImplementationOfAssert
+
 firmware_elf_CPPFLAGS += -I$(BARE_METAL_SUPPORT_DIR)/..  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
                                                          # does find the files in $(BARE_METAL_SUPPORT_DIR).
                                                          # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).

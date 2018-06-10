@@ -463,6 +463,9 @@ static const char * const CMDNAME_JTAGPINS = "JtagPins";
 static const char * const CMDNAME_JTAGSHIFTSPEEDTEST = "JtagShiftSpeedTest";
 static const char * const CMDNAME_MALLOCTEST = "MallocTest";
 static const char * const CMDNAME_CPP_EXCEPTION_TEST = "ExceptionTest";
+#ifndef NDEBUG
+  static const char * const CMDNAME_ASSERT_TEST = "Assert";
+#endif
 static const char * const CMDNAME_MEMORY_USAGE = "MemoryUsage";
 static const char * const CMDNAME_SIMULATE_ERROR = "SimulateError";
 static const char * const CMDNAME_RESET = "Reset";
@@ -498,6 +501,11 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
     Printf( "  %s: Test JTAG shift speed. WARNING: Do NOT connect any JTAG device." EOL, CMDNAME_JTAGSHIFTSPEEDTEST );
     Printf( "  %s: Exercises malloc()." EOL, CMDNAME_MALLOCTEST );
     Printf( "  %s: Exercises C++ exceptions." EOL, CMDNAME_CPP_EXCEPTION_TEST );
+
+    #ifndef NDEBUG
+      Printf( "  %s: Triggers an assertion." EOL, CMDNAME_ASSERT_TEST );
+    #endif
+
     Printf( "  %s: Shows memory usage." EOL, CMDNAME_MEMORY_USAGE );
     Printf( "  %s" EOL, CMDNAME_CPU_LOAD );
     Printf( "  %s" EOL, CMDNAME_UPTIME );
@@ -704,6 +712,15 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
     return;
   }
 
+  #ifndef NDEBUG
+  if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_ASSERT_TEST, false, false, &extraParamsFound ) )
+  {
+    PrintStr( "Asserting..." EOL );
+    assert( false );
+    PrintStr( "Assertion finished." EOL );
+    return;
+  }
+  #endif
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_SIMULATE_ERROR, false, true, &extraParamsFound ) )
   {

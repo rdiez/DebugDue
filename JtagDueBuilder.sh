@@ -42,7 +42,7 @@ user_config ()
 }
 
 
-VERSION_NUMBER="1.04"
+VERSION_NUMBER="1.05"
 SCRIPT_NAME="JtagDueBuilder.sh"
 
 declare -r EXIT_CODE_SUCCESS=0

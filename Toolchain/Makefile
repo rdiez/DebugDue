@@ -83,12 +83,6 @@ CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-fil
 #   CONFIG_CACHE_OPTION := --cache-file="$(CONFIGURE_CACHE_FILENAME)"
 CONFIG_CACHE_OPTION := --config-cache
 
-# Reduce the code size by removing the assert expressions and function names from the failed assertion messages.
-# If you need to further reduce the size of your debug build binaries, you could also remove
-# the filenames and line positions, but then it would be hard to know which assert just triggered.
-# You could try storing only the code address, and then using addr2line in order to lookup the source code position.
-USE_SMALLER_ASSERT := 1
-
 REMOVE_STRERROR_MESSAGES := 1
 
 DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
@@ -385,7 +379,7 @@ NEWLIB_NEWLIB_MAKEFILE := $(NEWLIB_NEWLIB_OBJ_DIR)/Makefile
 NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 NEWLIB_NEWLIB_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
 
-NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibSmallerAssert.patch
+NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibUserImplementationOfAssert.patch
 NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibRemoveStrerrorMessages.patch
 
 # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS)
@@ -640,10 +634,8 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(NEWLIB_TAR_FILE)" && \
 	popd >/dev/null && \
 	pushd "$(NEWLIB_SRC_DIR)" >/dev/null && \
-	if [ $(USE_SMALLER_ASSERT) -ne 0 ]; then \
-	  echo "Applying patch \"$(NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME)\" ..." && \
-	  patch -p0 --forward <"$(NEWLIB_SMALLER_ASSERT_H_PATCH_FILENAME)"; \
-	fi && \
+	echo "Applying patch \"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)\" ..." && \
+	patch -p0 --forward <"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)" && \
 	if [ $(REMOVE_STRERROR_MESSAGES) -ne 0 ]; then \
 	  echo "Applying patch \"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)\" ..." && \
 	  patch -p0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \

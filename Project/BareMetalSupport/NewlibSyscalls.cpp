@@ -146,10 +146,10 @@ extern "C" void __assert_func ( const char * const filename,
                                 const char * const funcname,
                                 const char * const failedexpr )
 {
-  char buffer[ASSERT_MSG_BUFSIZE];
+  char buffer[ ASSERT_MSG_BUFSIZE ];
 
   snprintf( buffer, sizeof(buffer),
-            "\nAssertion \"%s\" failed at file %s, line %d%s%s.\n",
+            "Assertion \"%s\" failed at file %s, line %d%s%s.\n",
             failedexpr ? failedexpr : "<expr unavail>",
             filename,
             line,
@@ -159,5 +159,30 @@ extern "C" void __assert_func ( const char * const filename,
   Panic( buffer );
 }
 
+
+#ifndef INCLUDE_USER_IMPLEMENTATION_OF_ASSERT
+  #error "INCLUDE_USER_IMPLEMENTATION_OF_ASSERT should be defined at this point."
+#endif
+
+extern "C" void __assert_func_only_file_and_line ( const char * const filename,
+                                                   const int line )
+{
+  char buffer[ ASSERT_MSG_BUFSIZE ];
+
+  // Wir geben hier kein DEBUG_OUTPUT_EOL vorne und hinten, weil Panic() es bereits macht.
+
+  snprintf( buffer, sizeof(buffer),
+            "Assertion failed at file %s, line %d.",
+            filename,
+            line );
+
+  Panic( buffer );
+}
+
+
+extern "C" void __assert_func_generic_err_msg ( void )
+{
+  Panic( "Assertion failed." );
+}
 
 #endif  // #ifndef NDEBUG

@@ -118,6 +118,11 @@ fi
 BUILD_FLAGS+=" -Wall"
 
 
+# See UserImplementationOfAssert.h for all possible assertion types.
+# For debug builds, the size of the final binary depends on the assertion type.
+ASSERT_TYPE=ASSERT_TYPE_FULL
+
+
 # ----------- Path to the Atmel Software Framework -----------
 
 AC_ARG_WITH(atmel-software-framework,
@@ -211,6 +216,9 @@ EXTRA_CPP_FLAGS+=" -D__SAM3X8E__"
 
 # Needed by the Atmel Software Framework.
 EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
+
+EXTRA_CPP_FLAGS+=" -DINCLUDE_USER_IMPLEMENTATION_OF_ASSERT"
+EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
 
 # Needed by NewlibSyscalls.cpp.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
