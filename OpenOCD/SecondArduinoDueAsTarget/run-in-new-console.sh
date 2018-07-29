@@ -7,12 +7,16 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 
-declare -r VERSION_NUMBER="1.10"
+declare -r VERSION_NUMBER="1.13"
 declare -r SCRIPT_NAME="run-in-new-console.sh"
+
+declare -r RUN_IN_NEW_CONSOLE_TERMINAL_TYPE_ENV_VAR_NAME="RUN_IN_NEW_CONSOLE_TERMINAL_TYPE"
+
+declare -r BOOLEAN_TRUE=0
+declare -r BOOLEAN_FALSE=1
 
 declare -r EXIT_CODE_SUCCESS=0
 declare -r EXIT_CODE_ERROR=1
-
 
 
 abort ()
@@ -27,7 +31,7 @@ display_help ()
 cat - <<EOF
 
 $SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3
+Copyright (c) 2014-2018 R. Diez - Licensed under the GNU AGPLv3
 
 Overview:
 
@@ -75,9 +79,14 @@ Options:
                        This option closes the console after the command terminates with an error.
 
  --terminal-type=xxx  Use the given terminal emulator. Options are:
-                      - 'auto' (the default) uses the first one found on the system from the available
+                      - 'auto' (the default)
+                        Honours environment variable $RUN_IN_NEW_CONSOLE_TERMINAL_TYPE_ENV_VAR_NAME
+                        if set (and not empty). Otherwise, it attempts to guess the current
+                        desktop environment, in order to choose the most suitable terminal.
+                        If that fails, it uses the first one found on the system from the available
                         terminal types below, in some arbitrary order hard-coded in this script,
                         subject to change without notice in any future versions.
+                      - 'mate-terminal' for mate-terminal, the usual MATE Desktop terminal.
                       - 'konsole' for Konsole, the usual KDE terminal.
                       - 'xfce4-terminal' for xfce4-terminal, the usual Xfce terminal.
 
@@ -90,10 +99,12 @@ Options:
                              the keyboard. Otherwise, you may be forced to resort to
                              the mouse in order to close the console window.
                              This option can also help debug $SCRIPT_NAME itself.
+                             Not available on mate-terminal.
 
  --console-icon="icon name"  Icons are normally .png files on your system.
                              Examples are "kcmkwm" or "applications-office".
                              You can also specify the path to an image file (like a .png file).
+                             This option does not work with mate-terminal.
 
  --console-discard-stderr    Sometimes Konsole spits out too many errors or warnings on the terminal
                              where $SCRIPT_NAME runs. For example, I have seen often D-Bus
@@ -299,22 +310,56 @@ parse_command_line_arguments ()
 }
 
 
-PROGRAM_KONSOLE="konsole"
-PROGRAM_XFCE4_TERMINAL="xfce4-terminal"
+is_tool_installed ()
+{
+  if type "$1" >/dev/null 2>&1 ;
+  then
+    return $BOOLEAN_TRUE
+  else
+    return $BOOLEAN_FALSE
+  fi
+}
+
+
+declare -r PROGRAM_KONSOLE="konsole"
+declare -r PROGRAM_XFCE4_TERMINAL="xfce4-terminal"
+declare -r PROGRAM_MATE_TERMINAL="mate-terminal"
 
 automatically_determine_terminal_type ()
 {
+  case "${XDG_CURRENT_DESKTOP:-}" in
+    KDE)   if is_tool_installed "$PROGRAM_KONSOLE"; then
+             USE_KONSOLE=true
+             return
+           fi;;
+
+    XFCE)  if is_tool_installed "$PROGRAM_XFCE4_TERMINAL"; then
+             USE_XFCE4_TERMINAL=true
+             return
+           fi;;
+
+    MATE)  if is_tool_installed "$PROGRAM_MATE_TERMINAL"; then
+             USE_MATE_TERMINAL=true
+             return
+           fi;;
+
+    *) ;;
+  esac
+
   # The order of preference for these checks is arbitrary.
   # The documentation warns the user that it can change at any time.
 
-  if type "$PROGRAM_KONSOLE" >/dev/null 2>&1 ;
-  then
+  if is_tool_installed "$PROGRAM_MATE_TERMINAL"; then
+    USE_MATE_TERMINAL=true
+    return
+  fi
+
+  if is_tool_installed "$PROGRAM_KONSOLE"; then
     USE_KONSOLE=true
     return
   fi
 
-  if type "$PROGRAM_XFCE4_TERMINAL" >/dev/null 2>&1 ;
-  then
+  if is_tool_installed "$PROGRAM_XFCE4_TERMINAL"; then
     USE_XFCE4_TERMINAL=true
     return
   fi
@@ -351,11 +396,18 @@ CONSOLE_DISCARD_STDERR=0
 
 parse_command_line_arguments "$@"
 
+USE_MATE_TERMINAL=false
 USE_KONSOLE=false
 USE_XFCE4_TERMINAL=false
 
+
+if [[ $TERMINAL_TYPE == auto ]]; then
+  TERMINAL_TYPE="${!RUN_IN_NEW_CONSOLE_TERMINAL_TYPE_ENV_VAR_NAME:-auto}"
+fi
+
 case "${TERMINAL_TYPE}" in
   auto)           automatically_determine_terminal_type;;
+  mate-terminal)  USE_MATE_TERMINAL=true;;
   konsole)        USE_KONSOLE=true;;
   xfce4-terminal) USE_XFCE4_TERMINAL=true;;
   *) abort "Unknown terminal type \"$TERMINAL_TYPE\".";;
@@ -451,6 +503,15 @@ if $USE_XFCE4_TERMINAL; then
 
   printf -v CONSOLE_CMD "%q" "$PROGRAM_XFCE4_TERMINAL"
 
+  # Whether "xfce4-terminal --command" blocks, depends on whether there was already a running
+  # instance of xfce4-terminal on the current session. I have reported this behaviour as a bug:
+  #   https://bugzilla.xfce.org/show_bug.cgi?id=14544
+  #
+  # Adding option --disable-server seems to fix it. However, this option is documented as
+  # "Do not register with the D-BUS session message bus", which is apparently unrelated to
+  # blocking, so I am not sure what other things will be breaking by disabling this D-Bus feature.
+  CONSOLE_CMD+=" --disable-server"
+
   if [[ $CONSOLE_TITLE != "" ]]; then
     CONSOLE_CMD+=" --title=$CONSOLE_TITLE_QUOTED"
   fi
@@ -461,6 +522,42 @@ if $USE_XFCE4_TERMINAL; then
 
   if [ $CONSOLE_NO_CLOSE -ne 0 ]; then
     CONSOLE_CMD+=" --hold"
+  fi
+
+  printf -v CMD5 "%q" "$CMD4"
+
+  CONSOLE_CMD+=" --command=$CMD5"
+
+fi
+
+
+if $USE_MATE_TERMINAL; then
+
+  printf -v CONSOLE_CMD "%q" "$PROGRAM_MATE_TERMINAL"
+
+  # Whether "mate-terminal --command" blocks, depends on whether there was already a running
+  # instance of mate-terminal on the current session. I have reported this behaviour as a bug:
+  #   https://github.com/mate-desktop/mate-terminal/issues/248
+  #
+  # Adding option --disable-factory seems to fix it. However, this option is documented as
+  # "Do not register with the activation nameserver, do not re-use an active terminal",
+  # which is apparently unrelated to blocking, so I am not sure what other things will be
+  # breaking by disabling this "activation nameserver" feature.
+  CONSOLE_CMD+=" --disable-factory"
+
+  if [[ $CONSOLE_TITLE != "" ]]; then
+    CONSOLE_CMD+=" --title=$CONSOLE_TITLE_QUOTED"
+  fi
+
+  if [[ $CONSOLE_ICON != "" ]]; then
+    # Unfortunately, mate-terminal does not support --icon anymore.
+    # I submitted a request to get this option back:
+    #   https://github.com/mate-desktop/mate-terminal/issues/246
+    abort "$PROGRAM_MATE_TERMINAL does not support setting an application icon with option --console-icon ."
+  fi
+
+  if [ $CONSOLE_NO_CLOSE -ne 0 ]; then
+    abort "$PROGRAM_MATE_TERMINAL does not support option --console-no-close ."
   fi
 
   printf -v CMD5 "%q" "$CMD4"

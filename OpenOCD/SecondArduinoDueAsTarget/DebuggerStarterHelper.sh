@@ -284,7 +284,7 @@ if [[ $DEBUGGER_TYPE = "ddd" ]]; then
 else
   NEW_CONSOLE_CMD="./run-in-new-console.sh"
   NEW_CONSOLE_CMD+=" --console-discard-stderr"
-  NEW_CONSOLE_CMD+=" --console-icon=kcmkwm"
+  NEW_CONSOLE_CMD+=" --console-icon=audio-card"
   NEW_CONSOLE_CMD+=" --console-title=\"Arduino Due GDB\""
   NEW_CONSOLE_CMD+=" --"
   NEW_CONSOLE_CMD+=" $(printf "%q" "$GDB_CMD")"
