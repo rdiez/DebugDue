@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2017 R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2018 R. Diez - Licensed under the GNU AGPLv3.
 
 
 .DELETE_ON_ERROR:
@@ -58,6 +58,39 @@ endif
 
 
 # ------- User Configuration -------
+
+VERSION_SET := VersionSet1
+
+ifeq ($(VERSION_SET),VersionSet1)
+
+  # This is the version set I have tested most.
+
+  BINUTILS_VERSION := 2.30
+  GMP_VERSION := 6.1.2
+  MPFR_VERSION := 3.1.6
+  MPC_VERSION := 1.0.3
+  GCC_VERSION := 7.3.0
+  NEWLIB_VERSION := 3.0.0.20180226
+  GDB_VERSION := 8.1
+
+else ifeq ($(VERSION_SET),VersionSet2)
+
+  # I have not tested this version set thoroughly yet.
+  # I immediately hit the following GDB 8.1 bug, so I am waiting for GDB 8.2:
+  #   https://sourceware.org/bugzilla/show_bug.cgi?id=23010
+
+  BINUTILS_VERSION := 2.31.1
+  GMP_VERSION := 6.1.2
+  MPFR_VERSION := 3.1.6
+  MPC_VERSION := 1.1.0
+  GCC_VERSION := 8.2.0
+  NEWLIB_VERSION := 3.0.0.20180720
+  GDB_VERSION := 8.1
+
+else
+  $(error Invalid configuration set "$(VERSION_SET)")
+endif
+
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
 # which enables debug code at least in newlib's malloc implementation, and probably in other places too.
@@ -219,7 +252,6 @@ COMMON_CFLAGS += -ffunction-sections  # Keeps functions in separate data section
 
 # ------- Binutils flags -------
 
-BINUTILS_VERSION := 2.30
 BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.xz
@@ -235,7 +267,6 @@ BINUTILS_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)B
 
 # ------- GMP lib flags -------
 
-GMP_VERSION := 6.1.2
 GMP_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gmp-$(GMP_VERSION)
 GMP_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gmp-$(GMP_VERSION)-obj
 GMP_TAR_FILE := gmp-$(GMP_VERSION).tar.bz2
@@ -247,10 +278,11 @@ GMP_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpIns
 
 
 # ------- MPFR lib flags -------
-
-# Version 4.0.x has been released in the meantime.
+#
+# Version 4.0.x has been released in the meantime, but I could not get
+# version 4.0.1 to work with GCC 8.2.0.
 # Older versions are still available on the website under "history", or on ftp://ftp.gnu.org/gnu/mpfr/ .
-MPFR_VERSION := 3.1.6
+
 MPFR_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)
 MPFR_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)-obj
 MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
@@ -262,9 +294,10 @@ MPFR_INSTALL_SENTINEL := $(CROSS_TOOLCHAIN_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrI
 
 
 # ------- MPC lib flags -------
-
+#
+# This libray can be downloaded from http://www.multiprecision.org/
 # Version 1.1.0 has been released in the meantime, so that it builds against MPFR 4.0.x .
-MPC_VERSION := 1.0.3
+
 MPC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)
 MPC_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)-obj
 MPC_TAR_FILE := mpc-$(MPC_VERSION).tar.gz
@@ -288,7 +321,6 @@ else
   GCC_DEBUG_BUILD_FLAGS :=
 endif
 
-GCC_VERSION := 7.3.0
 GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.xz
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -368,7 +400,6 @@ endif
 
 # ------- Newlib flags -------
 
-NEWLIB_VERSION := 3.0.0.20180226
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
@@ -392,7 +423,6 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 # ------- GDB flags -------
 
-GDB_VERSION := 8.1
 GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
