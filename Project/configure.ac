@@ -73,6 +73,8 @@ fi
 
 IS_GCC_7_OR_LATER=false
 AS_VERSION_COMPARE( [$ax_cv_c_compiler_version], [7], [], [], [IS_GCC_7_OR_LATER=true] )
+IS_GCC_8_OR_LATER=false
+AS_VERSION_COMPARE( [$ax_cv_c_compiler_version], [8], [], [], [IS_GCC_8_OR_LATER=true] )
 
 
 # ----------- Check whether debug or release build -----------
@@ -268,7 +270,6 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wunsafe-loop-optimizations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wstack-protector"
 EXTRA_C_AND_CXX_FLAGS+=" -Wbuiltin-macro-redefined"
 # EXTRA_C_AND_CXX_FLAGS+=" -Wmudflap"  # Not available from GCC version 4.9.
-EXTRA_C_AND_CXX_FLAGS+=" -Wabi"
 EXTRA_C_AND_CXX_FLAGS+=" -Wcpp"
 EXTRA_C_AND_CXX_FLAGS+=" -Wendif-labels"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated"
@@ -279,6 +280,12 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"
 if $IS_GCC_7_OR_LATER; then
   # This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
   EXTRA_C_AND_CXX_FLAGS+=" -Wno-expansion-to-defined"
+fi
+
+if $IS_GCC_8_OR_LATER; then
+  :
+else
+  EXTRA_C_AND_CXX_FLAGS+=" -Wabi"  # Avoid too many warnings with GCC 7.3.
 fi
 
 EXTRA_C_FLAGS=""
