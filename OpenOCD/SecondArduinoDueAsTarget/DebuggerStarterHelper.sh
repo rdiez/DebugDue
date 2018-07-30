@@ -279,9 +279,16 @@ fi
 add_gdb_arg "\"$ELF_FILE_PATH\""
 
 if [[ $DEBUGGER_TYPE = "ddd" ]]; then
-  echo "Starting DDD in the background with: $GDB_CMD"
-  eval "$GDB_CMD &"
+
+  echo
+  echo "Starting DDD with command:"
+  echo "$GDB_CMD"
+  echo
+
+  eval "$GDB_CMD"
+
 else
+
   NEW_CONSOLE_CMD="./run-in-new-console.sh"
   NEW_CONSOLE_CMD+=" --console-discard-stderr"
   NEW_CONSOLE_CMD+=" --console-icon=audio-card"
@@ -289,8 +296,17 @@ else
   NEW_CONSOLE_CMD+=" --"
   NEW_CONSOLE_CMD+=" $(printf "%q" "$GDB_CMD")"
 
-  echo "Starting GDB in new console with: $NEW_CONSOLE_CMD"
-  eval "$NEW_CONSOLE_CMD &"
+  echo
+  echo "The GDB command is:"
+  echo "$GDB_CMD"
+  echo
+
+  echo "Starting GDB in a new console with command:"
+  echo "$NEW_CONSOLE_CMD"
+  echo
+
+  eval "$NEW_CONSOLE_CMD"
+
 fi
 
 exit $EXIT_CODE_SUCCESS
