@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2018 R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2018 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 .DELETE_ON_ERROR:
@@ -93,7 +93,7 @@ endif
 
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
-# which enables debug code at least in newlib's malloc implementation, and probably in other places too.
+# which enables debug code at least in Newlib's malloc implementation, and probably in other places too.
 #
 # It would be best to build both the debug and non-debug library versions, and that's probably what
 # GCC's "multilib" support is all about, but I haven't figured it out yet.
@@ -186,10 +186,10 @@ endif
 
 # WARNING: The following components must be ABI compatible, which means they must be compiled
 #          with similar CFLAGS:
-# - newlib
-#   Keep in mind that newlib's configure.host  may provide additional compilation flags.
+# - Newlib
+#   Keep in mind that Newlib's configure.host  may provide additional compilation flags.
 #   The best thing to do is probably to run this makefile once and then look for the compilation flags
-#   in the log output of some newlib source file like "strlen.c".
+#   in the log output of some Newlib source file like "strlen.c".
 # - GCC's libgcc und libstdc++
 # - Your operating system and application, so you will have to keep the CFLAGS/CXXFLAGS in your
 #   own makefile in sync with this one.
@@ -449,11 +449,11 @@ $(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(BINUTILS_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
-	echo "Unpacking binutils finished."
+	echo "Unpacking Binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
+	echo "Unpacking Binutils finished."
 
 $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
-	echo "Configuring binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
+	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
 	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf "$(BINUTILS_OBJ_DIR)"; fi && \
 	mkdir -p "$(BINUTILS_OBJ_DIR)" && \
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
@@ -465,21 +465,21 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	  $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
 	  --disable-nls && \
 	popd >/dev/null && \
-	echo "The binutils config has finished."
+	echo "The Binutils configuration has finished."
 
 $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
-	echo "Building binutils ..." && \
+	echo "Building Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
-	echo "The binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
-	echo "The binutils build has finished."
+	echo "The Binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
+	echo "The Binutils build has finished."
 
 $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
-	echo "Installing binutils ..." && \
+	echo "Installing Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" install && \
-	echo "The binutils install has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
-	echo "The binutils install has finished."
+	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
+	echo "The Binutils installation has finished."
 
 
 # ----------------- Build GMP -----------------
@@ -503,7 +503,7 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	  $(CONFIG_CACHE_OPTION)  \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
-	echo "The GMP config has finished."
+	echo "The GMP configuration has finished."
 
 $(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
 	echo "Building GMP ..." && \
@@ -516,8 +516,8 @@ $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo "Installing GMP ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GMP_OBJ_DIR)" install && \
-	echo "The GMP install has finished." >"$(GMP_INSTALL_SENTINEL)" && \
-	echo "The GMP install has finished."
+	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
+	echo "The GMP installation has finished."
 
 
 # ----------------- Build MPFR -----------------
@@ -542,7 +542,7 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
-	echo "The MPFR config has finished."
+	echo "The MPFR configuration has finished."
 
 $(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
 	echo "Building MPFR ..." && \
@@ -555,8 +555,8 @@ $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo "Installing MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(MPFR_OBJ_DIR)" install && \
-	echo "The MPFR install has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
-	echo "The MPFR install has finished."
+	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
+	echo "The MPFR installation has finished."
 
 
 # ----------------- Build MPC -----------------
@@ -582,7 +582,7 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
-	echo "The MPC config has finished."
+	echo "The MPC configuration has finished."
 
 $(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
 	echo "Building MPC ..." && \
@@ -595,8 +595,8 @@ $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo "Installing MPC ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(MPC_OBJ_DIR)" install && \
-	echo "The MPC install has finished." >"$(MPC_INSTALL_SENTINEL)" && \
-	echo "The MPC install has finished."
+	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
+	echo "The MPC installation has finished."
 
 
 # ----------------- GCC phase 1 -----------------
@@ -617,7 +617,7 @@ $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking GCC finished."
 
 # Note that GCC's ./configure script will find at least some of
-# the binutils tools under the --prefix directory,
+# the Binutils tools under the --prefix directory,
 # even if the PATH is not set.
 
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
@@ -636,7 +636,7 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
         --without-headers \
         $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
-	echo "The GCC phase 1 config has finished."
+	echo "The GCC phase 1 configuration has finished."
 
 $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	echo "Building GCC phase 1 ..." && \
@@ -651,8 +651,8 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
     $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
-    echo "The GCC phase 1 install has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
-    echo "The GCC phase 1 install has finished."
+    echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
+    echo "The GCC phase 1 installation has finished."
 
 
 # ----------------- Build Newlib -----------------
@@ -671,8 +671,8 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	  patch -p0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
 	fi && \
 	popd >/dev/null && \
-	echo "Unpacking newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
-	echo "Unpacking newlib finished."
+	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
+	echo "Unpacking Newlib finished."
 
 NEWLIB_CFG_FLAGS :=
 
@@ -692,7 +692,7 @@ NEWLIB_CFG_FLAGS += --disable-newlib-mb
 NEWLIB_CFG_FLAGS += --disable-newlib-atexit-alloc
 NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
-NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc  # With newlib's standard malloc library, you get an array in RAM called __malloc_av_ that weighs 1032 bytes, at least on a Cortex-M3 CPU.
+NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc  # With Newlib's standard malloc library, you get an array in RAM called __malloc_av_ that weighs 1032 bytes, at least on a Cortex-M3 CPU.
 NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io  # Warning: you lose support for printing 64-bit integers.
 
 # About --disable-libgloss and --disable-newlib-supplied-syscalls:
@@ -719,43 +719,43 @@ NEWLIB_CFG_FLAGS += --disable-libgloss
 NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
 $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
-	echo "About to configure newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
+	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
 	mkdir -p "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
-	echo "Help text from 'configure' script for top-level newlib dir (see further below for newlib/ subdir):" && \
+	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
 	$(NEWLIB_SRC_DIR)/configure --help && \
-	echo "Help text from 'configure' script for newlib/ subdir:" && \
+	echo "Help text from 'configure' script for the newlib/ subdir:" && \
 	$(NEWLIB_SRC_DIR)/newlib/configure --help && \
-	echo "Configuring newlib:" && \
+	echo "Configuring Newlib:" && \
 	PATH=$(PATH_DIR):$$PATH \
           CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
           $(NEWLIB_SRC_DIR)/configure \
             $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
-	echo "The binutils config has finished."
+	echo "The Newlib configuration has finished."
 
 $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
-	echo "Building newlib ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
-    echo "The newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
-    echo "The newlib build has finished."
+	echo "Building Newlib ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
+	echo "The Newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
+	echo "The Newlib build has finished."
 
 $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
-	echo "Installing newlib ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" install && \
-    echo "The newlib install has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
-    echo "The newlib install has finished."
+	echo "Installing Newlib ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" install && \
+	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
+	echo "The Newlib installation has finished."
 
 
 # ----------------- GCC phase 2 -----------------
 
 # Note that GCC's ./configure script will find at least some of
-# the binutils tools under the --prefix directory,
+# the Binutils tools under the --prefix directory,
 # even if the PATH is not set.
 $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
 	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)" && \
@@ -768,7 +768,7 @@ $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
         --enable-languages=c,c++ \
         $(COMMON_GCC_OPTIONS) && \
     popd >/dev/null && \
-    echo "The GCC phase 2 config has finished."
+    echo "The GCC phase 2 configuration has finished."
 
 $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	echo "Building GCC phase 2 ..." && \
@@ -788,8 +788,8 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
     $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC2_OBJ_DIR)" install && \
-    echo "The GCC phase 2 install has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
-    echo "The GCC phase 2 install has finished."
+    echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
+    echo "The GCC phase 2 installation has finished."
 
 
 # ----------------- Build GDB -----------------
@@ -827,7 +827,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
-	echo "The GDB config has finished."
+	echo "The GDB configuration has finished."
 
 $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	echo "Building GDB ..." && \
@@ -840,8 +840,8 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "Installing GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GDB_OBJ_DIR)" install && \
-	echo "The GDB install has finished." >"$(GDB_INSTALL_SENTINEL)" && \
-	echo "The GDB install has finished."
+	echo "The GDB installation has finished." >"$(GDB_INSTALL_SENTINEL)" && \
+	echo "The GDB installation has finished."
 
 
 # --------------- Top-level rules ---------------
@@ -853,7 +853,7 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 
 $(TARGET_NAME_HELP):
 	@echo
-	@echo "This makefile builds a GCC/newlib toolchain for a 'bare metal' programming environment"
+	@echo "This makefile builds a GCC/Newlib toolchain for a 'bare metal' programming environment"
 	@echo "for an ARM Cortex-M3 microcontroller. Other CPUs are supported, search for"
 	@echo "TOOLCHAIN_TARGET_CPU in the makefile for details."
 	@echo
@@ -878,11 +878,11 @@ $(TARGET_NAME_HELP):
 	@echo "   the toolchain will be placed. For example: CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\""
 	@echo
 	@echo "3) Consider setting variable ENABLE_DEBUG_TOOLCHAIN to '1' in order to build a debug toolchain."
-	@echo "   This enables debug code in newlib's malloc implementation, for example."
-	@echo "   You can compile debug builds of your software with a non-debug toolchain, but the libraries"
-	@echo "   that the toolchain provides (such as newlib) will be linked in as non-debug versions."
+	@echo "   This enables debug code in Newlib's malloc implementation, for example."
 	@echo "   Note that your final binary will be bigger and perform more slowly, so you should use a normal"
 	@echo "   (non-debug) toolchain when building a public release of your software."
+	@echo "   You can compile debug builds of your software with a non-debug toolchain, but the libraries"
+	@echo "   that the toolchain provides (such as Newlib) will be linked in as non-debug versions."
 	@echo
 	@echo "4) Consider setting variable CROSS_TOOLCHAIN_BUILD_DIR to some directory of your choice where"
 	@echo "   all source and object files will be generated during the toolchain build process."
@@ -904,15 +904,19 @@ $(TARGET_NAME_HELP):
 	@echo "   the build subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
 	@echo
 	@echo "The recommended way to run this makefile is:"
-	@echo "  make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\" ...other variables... \\"
-	@echo "    --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
+	@echo
+	@echo "  make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\" \\"
+	@echo "       CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-build\" \\"
+	@echo "       ...other variables such as PATH_TO_TARBALLS_ON_FILE_SERVER... \\"
+	@echo "       --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
+	@echo
 	@echo "For GNU Make version 4.0 or above, option '--output-sync=recurse' is recommended."
 	@echo
 
 $(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)
 	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"."
 	@if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
-	echo "WARNING: After a toolchain change you should rebuild all target software from scratch." ; \
+	echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
 	fi
 
 # This 'clean' rule does not delete the toolchain bin directory (variable CROSS_TOOLCHAIN_DIR),
