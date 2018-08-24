@@ -84,8 +84,8 @@ else ifeq ($(VERSION_SET),VersionSet2)
   MPFR_VERSION := 3.1.6
   MPC_VERSION := 1.1.0
   GCC_VERSION := 8.2.0
-  NEWLIB_VERSION := 3.0.0.20180720
-  GDB_VERSION := 8.1
+  NEWLIB_VERSION := 3.0.0.20180802
+  GDB_VERSION := 8.1.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
