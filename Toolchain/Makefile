@@ -92,6 +92,17 @@ else
 endif
 
 
+# Use the 'install-strip' target, instead of the usual 'install', in order to reduce the size
+# of the installed binaries. For example, when building Binutils 2.30 with GCC 5.4.0,
+# the installation size goes from 194 MiB to 26 MiB, a reduction of 87 %.
+#
+# Should ever need the debug symbols, for example to generate a call stack for a bug report,
+# or to step through the code, you need to change this back to 'install'. But then
+# you will probably want to build the toolchain binaries without optimisation.
+
+INSTALL_TARGET := install-strip
+
+
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
 # which enables debug code at least in Newlib's malloc implementation, and probably in other places too.
 #
@@ -477,7 +488,7 @@ $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
 $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo "Installing Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" install && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
 	echo "The Binutils installation has finished."
 
@@ -515,7 +526,7 @@ $(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
 $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo "Installing GMP ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" install && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
 	echo "The GMP installation has finished."
 
@@ -554,7 +565,7 @@ $(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
 $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo "Installing MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" install && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
 	echo "The MPFR installation has finished."
 
@@ -594,7 +605,7 @@ $(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
 $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo "Installing MPC ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" install && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
 	echo "The MPC installation has finished."
 
@@ -747,7 +758,7 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	echo "Installing Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" install && \
+	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
 	echo "The Newlib installation has finished."
 
@@ -787,7 +798,7 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo "Installing GCC phase 2 ..." && \
     $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC2_OBJ_DIR)" install && \
+      $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
     echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
     echo "The GCC phase 2 installation has finished."
 
@@ -804,6 +815,12 @@ ifeq ($(GDB_ENABLE_DEBUG_BUILD),1)
 else
   GDB_DEBUG_BUILD_FLAGS :=
 endif
+
+
+# We cannot use INSTALL_TARGET here, because unfortunately GDB does not support the 'install-strip' target,
+# at least as of version 8.1. The error message is about not finding makefile recipes for targets
+# 'install-strip-readline' and 'install-strip-sim'.
+GDB_INSTALL_TARGET := install
 
 $(GDB_UNTAR_SENTINEL): $(GCC2_INSTALL_SENTINEL)
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
@@ -839,7 +856,7 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "Installing GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GDB_OBJ_DIR)" install && \
+	$(MAKE) -C "$(GDB_OBJ_DIR)" "$(GDB_INSTALL_TARGET)" && \
 	echo "The GDB installation has finished." >"$(GDB_INSTALL_SENTINEL)" && \
 	echo "The GDB installation has finished."
 
