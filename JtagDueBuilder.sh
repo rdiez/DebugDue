@@ -991,6 +991,341 @@ do_bossac ()
 }
 
 
+check_openocd_job_still_running ()
+{
+  # Unfortunately, Bash does not provide a timeout option for the 'wait' command, or any other
+  # option for it that only checks the job status without blocking.
+  #
+  # In order to check whether a child process is still alive, we could use something like this:
+  #
+  #   kill -0 "$CHILD_PID"
+  #
+  # However, that is unreliable, because the system can reuse PIDs at any point in time.
+  # Using a Bash job spec like this does not help either:
+  #
+  #   kill -0 %123
+  #
+  # The trouble is, the internal job table is apparently not updated in non-interactive shells
+  # until you execute a 'jobs' command. If the job has finished, attempting to reference
+  # its job spec will succeed only once the next time around. The job spec will then be dropped,
+  # and any subsequence reference to it will fail, in the best case, or will reference
+  # some other later job in the worst scenario.
+  #
+  # Furthermore, parsing the output from 'jobs' is not easy either. Here are some examples:
+  #
+  #  [1]+  Done                    my command
+  #  [2]-  Done(1)                 my command
+  #  [3]   Terminated              my command
+  #  [4]   Running                 my command
+  #  [5]   Stopped                 my command
+  #  [6]   Killed                  my command
+  #  [7]   Terminated              my command
+  #  [8]   User defined signal 1   my command
+  #  [9]   Profiling timer expired my command
+  #
+  # '+' means it is the "current" job. '-' means it is the "previous" job.
+  # 'Done' means an exit code of 0. 'Done(1)' means the process terminated with an exit status of 1.
+  # 'Terminated' means SIGTERM, 'Killed' means SIGKILL, 'User defined signal 1' means SIGUSR1,
+  # and 'Profiling timer expired' menas SIGPROF.
+  #
+  # All of the above is from empirical testing. As far as I can see, it is not documented.
+  # Therefore, I assume that it can change in any future version. Those messages could
+  # for example be translated in non-English locales.
+  #
+  # Therefore, attempting to parse the ouput is not a good idea.
+  #
+  # The workaround I have implemented is as follows: if 'jobs %n' fails, the job is not running
+  # anymore, and the reason why not was reported in the last successful invocation of 'jobs %n'.
+  # The downside is that the caller will realise that the job has finished on the next call
+  # to this routine. That is, there is a delay of one routine call.
+
+  local JOB_SPEC="$1"
+
+  local JOBS_OUTPUT_FILENAME="$PROJECT_OBJ_DIR_TMP/JobsCmdOutput.txt"
+
+  set +o errexit
+
+  # We cannot capture the output as usual like this:
+  #   $(jobs $JOBS_SPEC)
+  # The reason is that $() runs the command in a subshell, and changes to the internal job table
+  # are apparently not propagated to the parent shell instance.
+  # The workaround is to use a temporary file.
+  jobs "$JOB_SPEC" >"$JOBS_OUTPUT_FILENAME"
+
+  local JOBS_EXIT_CODE="$?"
+
+  set -o errexit
+
+  local JOBS_OUTPUT
+  JOBS_OUTPUT="$(<"$JOBS_OUTPUT_FILENAME")"
+
+  if (( JOBS_EXIT_CODE != 0 )); then
+    # Let the user see what 'jobs' printed, if anything. It will come after stderr,
+    # but it is better than nothing.
+    printf "%s" "$JOBS_OUTPUT"
+
+    MSG="OpenOCD failed to initialise."
+    if [ ! -z "$LAST_JOB_STATUS" ]; then
+      MSG+=" Its job result was: "
+      MSG+="$LAST_JOB_STATUS"
+    fi
+
+    abort "$MSG"
+  fi
+
+  LAST_JOB_STATUS="$JOBS_OUTPUT"
+}
+
+
+parse_job_id ()
+{
+  local JOBS_OUTPUT="$1"
+
+  local REGEXP="^\\[([0-9]+)\\]"
+
+  if ! [[ $JOBS_OUTPUT =~ $REGEXP ]]; then
+    local ERR_MSG
+    printf -v ERR_MSG "Cannot parse this output from 'jobs' command:\\n%s" "$JOBS_OUTPUT"
+    abort "$ERR_MSG"
+  fi
+
+  CAPTURED_JOB_SPEC="%${BASH_REMATCH[1]}"
+
+  if false; then
+    echo "CAPTURED_JOB_SPEC: $CAPTURED_JOB_SPEC"
+  fi
+}
+
+
+build_gdb_command ()
+{
+  printf  -v GDB_CMD  "cd %q  &&  ./DebuggerStarterHelper.sh"  "$OPENOCD_CONFIG_DIR"
+
+  if $DEBUG_FROM_THE_START_SPECIFIED; then
+    GDB_CMD+=" --debug-from-the-start"
+  fi
+
+  if (( ${#BREAKPOINTS[*]} > 0 )); then
+    local BP
+    for BP in "${BREAKPOINTS[@]}"; do
+      GDB_CMD+=" --add-breakpoint \"$BP\""
+    done
+  fi
+
+  local TMP
+  printf  -v TMP  "%s %s %s"  "$TOOLCHAIN_DIR" "$ELF_FILEPATH" "$DEBUGGER_TYPE"
+  GDB_CMD+=" $TMP"
+}
+
+
+declare -r FIFO_MSG_FINISHED_INIT="FIFO message: OpenOCD finished initialising."
+
+debug_target ()
+{
+  # What we want to do is actually pretty straightforward:
+  #
+  # 1) Start OpenOCD.
+  # 2) Wait until OpenOCD is ready to accept a GDB connection.
+  # 3) Start GDB in a new window.
+  # 4) Wait until the user closes GDB.
+  # 5) Shutdown OpenOCD.
+  #
+  # There are all kinds of shortcomings that make this task difficult:
+  # a) OpenOCD provides no way to signal when it has initialised the GDB server.
+  # b) OpenOCD cannot shut itself down cleanly when GDB detaches.
+  #    There is an event on detach, but shutdown down inside it will break
+  #    the closing handshake with GDB and make it error.
+  # c) It is very hard to coordinate child processes correctly with Bash.
+  #
+  # I have posted questions in the OpenOCD and Bash mailing lists to no avail:
+  #
+  # - https://sourceforge.net/p/openocd/mailman/message/36388664/
+  # - https://lists.gnu.org/archive/html/help-bash/2018-08/msg00005.html
+  #
+  # In the end, I managed to implement a reasonable solution in this script by resorting
+  # to a number of workarounds in this routine and its callees.
+
+
+  # Build the GDB command upfront. If something is wrong, it is not worth starting OpenOCD.
+  local GDB_CMD
+  build_gdb_command
+
+
+  # It would be best to create an unnamed pipe between this script and the OpenOCD child process,
+  # but there is no easy way to do that in Bash. There is a workaround, but it is not portable.
+  # In order to overcome this hurdle, I am using a named FIFO.
+  # The drawback is that, if this script dies, it will leave the named FIFO behind.
+  # But there is only one such FIFO per project output directory, so that is probably OK.
+
+  local PROJECT_OBJ_DIR_TMP="$PROJECT_OBJ_DIR/tmp"
+
+  mkdir --parents -- "$PROJECT_OBJ_DIR_TMP"
+
+  local FIFO_FILENAME="$PROJECT_OBJ_DIR_TMP/HasOpenOcdInitialised.fifo"
+
+  # Delete and recreate the FIFO each time. If some other process is using the same FIFO,
+  # this increases the chances that the user will notice what the problem is.
+
+  if [ -p "$FIFO_FILENAME" ]; then
+    echo "Deleting existing FIFO \"$FIFO_FILENAME\"."
+    rm -- "$FIFO_FILENAME"
+  fi
+
+  echo "Creating FIFO \"$FIFO_FILENAME\"."
+  mkfifo --mode=600 -- "$FIFO_FILENAME"
+
+
+  if false; then
+    add_openocd_cmd "error \"Simulated error 1 in OpenOCD command.\""
+  fi
+
+
+  # Make sure you write to the FIFO after calling OpenOCD's 'init' command.
+  add_openocd_cmd "echo \"Informing the parent script that OpenOCD has finished initialising.\""
+  local FILE_OPEN_CMD
+  printf -v FILE_OPEN_CMD "set fifo [open %q a]" "$FIFO_FILENAME"
+  add_openocd_cmd "$FILE_OPEN_CMD"
+  add_openocd_cmd "puts \$fifo \"$FIFO_MSG_FINISHED_INIT\""
+  add_openocd_cmd "close \$fifo"
+
+  echo
+  echo "Starting OpenOCD with command:"
+  echo "$OPEN_OCD_CMD"
+  echo
+  eval "$OPEN_OCD_CMD" &
+
+  # This first check will probably always succeed. If the child process has terminated,
+  # we will find out the next time around. We are doing an initial check
+  # in order to extract the exact job ID. Bash provides no other way to
+  # get the job spec, as far as I can tell. Using the "last job" spec %%
+  # is risky, because something else may start another job in the meantime.
+  local LAST_JOB_STATUS=""
+  check_openocd_job_still_running %%
+  parse_job_id "$LAST_JOB_STATUS"
+  local OPEN_OCD_JOB_SPEC="$CAPTURED_JOB_SPEC"
+
+
+  # Wail until the OpenOCD child process has indicated that it has finished initialisation. During the wait,
+  # check too whether the OpenOCD child process has terminated unexpectedly.
+  #
+  # If the timeout is too short, it will waste CPU cycles. If it is too long,
+  # it will unnecessarily delay detection of a terminated OpenOCD.
+  # Due to the way in which check_openocd_job_still_running is implemented,
+  # the maximum detection delay is 2 x FIFO_TIMEOUT.
+  # This delay is not too bad, because there will be no delay in the typical sunny day scenario.
+  local -r FIFO_TIMEOUT="0.2"
+  local FIFO_LINE
+  local READ_EXIT_CODE
+
+  while true; do
+
+    set +o errexit
+
+    # We have to open the pipe in read/write mode, therefore the "<>" below. Opening it in read-only mode will hang
+    # until somebody writes to the pipe, and the timeout will not work. If the child process dies
+    # before writing anything to the FIFO, we will then forever hang.
+    read -t "$FIFO_TIMEOUT" -r FIFO_LINE <>"$FIFO_FILENAME"
+
+    READ_EXIT_CODE="$?"
+
+    set -o errexit
+
+    if (( READ_EXIT_CODE == 0 )); then
+
+      if [[ "$FIFO_LINE" = "$FIFO_MSG_FINISHED_INIT" ]]; then
+        break
+      fi
+
+      abort "Unexpected FIFO message from OpenOCD process: $FIFO_LINE"
+
+    fi
+
+    # A read timeout yields an exit status > 128.
+
+    if (( READ_EXIT_CODE <= 128 )); then
+      abort "Command 'read' failed with an exit code of $READ_EXIT_CODE."
+    fi
+
+
+    # echo "Checking whether the child is still running."
+    check_openocd_job_still_running  "$OPEN_OCD_JOB_SPEC"
+
+  done
+
+
+  if false; then
+    GDB_CMD="echo \"Simulating GDB_CMD failure...\" && bash -c 'exit 123'"
+  fi
+
+  if false; then
+    GDB_CMD="echo \"Simulating GDB_CMD death by signal...\" && bash -c 'kill -USR1 \$\$'"
+  fi
+
+  echo
+  echo "Running debugger script:"
+  echo "$GDB_CMD"
+
+  set +o errexit
+  eval "$GDB_CMD"
+  local GDB_CMD_EXIT_CODE="$?"
+  set -o errexit
+
+  if (( GDB_CMD_EXIT_CODE != 0 )); then
+    abort "The debugger script failed with an exit code of $GDB_CMD_EXIT_CODE."
+  fi
+
+
+  echo
+  echo "The debugger script has terminated. Shutting down OpenOCD..."
+
+  if false; then
+
+    # OpenOCD provides no clean way to shut it down from outside. A workaround is to use telnet.
+    # Unfortunately, the shutdown operation does not wait until the telnet connection has been closed,
+    # so telnet fails with a non-zero exit code. Therefore, I am using the alternative further below.
+
+    echo "shutdown" | telnet localhost 4444 >/dev/null
+
+  else
+
+    # This is not a clean telnet connection, because we actually do not implement the telnet protocol
+    # in the connection below, but it is enough to get the 'shutdown' command through.
+
+    local TELNET_CONNECTION
+
+    exec {TELNET_CONNECTION}>/dev/tcp/localhost/4444
+
+    printf "shutdown\\n" >&${TELNET_CONNECTION}
+
+    # With a command like this we could print any reply the telnet server printed.
+    # The trouble is, the first bytes will show some rubbish, because they are actually an attempt to negotiate
+    # a Telnet protocol connection.
+    if false; then
+      cat <&${TELNET_CONNECTION}
+    fi
+
+    exec {TELNET_CONNECTION}<&-
+
+  fi
+
+
+  echo "Waiting for the OpenOCD child process to terminate..."
+
+  set +o errexit
+  local OPENOCD_EXIT_CODE
+  wait "$OPEN_OCD_JOB_SPEC"
+  OPENOCD_EXIT_CODE="$?"
+  set -o errexit
+
+  if (( OPENOCD_EXIT_CODE != 0 )); then
+    # Use OpenOCD command "shutdown error" to test this error handling logic.
+    abort "OpenOCD failed with exit code $OPENOCD_EXIT_CODE."
+  fi
+
+  echo "The debug session terminated successfully."
+}
+
+
 do_program_and_debug ()
 {
   local OPEN_OCD_CMD="\"$PATH_TO_OPENOCD\" "
@@ -1069,34 +1404,11 @@ do_program_and_debug ()
   fi
 
   if $DEBUG_SPECIFIED; then
-    add_openocd_arg "-f \"$OPENOCD_CONFIG_DIR/CloseOpenOcdOnGdbDetach.cfg\""
-
-    local BASH_CMD="cd \"$OPENOCD_CONFIG_DIR\" && ./DebuggerStarterHelper.sh"
-
-    if $DEBUG_FROM_THE_START_SPECIFIED; then
-      BASH_CMD+=" --debug-from-the-start"
-    fi
-
-    if (( ${#BREAKPOINTS[*]} > 0 )); then
-      local BP
-      for BP in "${BREAKPOINTS[@]}"; do
-        BASH_CMD+=" --add-breakpoint \"$BP\""
-      done
-    fi
-
-    BASH_CMD+=" \"$TOOLCHAIN_DIR\" \"$ELF_FILEPATH\" \"$DEBUGGER_TYPE\""
-
-    local EXEC_CMD
-    printf -v EXEC_CMD "bash -c %q" "$BASH_CMD"
-    add_openocd_cmd_echo "Running command in background: $EXEC_CMD"
-    add_openocd_cmd "exec $EXEC_CMD &"
-
-    # Is there a way in OpenOCD to periodically monitor the child process?
-    # If it exits unexpectedly, OpenOCD should automatically quit.
+    debug_target
+  else
+    echo "$OPEN_OCD_CMD"
+    eval "$OPEN_OCD_CMD"
   fi
-
-  echo "$OPEN_OCD_CMD"
-  eval "$OPEN_OCD_CMD"
 }
 
 
