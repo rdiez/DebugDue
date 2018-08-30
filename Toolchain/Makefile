@@ -99,8 +99,31 @@ endif
 # Should ever need the debug symbols, for example to generate a call stack for a bug report,
 # or to step through the code, you need to change this back to 'install'. But then
 # you will probably want to build the toolchain binaries without optimisation.
+# And do not forget to change option '-g0' below to '-g'.
 
 INSTALL_TARGET := install-strip
+
+
+# These are the compilation flags for the toolchain itself when running on the cross-compiling PC.
+HF :=
+
+# Building without debug information cuts the Binutils build time alone with GCC 5.4.0 and
+# "-O3 -march=native" on my Intel Core i3 M 380 from 5 minutes, 22 seconds to 4 minutes.
+# You need to explicitly add -g0 to disable debug information, because some components
+# automatically prepend the compiler flags with '-g'.
+HF += -g0
+
+# The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
+# so we want to optimise them as much as we reasonably can.
+# In the future, when building the toolchain with GCC version 7 and onwards,
+# we should try and build with LTO.
+HF += -O3
+
+# Building for the current CPU makes this toolchain not portable, but can yield
+# a good performance boost, especially on newer CPUs.
+HF += -march=native
+
+HOST_FLAGS := CFLAGS="$(HF)"  CXXFLAGS="$(HF)"
 
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
@@ -350,6 +373,7 @@ GCC_CFLAGS := $(COMMON_CFLAGS)
 # GCC_CFLAGS += -H  # Print the name of each header file included, useful during development of this makefile.
 
 COMMON_GCC_OPTIONS :=
+COMMON_GCC_OPTIONS += $(HOST_FLAGS)
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
 COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 
@@ -471,6 +495,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	$(BINUTILS_SRC_DIR)/configure --help && \
 	$(BINUTILS_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --target=$(ARM_TARGET) \
 	  $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
@@ -512,6 +537,7 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	$(GMP_SRC_DIR)/configure --help && \
 	$(GMP_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
 	echo "The GMP configuration has finished."
@@ -550,6 +576,7 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	$(MPFR_SRC_DIR)/configure --help && \
 	$(MPFR_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
@@ -589,6 +616,7 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	$(MPC_SRC_DIR)/configure --help && \
 	$(MPC_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
@@ -687,6 +715,7 @@ $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 
 NEWLIB_CFG_FLAGS :=
 
+NEWLIB_CFG_FLAGS += $(HOST_FLAGS)
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(ARM_TARGET)
 NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
@@ -841,6 +870,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	  $(GDB_SRC_DIR)/configure \
 	    $(GDB_DEBUG_BUILD_FLAGS) \
 	    $(CONFIG_CACHE_OPTION)  \
+	    $(HOST_FLAGS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
