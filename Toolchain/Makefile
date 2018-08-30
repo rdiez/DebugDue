@@ -941,9 +941,12 @@ $(TARGET_NAME_HELP):
 	@echo "   The build directory can be discarded after the toolchain has been installed to the"
 	@echo "   CROSS_TOOLCHAIN_DIR directory you chose further above. However, if you keep it, you will be"
 	@echo "   able to step into the C runtime library and so on when debugging your software with GDB."
+	@echo "   If you will be discarding it at the end, and you have memory to spare, placing it"
+	@echo "   on a RAM disk like tmpfs will speed up building the toolchain and discarding the"
+	@echo "   build directory at the end considerably."
 	@echo
 	@echo "5) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
-	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally "
+	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally"
 	@echo "   find such libraries in your Linux distribution's repository. Note that this makefile"
 	@echo "   can build GMP, MPFR and MPC itself, but you will probably need other libraries too."
 	@echo "   Consult GCC's documentation for details."
