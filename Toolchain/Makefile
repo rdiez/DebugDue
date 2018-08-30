@@ -34,6 +34,7 @@ verify_dir_does_not_exist = $(if $(shell if [ -d "$(1)" ]; then echo exists; fi)
 TARGET_NAME_ALL := all
 TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
+TARGET_NAME_CHECK := check
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
 TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
@@ -297,6 +298,7 @@ BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarS
 BINUTILS_MAKEFILE := $(BINUTILS_OBJ_DIR)/Makefile
 BINUTILS_MAKE_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 BINUTILS_INSTALL_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)BinutilsInstallSentinel
+BINUTILS_CHECK_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)CheckSentinel
 
 
 # ------- GMP lib flags -------
@@ -309,6 +311,7 @@ GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 GMP_MAKEFILE := $(GMP_OBJ_DIR)/Makefile
 GMP_MAKE_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 GMP_INSTALL_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpInstallSentinel
+GMP_CHECK_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpCheckSentinel
 
 
 # ------- MPFR lib flags -------
@@ -325,6 +328,7 @@ MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 MPFR_MAKEFILE := $(MPFR_OBJ_DIR)/Makefile
 MPFR_MAKE_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 MPFR_INSTALL_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrInstallSentinel
+MPFR_CHECK_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrCheckSentinel
 
 
 # ------- MPC lib flags -------
@@ -340,6 +344,7 @@ MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 MPC_MAKEFILE := $(MPC_OBJ_DIR)/Makefile
 MPC_MAKE_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 MPC_INSTALL_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcInstallSentinel
+MPC_CHECK_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcCheckSentinel
 
 
 # ------- GCC flags -------
@@ -368,6 +373,7 @@ GCC2_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)-obj-phase2
 GCC2_MAKEFILE := $(GCC2_OBJ_DIR)/Makefile
 GCC2_MAKE_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Make2Sentinel
 GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc2InstallSentinel
+GCC2_CHECK_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc2CheckSentinel
 
 GCC_CFLAGS := $(COMMON_CFLAGS)
 # GCC_CFLAGS += -H  # Print the name of each header file included, useful during development of this makefile.
@@ -517,6 +523,12 @@ $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
 	echo "The Binutils installation has finished."
 
+$(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
+	echo "Checking Binutils ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" check && \
+	echo "The Binutils check has finished." >"$(BINUTILS_CHECK_SENTINEL)" && \
+	echo "The Binutils check has finished."
 
 # ----------------- Build GMP -----------------
 
@@ -555,6 +567,13 @@ $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	$(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
 	echo "The GMP installation has finished."
+
+$(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
+	echo "Checking GMP ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" check && \
+	echo "The GMP check has finished." >"$(GMP_CHECK_SENTINEL)" && \
+	echo "The GMP check has finished."
 
 
 # ----------------- Build MPFR -----------------
@@ -596,6 +615,13 @@ $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
 	echo "The MPFR installation has finished."
 
+$(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
+	echo "Checking MPFR ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
+	echo "The MPFR check has finished." >"$(MPFR_CHECK_SENTINEL)" && \
+	echo "The MPFR check has finished."
+
 
 # ----------------- Build MPC -----------------
 
@@ -636,6 +662,13 @@ $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	$(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
 	echo "The MPC installation has finished."
+
+$(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
+	echo "Checking MPC ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" check && \
+	echo "The MPC check has finished." >"$(MPC_CHECK_SENTINEL)" && \
+	echo "The MPC check has finished."
 
 
 # ----------------- GCC phase 1 -----------------
@@ -831,6 +864,15 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
     echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
     echo "The GCC phase 2 installation has finished."
 
+$(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
+	echo "Checking GCC phase 2 ..." && \
+    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+    PATH=$(PATH_DIR):$$PATH \
+      $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
+        CFLAGS_FOR_TARGET="$(GCC_CFLAGS)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS)" && \
+    echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
+    echo "The GCC phase 2 check has finished."
+
 
 # ----------------- Build GDB -----------------
 
@@ -896,6 +938,7 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 .PHONY: $(TARGET_NAME_ALL) $(TARGET_NAME_HELP) $(TARGET_NAME_CLEAN)
 .PHONY: $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)
 .PHONY: $(TARGET_NAME_TEST_MAKEFLAGS)
+.PHONY: $(TARGET_NAME_CHECK)
 
 .DEFAULT_GOAL := help
 
@@ -953,6 +996,10 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "6) If you have already run this makefile in the past, you will have to delete or rename"
 	@echo "   the build subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
+	@echo
+	@echo "7) If you are worried whether the generated toolchain is reliable,"
+	@echo "   run target '$(TARGET_NAME_CHECK)' at the end."
+	@echo "   You will probably need to install tools like DejaGnu, Tcl, and Expect beforehand."
 	@echo
 	@echo "The recommended way to run this makefile is:"
 	@echo
@@ -1012,3 +1059,8 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
 
 $(TARGET_NAME_TEST_MAKEFLAGS):
 	@$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && echo "MAKEFLAGS passed in the environment: $$MAKEFLAGS"
+
+$(TARGET_NAME_CHECK): $(BINUTILS_CHECK_SENTINEL)
+$(TARGET_NAME_CHECK): $(GMP_CHECK_SENTINEL) $(MPFR_CHECK_SENTINEL) $(MPC_CHECK_SENTINEL)
+# We cannot run the GCC checks on the host PC:
+# $(TARGET_NAME_CHECK): $(GCC2_CHECK_SENTINEL)
