@@ -1000,6 +1000,9 @@ $(TARGET_NAME_HELP):
 	@echo "7) If you are worried whether the generated toolchain is reliable,"
 	@echo "   run target '$(TARGET_NAME_CHECK)' at the end."
 	@echo "   You will probably need to install tools like DejaGnu, Tcl, and Expect beforehand."
+	@echo "   Full testing is not implemented yet. In order to do it properly, you would need a"
+	@echo "   virtual machine for an ARM CPU etc. At the moment, only some components are tested"
+	@echo "   with this target."
 	@echo
 	@echo "The recommended way to run this makefile is:"
 	@echo
