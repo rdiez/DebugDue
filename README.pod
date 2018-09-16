@@ -172,6 +172,8 @@ you'll realise that many of the test binaries are built with this flag.
 
 =back
 
+The toolchain builder makefile does not support building a multilib toolchain. You will need a separate toolchain for each CPU type you need (one for Cortex-M0, one for Cortex-M4F, and so on).
+
 =head2 About the JTAG Functionality
 
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
@@ -263,7 +265,27 @@ in order to flash a pre-built binary file.
 
 =item 1) Build the toolchain (the GCC compiler for the Arduino Due).
 
-Change to the 'Toolchain' subdirectory and type "make help" for more information.
+Change to the 'Toolchain' subdirectory and type "make help" for detailed information.
+
+Install the prerequisites first. On Ubuntu/Debian systems, installing package 'build-essential' gets you a long way.
+
+On Windows/Cygwin, install these packages:
+
+  gcc-core gcc-g++ automake make curl patch libtool
+
+These are the commands I normally use to build a toolchain:
+
+  make download-tarballs-from-internet
+
+  make CROSS_TOOLCHAIN_DIR=~/arduino/toolchain-test-bin  \
+       CROSS_TOOLCHAIN_BUILD_DIR=~/arduino/toolchain-test-build  \
+       --no-builtin-variables  --warn-undefined-variables  \
+       --output-sync=recurse  -j 5  \
+       all
+
+My old laptop with an Intel Core i3 M 380 running at 2.53 GHz, with a traditional (rotational) hard disk, needs 35 minutes to build a toolchain.
+
+For a toolchain with GCC 7.3, the bin directory needs 169 MB, and the build directory 2.1 GB. But sizes can vary depending on the build flags.
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 

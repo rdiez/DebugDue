@@ -988,10 +988,11 @@ $(TARGET_NAME_HELP):
 	@echo "   on a RAM disk like tmpfs will speed up building the toolchain and discarding the"
 	@echo "   build directory at the end considerably."
 	@echo
-	@echo "5) Install any packages that GCC needs to build itself, like the GMP, MPFR, MPC and ELF libraries."
-	@echo "   You will probably need to install the 'devel' versions of those packages. You will normally"
+	@echo "5) Install any packages needed to build GCC, like a C compiler and ELF libraries."
+	@echo "   The 'devel' versions of those packages are probably needed. You will normally"
 	@echo "   find such libraries in your Linux distribution's repository. Note that this makefile"
-	@echo "   can build GMP, MPFR and MPC itself, but you will probably need other libraries too."
+	@echo "   builds GMP, MPFR and MPC itself by default."
+	@echo "   On Ubuntu/Debian systems, installing package 'build-essential' gets you a long way."
 	@echo "   Consult GCC's documentation for details."
 	@echo
 	@echo "6) If you have already run this makefile in the past, you will have to delete or rename"
