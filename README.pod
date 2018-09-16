@@ -19,7 +19,9 @@ However, the POD syntax is quite simple and can be edited with a standard text e
 =head1 JtagDue Project
 
 The main goal of this project is to provide an up-to-date, comfortable but fully-featured
-B<bare-metal C++ programming environment> for the Arduino Due and, in the future, for similar boards.
+B<bare-metal C++ programming environment> for the Arduino Due. However, most of the
+techniques used are generic and can be applied to other Cortex-Mx microcontrollers,
+or even to other bare-metal embedded architectures.
 
 The makefile that builds the B<GCC-based toolchain> is completely generic (it knows nothing about the Arduino Due),
 so that you can use it to create toolchains for other ARM Cortex microcontrollers, like the STM32 family.
@@ -50,9 +52,20 @@ There are no OS background tasks or threads to worry about.
 
 =item * C++ exceptions.
 
-=item * Newlib with malloc support.
+Contrary to popular belief, C++ exception handling does not need many resources. I have been generating
+dynamic error messages in readable English using C++ exceptions on microcontrollers with
+as little as 16 KiB SRAM for years, with 'plenty' of memory to spare.
+
+You do need to patch GCC though in order to disable the C++ exception emergency buffer,
+or you will lose 2 KiB RAM, or maybe more, depending on your target.
+See the toolchain builder makefile for more information.
+
+=item * L<< Newlib|https://sourceware.org/newlib/ >> with malloc support.
 
 =item * Assertions.
+
+Assertions can increase the binary size considerably. There is a way to make debug binaries smaller
+by reducing assertion comfort, see the toolchain builder makefile for more information.
 
 =item * Debug console.
 
@@ -67,18 +80,25 @@ an indication that some text was lost at the position where the overflow occurre
 
 Most basic functions you need to get started have been implemented: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, a template-based circular buffer implementation, etc.
 
-=item * Short start-up delay for easy JTAG debugging right after reset. This is useful for JTAG probes that do not support the RCLK signal (adaptive clock speed).
+=item * Short start-up delay for easy JTAG debugging right after reset.
+
+Atmel and STM32 microcontrollers start with a low CPU frequency. One of the first
+initialisation tasks is to drastically increase this frequency. Without a short pause afterwards,
+JTAG probes that do not support the RCLK (adaptive clock speed) signal
+cannot connect to the board and stop the firmware early enough after reset,
+which can make debugging from the start difficult.
 
 =item * Firmware cross-compiled with the standard GCC and autotools.
 
-You can also enable using a cache file when invoking autoconf's 'configure' script.
+The F<< configure.ac >> and F<< Makefile.am >> files are clean and properly commented.
+
+There is support for debug and release firmware builds.
 
 =item * L<< LTO|https://en.wikipedia.org/wiki/Interprocedural_optimization >> release builds.
 
-The toolchain is built with newlib's --enable-newlib-nano-malloc and --enable-newlib-nano-formatted-io.
-I have also added a few small and simple patches for GCC and newlib to further reduce code and data sizes.
+=item * The firmware build script can automatically start a debugger over a JTAG connection.
 
-=item * The build script can automatically start a debugger over a JTAG connection. Alternatively, you can program your Arduino Due with the 'bossac' tool.
+Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
 =item * In order to help trim the firmware size, the build script can optionally generate a readelf dump, and objdump with code disassembly, a list of ELF objects sorted by size, and a list of all text strings found in the final binary.
 
@@ -121,8 +141,7 @@ The lowest-level JTAG bit shifting routine should be rewritten in assembly. Help
 
 =back
 
-See this page for more information about my experience with the Arduino Due:
-  L<< http://www.devtal.de/wiki/Benutzer:Rdiez/ArduinoDue >>
+You will find more information about my experience with the Arduino Due on my wiki page at S<< L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >> . >>
 
 =head1 Empty Firmware Project
 
@@ -151,9 +170,9 @@ You should get byte sizes similar to the following with an optimised (release) b
   BSS size:               2,160
   Total:                 17,668
 
-This firmware also has C++ exception support, which automatically pulls in malloc() support from I<< newlib >>.
+This firmware also has C++ exception support, which automatically pulls in malloc() support from I<< Newlib >>.
 
-Adding a call to sprintf() pulls in the corresponding formatting code from I<< newlib >> and yields the following sizes:
+Adding a call to sprintf() pulls in the corresponding formatting code from I<< Newlib >> and yields the following sizes:
 
   Code size:             23,300
   Initialised data size:  1,360
@@ -469,6 +488,7 @@ on reconstruct the call stack, if the .elf file with debug information is availa
 =head1 Changelog
 
 This changelog only covers the released binary files for the JtagDue firmware.
+Sources are updated more frequently.
 
 =over
 
@@ -486,7 +506,7 @@ The project's official web site is L<< https://github.com/rdiez/JtagDue >>
 
 =head1 License
 
-Copyright (C) R. Diez 2012-2017,  rdiezmail-arduino at yahoo.de
+Copyright (C) R. Diez 2012-2018,  rdiezmail-arduino at yahoo.de
 
 The source code is released under the AGPL 3 license.
 
