@@ -106,6 +106,72 @@ Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
 =back
 
+=head2 About the Toolchain Builder Makefile
+
+You will find a makefile to build your own GCC-based, cross-compiling toolchain in the F<< Toolchain >> subdirectory.
+See the installation instructions below for more information on how to build one yourself.
+
+Instead of building your own, you could download a pre-built toolchain for ARM Cortex microcontrollers. Popular toolchains are:
+
+L<< https://developer.arm.com/open-source/gnu-toolchain/gnu-rm >>
+
+L<< https://launchpad.net/gcc-arm-embedded >>
+
+However, building your own toolchain is not difficult with the automated makefile
+that this project provides. Here are some reasons why it is better to build your own:
+
+=over
+
+=item * You are not downloading binaries from any private companies or unofficial volunteers.
+
+The toolchain builder makefile from this project downloads only source code, and only from their official sites.
+You can confirm this simply by inspecting the makefile contents.
+
+There is support for building toolchains offline with pre-downloaded sources.
+
+=item * No root privileges necessary.
+
+You can build several toolchains, and install them into separate subdirectories under your home directory.
+So you can test a new toolchain while keeping the old one ready.
+
+=item * Debug into any linked libraries.
+
+If you keep the toolchain sources on your disk, you will be able to step into all toolchain-provided
+libraries like Newlib when debugging.
+
+=item * You have complete control.
+
+You know exactly what goes into your toolchain, and what compiler flags you are using for all components.
+
+For some reason, pre-built toolchains tend to be poorly documented. You cannot easily find out what
+compiler flags Newlib, libstdc++ or libgcc were built with. But they all get linked into your final binary.
+
+The build flags in this project's makefile are optimised for small embedded targets, see for example I<< --enable-newlib-nano-malloc >>
+in the makefile. But you can easily change all such flags yourself.
+
+There some also some bonuses in this project's toolchain for convenience or code size. There is a patch
+to reduce the RAM footprint when you use C++ exceptions. Assertion code size can be reduced,
+search for ASSERT_TYPE_FULL in the source code for assert options.
+And all toolchain components that land into your firmware are built ready for LTO.
+
+=item * You have more flexibility.
+
+You can comfortably choose which component versions you want in your toolchain.
+This is useful if you hit a bug in one of them, which has happened to be more often than I thought.
+
+Or you can use the latest versions straight away, without waiting for a new pre-built toolchain to be released.
+
+You can also generate a debug toolchain, in order to troubleshoot the toolchain components themselves.
+
+=item * A little more performance when building and debugging.
+
+The toolchain is built with I<< -march=native >> by default, so it performs optimally on your current CPU.
+There is often a measurable difference when I<< -march=native >> is used. If you look at the benchmarks
+under S<< L<< https://www.phoronix.com/ >> , >>
+you'll realise that many of the test binaries are built with this flag.
+
+=back
+
 =head2 About the JTAG Functionality
 
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
