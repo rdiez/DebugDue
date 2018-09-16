@@ -21,18 +21,18 @@ However, the POD syntax is quite simple and can be edited with a standard text e
 The main goal of this project is to provide an up-to-date, comfortable but fully-featured
 B<bare-metal C++ programming environment> for the Arduino Due and, in the future, for similar boards.
 
-The script that builds the B<GCC-based toolchain> is completely generic (it knows nothing about the Arduino Due),
+The makefile that builds the B<GCC-based toolchain> is completely generic (it knows nothing about the Arduino Due),
 so that you can use it to create toolchains for other ARM Cortex microcontrollers, like the STM32 family.
-In fact, the toolchain builder script is probably the most valuable outcome of this project.
+In fact, the toolchain builder makefile is probably the most valuable outcome of this project.
 
-A secondary goal is to convert the Arduino Due into a B<JTAG adapter>
-by emulating a I<Bus Pirate> from L<< Dangerous Prototypes|http://dangerousprototypes.com/ >>S< ,>
-so that it is compatible with L<< OpenOCD|http://openocd.sourceforge.net/ >>S< .>
+A secondary goal of this project is to convert the Arduino Due into a B<JTAG adapter>
+by emulating a I<Bus Pirate> from S<< L<< Dangerous Prototypes|http://dangerousprototypes.com/ >> , >>
+so that it is compatible with S<< L<< OpenOCD|http://openocd.sourceforge.net/ >> . >>
 
 This means that you can use an Arduino Due (acting as a JTAG adapter) in order to debug with GDB
 your own code running on a second Arduino Due.
 
-You will find more information about the Arduino Due on my wiki page at L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >>S< .>
+You will find more information about the Arduino Due on my wiki page at S<< L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >> . >>
 
 =head2 About the Bare Metal C++ Environment
 
@@ -168,7 +168,7 @@ That means an increase of 9,152 bytes the first time you touch a printf-style fu
 
 =head2 Installing a binary file
 
-Pre-built binary files are available in a separate repository at L<< https://github.com/rdiez/JtagDueBinaries >>S< .>
+Pre-built binary files are available in a separate repository at S<< L<< https://github.com/rdiez/JtagDueBinaries >> . >>
 These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
 in order to flash a pre-built binary file.
 
@@ -183,7 +183,7 @@ Change to the 'Toolchain' subdirectory and type "make help" for more information
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 
 I have tested against ASF versions 3.19.0.95, 3.35.1.54 and 3.40.0. You will probably have to manually edit file
-F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with I<< #ifndef __cplusplus >>S< ,>
+F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with S<< I<< #ifndef __cplusplus >> , >>
 so that they look like this:
 
   #ifndef __cplusplus  // The user added this to avoid a clash with std::min when compiling C++ sources.
@@ -197,7 +197,7 @@ so that they look like this:
   #endif
 
 Without this amendment, compiling your C++ projects will probably fail later on with an error message related to I<< min >> or I<< max >>.
-This kind of fix is in place for F<< sam0/utils/compiler.h >>S< ,> but not for F<< sam/utils/compiler.h >>S< ,> at least for ASF S<version 3.34.2.53>.
+This kind of fix is in place for S<< F<< sam0/utils/compiler.h >> , >> but not for S<< F<< sam/utils/compiler.h >> , >> at least for ASF S<version 3.34.2.53>.
 
 =item 3) Build the JtagDue firmware for the Arduino Due like most Autotools projects:
 
@@ -220,7 +220,7 @@ by verifying that this command works:
   make  --no-builtin-rules  -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
   make install
 
-The binaries files land in the prefix directory you specified, inside a subdirectory called  F<< share >>S< .> Look for files F<< jtagdue.bin >> and F<< emptydue.bin >>S< .>
+The binaries files land in the prefix directory you specified, inside a subdirectory called S<< F<< share >> . >> Look for files F<< jtagdue.bin >> and S<< F<< emptydue.bin >> . >>
 
 =back
 
@@ -384,7 +384,7 @@ The only LED on the Arduino Due is used as a heartbeat indicator at the moment.
 
 From this point on, follow the standard OpenOCD instructions in order to connect to your target board.
 
-If you are connecting to a second Arduino Due target, check out the files under F<< OpenOCD/SecondArduinoDueAsTarget/ >>S< .>
+If you are connecting to a second Arduino Due target, check out the files under S<< F<< OpenOCD/SecondArduinoDueAsTarget/ >> . >>
 You should be able to connect to it with a command like this:
 
   cd <JtagDue root dir where this README file is>
