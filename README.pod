@@ -1,18 +1,9 @@
 
-This is the source file from which the README file is generated.
-
 This file is written in Perl's Plain Old Documentation (POD) format.
-Run the following Perl commands to convert it to text or to HTML
-for easy reading:
+Run the following Perl commands to convert it to HTML or to plain text for easy reading:
 
+  pod2html README.pod >README.html
   pod2text README.pod >README.txt
-
-  # pod2html seems buggy, at least in perl v5.10.1, therefore
-  # I'm using this long one-liner instead (with bash):
-  perl -MPod::Simple::HTML  -e "\$p = Pod::Simple::HTML->new; \$p->index( 1 ); \$p->output_fh( *STDOUT{IO} ); \$p->force_title('JtagDue'); \$p->parse_file('README.pod');"  >README.html
-
-This file is best edited with emacs module pod-mode, available in CPAN.
-However, the POD syntax is quite simple and can be edited with a standard text editor.
 
 =pod
 
