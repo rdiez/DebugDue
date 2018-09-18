@@ -314,6 +314,17 @@ GMP_INSTALL_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpInstallSent
 GMP_CHECK_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpCheckSentinel
 
 
+# According to GMP's documentation, when building for Windows:
+#  "Static and DLL libraries can’t both be built, since certain export directives in gmp.h must be different."
+# If you build GMP as a static library, MPFR and MPC can apparently only be built as static libraries too.
+#
+# Normally, the build scripts for all those libraries will try to build them both as static libraries
+# and as shared objects, but this is waste of build time and disk space, since we only need
+# one kind anyway, even on Linux.
+
+FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS := --disable-shared --enable-static
+
+
 # ------- MPFR lib flags -------
 #
 # Version 4.0.x has been released in the meantime, but I could not get
@@ -550,6 +561,7 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	$(GMP_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
 	  $(HOST_FLAGS) \
+	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
 	echo "The GMP configuration has finished."
@@ -596,6 +608,7 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	$(MPFR_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
 	  $(HOST_FLAGS) \
+	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
@@ -643,6 +656,7 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	$(MPC_SRC_DIR)/configure \
 	  $(CONFIG_CACHE_OPTION)  \
 	  $(HOST_FLAGS) \
+	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
