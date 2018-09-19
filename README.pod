@@ -443,9 +443,19 @@ the JTAG target board.
 
 =item 8) Connect to the JtagDue with OpenOCD.
 
-First of all, you may need to build OpenOCD with support for the Bus Pirate. For example:
+First of all, you may need to build OpenOCD with support for the Bus Pirate.
 
-  ./configure --enable-buspirate --prefix="$HOME/SomeDir/openocd-0.8.0-bin"
+If you are building OpenOCD version 0.10.0, you will need to patch it manually.
+Edit the generated 'configure' script that Autoconf generates, and remove the I<< --with-ext >> and I<< --without-ext >> arguments from this line:
+
+  AX_CONFIG_SUBDIR_OPTION([jimtcl], [--disable-install-jim --with-ext="eventloop array clock regexp stdlib tclcompat" --without-ext="default"])
+
+Without those arguments, Jim Tcl's default modules will be installed. This change was made for OpenOCD version 0.10.0 and
+has been reverted afterwards, but a new stable version has not been released yet as of september 2018.
+
+Build OpenOCD. For example:
+
+  ./configure --enable-buspirate --prefix="$HOME/SomeDir/openocd-0.10.0-bin"
   make -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
   make install
 
