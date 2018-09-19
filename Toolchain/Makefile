@@ -27,7 +27,6 @@ TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
 
 
 verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
-verify_dir_does_not_exist = $(if $(shell if [ -d "$(1)" ]; then echo exists; fi),$(error Directory "$(1)" already exists, but it should not at this point.))
 
 
 # Targets 'help', 'clean' and download-tarballs-from-* do not build, all other targets (usually 'all') do build.
@@ -209,12 +208,6 @@ EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_
 # ------- Build directory definitions -------
 
 TOOLCHAIN_OBJ_DIR_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
-
-# You probably want to start from scratch when building the toolchain,
-# so check if the temporary directory already exists, but only if the user asked for a build.
-ifeq ($(IS_BUILDING),1)
-  $(call verify_dir_does_not_exist,$(TOOLCHAIN_OBJ_DIR))
-endif
 
 
 # ------- Common C/C++ Compilation flags -------
@@ -488,9 +481,8 @@ GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GdbInstallSent
 # ----------------- Create the directory where the toolchain build files (object files, etc) will land -----------------
 
 $(TOOLCHAIN_OBJ_DIR_SENTINEL):
-	if [ -d "$(CROSS_TOOLCHAIN_DIR)" ]; then echo "Directory \"$(CROSS_TOOLCHAIN_DIR)\" must not exist when building the toolchain from scratch. Otherwise you may end up with a mixture of old and new files." && false; fi && \
 	echo "Creating directory \"$(TOOLCHAIN_OBJ_DIR)\"..." && \
-	mkdir -p "$(TOOLCHAIN_OBJ_DIR)" && \
+	mkdir --parents -- "$(TOOLCHAIN_OBJ_DIR)" && \
 	echo "Creation of directory \"$(TOOLCHAIN_OBJ_DIR)\" finished." >"$(TOOLCHAIN_OBJ_DIR_SENTINEL)"
 
 # ----------------- Build Binutils -----------------
@@ -507,7 +499,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
 	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf "$(BINUTILS_OBJ_DIR)"; fi && \
-	mkdir -p "$(BINUTILS_OBJ_DIR)" && \
+	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
 	$(BINUTILS_SRC_DIR)/configure --help && \
 	$(BINUTILS_SRC_DIR)/configure \
@@ -555,7 +547,7 @@ $(GMP_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)" && \
 	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf "$(GMP_OBJ_DIR)"; fi && \
-	mkdir -p "$(GMP_OBJ_DIR)" && \
+	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
 	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
 	$(GMP_SRC_DIR)/configure --help && \
 	$(GMP_SRC_DIR)/configure \
@@ -602,7 +594,7 @@ $(MPFR_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)" && \
 	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf "$(MPFR_OBJ_DIR)"; fi && \
-	mkdir -p "$(MPFR_OBJ_DIR)" && \
+	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
 	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
 	$(MPFR_SRC_DIR)/configure --help && \
 	$(MPFR_SRC_DIR)/configure \
@@ -650,7 +642,7 @@ $(MPC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
 	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)" && \
 	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf "$(MPC_OBJ_DIR)"; fi && \
-	mkdir -p "$(MPC_OBJ_DIR)" && \
+	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
 	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
 	$(MPC_SRC_DIR)/configure --help && \
 	$(MPC_SRC_DIR)/configure \
@@ -713,7 +705,7 @@ endif
 $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)" && \
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf "$(GCC1_OBJ_DIR)"; fi && \
-	mkdir -p "$(GCC1_OBJ_DIR)" && \
+	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
 	$(GCC_SRC_DIR)/configure --help && \
 	PATH=$(PATH_DIR):$$PATH \
@@ -808,7 +800,7 @@ NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
-	mkdir -p "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
+	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
 	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
 	$(NEWLIB_SRC_DIR)/configure --help && \
@@ -847,7 +839,7 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
 	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)" && \
     if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf "$(GCC2_OBJ_DIR)"; fi && \
-    mkdir -p "$(GCC2_OBJ_DIR)" && \
+    mkdir --parents -- "$(GCC2_OBJ_DIR)" && \
     pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
     PATH=$(PATH_DIR):$$PATH \
       $(GCC_SRC_DIR)/configure \
@@ -919,7 +911,7 @@ $(GDB_UNTAR_SENTINEL): $(GCC2_INSTALL_SENTINEL)
 $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf "$(GDB_OBJ_DIR)"; fi && \
-	mkdir -p "$(GDB_OBJ_DIR)" && \
+	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
 	$(GDB_SRC_DIR)/configure --help && \
 	PATH=$(PATH_DIR):$$PATH \
@@ -979,19 +971,15 @@ $(TARGET_NAME_HELP):
 	@echo "   A third option is to use target '$(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)'"
 	@echo "   together with variable PATH_TO_TARBALLS_ON_FILE_SERVER."
 	@echo
-	@echo "2) Think about a target directory of your choice for variable CROSS_TOOLCHAIN_DIR where"
-	@echo "   the toolchain will be placed. For example: CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\""
+	@echo "2) Think about a directory of your choice for variable CROSS_TOOLCHAIN_DIR where"
+	@echo "   the toolchain will be installed. For example: CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-14-bin\""
+	@echo "   You will probably build several toolchains, so inserting a number is probably a good idea."
+	@echo "   You should start with a clean installation directory, or you may end up with a problematic mixture of"
+	@echo "   old and new files, for different targets, or built with different flags."
 	@echo
-	@echo "3) Consider setting variable ENABLE_DEBUG_TOOLCHAIN to '1' in order to build a debug toolchain."
-	@echo "   This enables debug code in Newlib's malloc implementation, for example."
-	@echo "   Note that your final binary will be bigger and perform more slowly, so you should use a normal"
-	@echo "   (non-debug) toolchain when building a public release of your software."
-	@echo "   You can compile debug builds of your software with a non-debug toolchain, but the libraries"
-	@echo "   that the toolchain provides (such as Newlib) will be linked in as non-debug versions."
-	@echo
-	@echo "4) Consider setting variable CROSS_TOOLCHAIN_BUILD_DIR to some directory of your choice where"
-	@echo "   all source and object files will be generated during the toolchain build process."
-	@echo "   For example: CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-build\""
+	@echo "3) Consider passing variable CROSS_TOOLCHAIN_BUILD_DIR with some directory of your choice where"
+	@echo "   all source and object files will be unpacked or generated during the toolchain build process."
+	@echo "   For example: CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-14-build\""
 	@echo "   By default, these build files are placed in a subdirectory called \"Tmp\". That name is"
 	@echo "   intuitive enough. I normally have such \"Tmp\" directories listed in my .gitignore files,"
 	@echo "   and I tend to skip anything called \"Tmp\" when doing recursive greps."
@@ -1001,16 +989,35 @@ $(TARGET_NAME_HELP):
 	@echo "   If you will be discarding it at the end, and you have memory to spare, placing it"
 	@echo "   on a RAM disk like tmpfs will speed up building the toolchain and discarding the"
 	@echo "   build directory at the end considerably."
+	@echo "   You should start with a clean build directory, or you may end up with a problematic mixture of"
+	@echo "   old and new files, for different targets, or built with different flags."
 	@echo
-	@echo "5) Install any packages needed to build GCC, like a C compiler and ELF libraries."
+	@echo "4) Consider setting variable ENABLE_DEBUG_TOOLCHAIN to '1' in order to build a debug toolchain."
+	@echo "   This enables debug code in Newlib's malloc implementation, for example."
+	@echo "   Note that your final binary will be bigger and perform more slowly, so you should use a normal"
+	@echo "   (non-debug) toolchain when building a public release of your software."
+	@echo "   You can compile debug builds of your software with a non-debug toolchain, but the libraries"
+	@echo "   that the toolchain provides (such as Newlib) will be linked in as non-debug versions."
+	@echo
+	@echo "5) Install any packages needed to build GCC and GDB, like a C compiler and ELF libraries."
 	@echo "   The 'devel' versions of those packages are probably needed. You will normally"
 	@echo "   find such libraries in your Linux distribution's repository. Note that this makefile"
 	@echo "   builds GMP, MPFR and MPC itself by default."
+	@echo "   Consult GCC's and GDB's documentation for details."
 	@echo "   On Ubuntu/Debian systems, installing package 'build-essential' gets you a long way."
-	@echo "   Consult GCC's documentation for details."
+	@echo "   On Windows/Cygwin, install these packages: gcc-core gcc-g++ automake make curl patch libtool"
 	@echo
-	@echo "6) If you have already run this makefile in the past, you will have to delete or rename"
-	@echo "   the build subdirectory beforehand. Alternatively, run this makefile for target 'clean'."
+	@echo "6) Run this makefile for target '$(TARGET_NAME_ALL)'. The recommended command is:"
+	@echo
+	@echo "   # Remember to delete any old build and installation directories first."
+	@echo
+	@echo "   make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-14-bin\" \\"
+	@echo "       CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-14-build\" \\"
+	@echo "       --no-builtin-variables --warn-undefined-variables \\"
+	@echo "       --output-sync=recurse  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\" \\"
+	@echo "       $(TARGET_NAME_ALL)"
+	@echo
+	@echo "   Option '--output-sync=recurse' above is only available in GNU Make version 4.0 or later."
 	@echo
 	@echo "7) If you are worried whether the generated toolchain is reliable,"
 	@echo "   run target '$(TARGET_NAME_CHECK)' at the end."
@@ -1018,15 +1025,6 @@ $(TARGET_NAME_HELP):
 	@echo "   Full testing is not implemented yet. In order to do it properly, you would need a"
 	@echo "   virtual machine for an ARM CPU etc. At the moment, only some components are tested"
 	@echo "   with this target."
-	@echo
-	@echo "The recommended way to run this makefile is:"
-	@echo
-	@echo "  make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-bin\" \\"
-	@echo "       CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-build\" \\"
-	@echo "       ...other variables such as PATH_TO_TARBALLS_ON_FILE_SERVER... \\"
-	@echo "       --no-builtin-variables --warn-undefined-variables  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\"  $(TARGET_NAME_ALL)"
-	@echo
-	@echo "For GNU Make version 4.0 or above, option '--output-sync=recurse' is recommended."
 	@echo
 
 $(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)

@@ -256,17 +256,13 @@ in order to flash a pre-built binary file.
 
 =item 1) Build the toolchain (the GCC compiler for the Arduino Due).
 
-Change to the 'Toolchain' subdirectory and type "make help" for detailed information.
-
-Install the prerequisites first. On Ubuntu/Debian systems, installing package 'build-essential' gets you a long way.
-
-On Windows/Cygwin, install these packages:
-
-  gcc-core gcc-g++ automake make curl patch libtool
+Change to the 'Toolchain' subdirectory and type "make help" for the prerequisites and detailed information.
 
 These are the commands I normally use to build a toolchain:
 
   make download-tarballs-from-internet
+
+  < delete any old build and installation directories >
 
   make CROSS_TOOLCHAIN_DIR=~/arduino/toolchain-test-bin  \
        CROSS_TOOLCHAIN_BUILD_DIR=~/arduino/toolchain-test-build  \
@@ -277,7 +273,9 @@ These are the commands I normally use to build a toolchain:
 
 My old laptop with an Intel Core i3 M 380 running at 2.53 GHz, with a traditional (rotational) hard disk, needs 35 minutes to build a toolchain.
 
-For a toolchain with GCC 7.3, the bin directory needs 169 MB, and the build directory 2.1 GB. But sizes can vary depending on the build flags.
+Building on Cygwin takes longer. A much faster Intel Core i3-6100 CPU running at 3.70 GHz needs 1 hour 7 min.
+
+For a toolchain with GCC 7.3, the installation directory needs 169 MB, and the build directory 2.1 GB. But sizes can vary depending on the build flags.
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 
