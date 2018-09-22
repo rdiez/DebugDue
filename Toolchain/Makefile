@@ -62,6 +62,10 @@ endif
 # You can check out GCC's contrib/download_prerequisites for inspiration
 # on libraries and version numbers. Unfortunately, that script looks
 # outdated and has no comments about why a version was chosen or skipped.
+#
+# We could also download and build the isl (Integer Set Library),
+# availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
+# See GCC's configuration option '--with-isl'.
 
 VERSION_SET := VersionSet1
 
