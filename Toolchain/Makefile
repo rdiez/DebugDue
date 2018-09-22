@@ -717,10 +717,10 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
 	$(GCC_SRC_DIR)/configure --help && \
 	PATH=$(PATH_DIR):$$PATH \
-      $(GCC_SRC_DIR)/configure \
-        --enable-languages=c \
-        --without-headers \
-        $(COMMON_GCC_OPTIONS) && \
+	  $(GCC_SRC_DIR)/configure \
+	    --enable-languages=c \
+	    --without-headers \
+	    $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
 	echo "The GCC phase 1 configuration has finished."
 
