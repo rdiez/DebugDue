@@ -59,6 +59,10 @@ endif
 
 # ------- User Configuration -------
 
+# You can check out GCC's contrib/download_prerequisites for inspiration
+# on libraries and version numbers. Unfortunately, that script looks
+# outdated and has no comments about why a version was chosen or skipped.
+
 VERSION_SET := VersionSet1
 
 ifeq ($(VERSION_SET),VersionSet1)
@@ -1050,6 +1054,7 @@ GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
 
 DOWNLOAD_TARBALL_TOOL_PATH := ./DownloadTarball.sh
 
+# An alternative to this target could be script contrib/download_prerequisites in the GCC sources.
 $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
 	mkdir --parents -- "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/binutils/$(BINUTILS_TAR_FILE)"           "$(TARBALLS_DOWNLOAD_DIR)"
