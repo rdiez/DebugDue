@@ -899,7 +899,10 @@ endif
 # 'install-strip-readline' and 'install-strip-sim'.
 GDB_INSTALL_TARGET := install
 
-$(GDB_UNTAR_SENTINEL): $(GCC2_INSTALL_SENTINEL)
+
+# GDB does not need Binutils, the GCC cross-compiler, or anything else. It just needs a C compiler on the host.
+
+$(GDB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
 	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf "$(GDB_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
@@ -1027,7 +1030,7 @@ $(TARGET_NAME_HELP):
 	@echo "   with this target."
 	@echo
 
-$(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)
+$(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
 	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"."
 	@if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
 	echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
