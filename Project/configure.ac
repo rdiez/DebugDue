@@ -1,5 +1,5 @@
 
-# Copyright (C) 2012-2017 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2012-2018 R. Diez - see the JtagDue project for licensing information.
 
 # By default, if you change the firmware version number below, the next 'make' invocation
 # will rebuild the 'configure' script. This script will have the updated version number
@@ -7,7 +7,7 @@
 # but despite this, the sources will not be recompiled.
 # I tried the "maintainer mode" (AM_MAINTAINER_MODE), but that did not help.
 AC_INIT([JtagDue],[1.1.4])
-AC_PREREQ([2.65])  # Tested mainly with version 2.69.
+AC_PREREQ([2.69])  # Tested mainly with version 2.69.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
                    # see the toolchain makefile for more information about why this is needed. Short version:
