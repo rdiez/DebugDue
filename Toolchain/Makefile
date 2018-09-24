@@ -38,8 +38,12 @@ TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
 TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
 
-ifeq ($(strip $(MAKECMDGOALS)),)
+ifndef MAKECMDGOALS
   # The default target is 'help'
+  # According to the GNU Make documentation, variable MAKECMDGOALS should be empty if no goals were specified,
+  # but it is actually undefined, at least with GNU Make 4.2.1.
+  IS_BUILDING := 0
+else ifeq ($(strip $(MAKECMDGOALS)),)
   IS_BUILDING := 0
 else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
   IS_BUILDING := 0
@@ -949,6 +953,9 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "The GDB installation has finished." >"$(GDB_INSTALL_SENTINEL)" && \
 	echo "The GDB installation has finished."
 
+# Short target name for building and installing GDB. Sometimes useful when testing this makefile.
+gdb: $(GDB_INSTALL_SENTINEL)
+
 
 # --------------- Top-level rules ---------------
 
@@ -1050,8 +1057,8 @@ $(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
 # does not work correctly.
 $(TARGET_NAME_CLEAN):
 	@echo "Deleting directory \"$(TOOLCHAIN_OBJ_DIR)\"..."
-	@if [ -d "$(TOOLCHAIN_OBJ_DIR)" ]; then rm -rf "$(TOOLCHAIN_OBJ_DIR)"; fi
-	@echo "Finished. You may want to delete the toolchain directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
+	rm -rf "$(TOOLCHAIN_OBJ_DIR)"
+	@echo "Finished. You may want to delete the toolchain installation directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
 
 
 GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
