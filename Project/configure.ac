@@ -61,20 +61,19 @@ if test "x$GCC" != "xyes"; then
   AC_MSG_ERROR([GCC is the only supported compiler at the moment.])
 fi
 
-AX_COMPILER_VERSION
-
-# For some reason, variable ax_cv_cxx_compiler_version for the C++ compiler version
-# does not work for me.
-if false; then
-  if test "x$ax_cv_c_compiler_version" != "x$ax_cv_cxx_compiler_version"; then
-    AC_MSG_ERROR([The gcc and g++ versions do not match.])
-  fi
-fi
+# This code is inspired by macro AX_COMPILER_VERSION, because using that macro means that the user needs
+# to install GNU Autoconf Archive beforehand.
+# Note that we are assuming here that the C and C++ compilers are the same version.
+AC_COMPUTE_INT(gcc_version_major, __GNUC__,, AC_MSG_FAILURE([unknown gcc major]))
+AC_COMPUTE_INT(gcc_version_minor, __GNUC_MINOR__,, AC_MSG_FAILURE([unknown gcc minor]))
+AC_COMPUTE_INT(gcc_version_patch, __GNUC_PATCHLEVEL__,, AC_MSG_FAILURE([unknown gcc patch level]))
+my_compiler_version="$gcc_version_major.$gcc_version_minor.$gcc_version_patch"
+echo "Detected compiler: GCC $my_compiler_version"
 
 IS_GCC_7_OR_LATER=false
-AS_VERSION_COMPARE( [$ax_cv_c_compiler_version], [7], [], [], [IS_GCC_7_OR_LATER=true] )
+AS_VERSION_COMPARE( [$my_compiler_version], [7], [], [], [IS_GCC_7_OR_LATER=true] )
 IS_GCC_8_OR_LATER=false
-AS_VERSION_COMPARE( [$ax_cv_c_compiler_version], [8], [], [], [IS_GCC_8_OR_LATER=true] )
+AS_VERSION_COMPARE( [$my_compiler_version], [8], [], [], [IS_GCC_8_OR_LATER=true] )
 
 
 # ----------- Check whether debug or release build -----------
