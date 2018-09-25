@@ -1045,11 +1045,18 @@ $(TARGET_NAME_HELP):
 	@echo "   with this target."
 	@echo
 
-$(TARGET_NAME_ALL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
-	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"."
+
+TARGET_ALL_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)TargetAllSentinel
+
+$(TARGET_ALL_SENTINEL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
+	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." && \
+	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." >"$(TARGET_ALL_SENTINEL)"
 	@if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
 	echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
 	fi
+
+$(TARGET_NAME_ALL): $(TARGET_ALL_SENTINEL)
+
 
 # This 'clean' rule does not delete the toolchain bin directory (variable CROSS_TOOLCHAIN_DIR),
 # the user has to delete it manually. I'm not sure whether that is a good idea or not,
