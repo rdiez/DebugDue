@@ -6,7 +6,7 @@
 # in the PACKAGE_VERSION variable. All makefiles will automatically get rebuilt,
 # but despite this, the sources will not be recompiled.
 # I tried the "maintainer mode" (AM_MAINTAINER_MODE), but that did not help.
-AC_INIT([JtagDue],[1.1.4])
+AC_INIT([JtagDue],[1.1.6])
 AC_PREREQ([2.69])  # Tested mainly with version 2.69.
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",

@@ -42,7 +42,7 @@ user_config ()
 }
 
 
-VERSION_NUMBER="1.05"
+VERSION_NUMBER="1.06"
 SCRIPT_NAME="JtagDueBuilder.sh"
 
 declare -r EXIT_CODE_SUCCESS=0
@@ -254,7 +254,7 @@ display_help ()
 cat - <<EOF
 
 $SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3
+Copyright (c) 2014-2018 R. Diez - Licensed under the GNU AGPLv3
 
 Overview:
 
