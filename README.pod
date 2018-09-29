@@ -525,11 +525,11 @@ You should use the same technique in your own firmware, or it will be hard (or m
 
 =item 9) Prepare a comfortable development environment.
 
-First of all, make sure that script F<< OpenOCD/SecondArduinoDueAsTarget/run-in-new-console.sh >> works fine on your system.
+First of all, make sure that script F<< Tools/run-in-new-console.sh >> works fine on your system.
 You may have to install Konsole (KDE's terminal emulator) or amend the script to use some other terminal program.
 You can test it as follows:
 
-  ./run-in-new-console.sh "echo Press ENTER... && read"
+  Tools/run-in-new-console.sh "echo Press ENTER... && read"
 
 If everything works correctly, you should see a new console window asking you to press the ENTER key.
 

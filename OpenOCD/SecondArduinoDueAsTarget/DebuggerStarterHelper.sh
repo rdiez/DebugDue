@@ -184,6 +184,8 @@ parse_command_line_arguments ()
 
 # ------- Entry point -------
 
+GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "../..")"
+
 USER_SHORT_OPTIONS_SPEC=""
 
 # Use an associative array to declare how many arguments every long option expects.
@@ -289,7 +291,7 @@ if [[ $DEBUGGER_TYPE = "ddd" ]]; then
 
 else
 
-  NEW_CONSOLE_CMD="./run-in-new-console.sh"
+  NEW_CONSOLE_CMD="$GIT_REPOSITORY_BASE/Tools/run-in-new-console.sh"
   NEW_CONSOLE_CMD+=" --console-discard-stderr"
   NEW_CONSOLE_CMD+=" --console-icon=audio-card"
   NEW_CONSOLE_CMD+=" --console-title=\"Arduino Due GDB\""
