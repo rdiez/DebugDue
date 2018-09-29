@@ -69,7 +69,8 @@ run_cmd ()
 
 # ----- Entry point -----
 
-GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- ".")"
+TOOLS_DIR="$(readlink --canonicalize --verbose -- ".")"
+GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "..")"
 declare -r TOOLCHAIN_DIR="$GIT_REPOSITORY_BASE/Toolchain"
 
 if [ $# -ne 0 ]; then
@@ -91,7 +92,7 @@ mkdir --parents -- "$OUTPUT_BASE_DIR"
 
 echo "Rotating test output directory..."
 
-ROTATED_DIR="$(perl "RotateDir.pl" --slot-count "$ROTATE_DIR_SLOT_COUNT" --dir-name-prefix "ToolchainMakefileTest-" --dir-naming-scheme="date" --output-only-new-dir-name "$OUTPUT_BASE_DIR")"
+ROTATED_DIR="$(perl "$TOOLS_DIR/RotateDir.pl" --slot-count "$ROTATE_DIR_SLOT_COUNT" --dir-name-prefix "ToolchainMakefileTest-" --dir-naming-scheme="date" --output-only-new-dir-name "$OUTPUT_BASE_DIR")"
 
 echo "Test output directory rotated. The output directory is:"
 echo "  $ROTATED_DIR"
