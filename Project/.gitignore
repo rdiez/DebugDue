@@ -1,16 +1,8 @@
-m4/
-autom4te/
 autom4te.cache/
-config.guess
-config.sub
+build-aux/
 configure
 Makefile.in
 aclocal.m4
-depcomp
-install-sh
-ltmain.sh
-missing
-compile
 
 # Symbolic link that gets created automatically.
 AsfSrc

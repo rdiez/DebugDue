@@ -9,6 +9,9 @@
 AC_INIT([JtagDue],[1.1.6])
 AC_PREREQ([2.69])  # Tested mainly with version 2.69.
 
+# Place auxiliary files in a subdirectory in order to reduce clutter in the top-level project directory.
+AC_CONFIG_AUX_DIR([build-aux])
+
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
                    # see the toolchain makefile for more information about why this is needed. Short version:
                    # libgloss was not adapted for our board, so the toolchain alone cannot build executables.
