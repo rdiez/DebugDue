@@ -8,7 +8,7 @@ set -o pipefail
 
 
 declare -r SCRIPT_NAME="DownloadTarball.sh"
-declare -r VERSION_NUMBER="1.04"
+declare -r VERSION_NUMBER="1.05"
 
 declare -r EXIT_CODE_SUCCESS=0
 declare -r EXIT_CODE_ERROR=1
@@ -161,7 +161,7 @@ parse_command_line_arguments ()
     echo "USER_SHORT_OPTIONS_SPEC: $USER_SHORT_OPTIONS_SPEC"
     echo "Contents of USER_LONG_OPTIONS_SPEC:"
     for key in "${!USER_LONG_OPTIONS_SPEC[@]}"; do
-      printf -- "- %s=%s\n" "$key" "${USER_LONG_OPTIONS_SPEC[$key]}"
+      printf -- "- %s=%s\\n" "$key" "${USER_LONG_OPTIONS_SPEC[$key]}"
     done
   fi
 
@@ -287,7 +287,7 @@ if ! [ -d "$DESTINATION_DIR" ]; then
   abort "Destination directory \"$DESTINATION_DIR\" does not exist."
 fi
 
-DESTINATION_DIR_ABS="$(readlink --verbose --canonicalize "$DESTINATION_DIR")"
+DESTINATION_DIR_ABS="$(readlink --verbose --canonicalize -- "$DESTINATION_DIR")"
 
 NAME_ONLY="${URL##*/}"
 

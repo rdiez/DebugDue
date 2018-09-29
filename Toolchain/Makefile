@@ -1070,7 +1070,7 @@ $(TARGET_NAME_CLEAN):
 
 GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
 
-DOWNLOAD_TARBALL_TOOL_PATH := ./DownloadTarball.sh
+DOWNLOAD_TARBALL_TOOL_PATH := $(THIS_MAKEFILE_DIR)/DownloadTarball.sh
 
 # An alternative to this target could be script contrib/download_prerequisites in the GCC sources.
 $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
