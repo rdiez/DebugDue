@@ -95,6 +95,10 @@ Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
 =item * The build script can optionally use L<< ccache|https://en.wikipedia.org/wiki/Ccache >>, which can possibly reduce compilation times.
 
+=item * The build script can skip reprogramming the target if the binary has not changed.
+
+Restarting the firmware under the debugger is almost instantaneous.
+
 =back
 
 =head2 About the Toolchain Builder Makefile
