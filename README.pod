@@ -254,7 +254,7 @@ Pre-built binary files are available in a separate repository at S<< L<< https:/
 These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
 in order to flash a pre-built binary file.
 
-=head2 Building by hand
+=head2 Building by Hand
 
 =over
 
@@ -280,6 +280,8 @@ My old laptop with an Intel Core i3 M 380 running at 2.53 GHz, with a traditiona
 Building on Cygwin takes longer. A much faster Intel Core i3-6100 CPU running at 3.70 GHz needs 1 hour 7 min.
 
 For a toolchain with GCC 7.3, the installation directory needs 169 MB, and the build directory 2.1 GB. But sizes can vary depending on the build flags.
+
+If you are experimenting with toolchains and will be building them often, you may find the following scripts handy: L<< background.sh|https://github.com/rdiez/Tools/tree/master/Background >> (limits overall performance impact and provides a convenient notification) and L<< MountMyRamDiskIfNecessary.sh|https://github.com/rdiez/Tools/tree/master/MountRamDisk >> (speeds up the build considerably).
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 
