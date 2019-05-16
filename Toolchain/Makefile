@@ -502,7 +502,7 @@ $(TOOLCHAIN_OBJ_DIR_SENTINEL):
 
 $(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(BINUTILS_TAR_FILE) ..." && \
-	if [ -d "$(BINUTILS_SRC_DIR)" ]; then rm -rf "$(BINUTILS_SRC_DIR)"; fi && \
+	if [ -d "$(BINUTILS_SRC_DIR)" ]; then rm -rf -- "$(BINUTILS_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(BINUTILS_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -511,7 +511,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 
 $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
-	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf "$(BINUTILS_OBJ_DIR)"; fi && \
+	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
 	$(BINUTILS_SRC_DIR)/configure --help && \
@@ -550,7 +550,7 @@ $(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 
 $(GMP_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(GMP_TAR_FILE) ..." && \
-	if [ -d "$(GMP_SRC_DIR)" ]; then rm -rf "$(GMP_SRC_DIR)"; fi && \
+	if [ -d "$(GMP_SRC_DIR)" ]; then rm -rf -- "$(GMP_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GMP_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -559,7 +559,7 @@ $(GMP_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 
 $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)" && \
-	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf "$(GMP_OBJ_DIR)"; fi && \
+	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
 	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
 	$(GMP_SRC_DIR)/configure --help && \
@@ -597,7 +597,7 @@ $(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
 
 $(MPFR_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(MPFR_TAR_FILE) ..." && \
-	if [ -d "$(MPFR_SRC_DIR)" ]; then rm -rf "$(MPFR_SRC_DIR)"; fi && \
+	if [ -d "$(MPFR_SRC_DIR)" ]; then rm -rf -- "$(MPFR_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPFR_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -606,7 +606,7 @@ $(MPFR_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 
 $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)" && \
-	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf "$(MPFR_OBJ_DIR)"; fi && \
+	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
 	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
 	$(MPFR_SRC_DIR)/configure --help && \
@@ -645,7 +645,7 @@ $(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
 
 $(MPC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(MPC_TAR_FILE) ..." && \
-	if [ -d "$(MPC_SRC_DIR)" ]; then rm -rf "$(MPC_SRC_DIR)"; fi && \
+	if [ -d "$(MPC_SRC_DIR)" ]; then rm -rf -- "$(MPC_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPC_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -654,7 +654,7 @@ $(MPC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 
 $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
 	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)" && \
-	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf "$(MPC_OBJ_DIR)"; fi && \
+	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
 	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
 	$(MPC_SRC_DIR)/configure --help && \
@@ -694,7 +694,7 @@ $(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
 
 $(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(GCC_TAR_FILE) ..." && \
-	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf "$(GCC_SRC_DIR)"; fi && \
+	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf -- "$(GCC_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GCC_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -717,7 +717,7 @@ endif
 
 $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)" && \
-	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf "$(GCC1_OBJ_DIR)"; fi && \
+	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
 	$(GCC_SRC_DIR)/configure --help && \
@@ -750,7 +750,7 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 
 $(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(NEWLIB_TAR_FILE) ..." && \
-	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf "$(NEWLIB_UNTAR_DIR)"; fi && \
+	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf -- "$(NEWLIB_UNTAR_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(NEWLIB_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -812,7 +812,7 @@ NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
 $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
-	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
+	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
 	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
@@ -851,7 +851,7 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 # even if the PATH is not set.
 $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
 	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)" && \
-    if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf "$(GCC2_OBJ_DIR)"; fi && \
+    if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf -- "$(GCC2_OBJ_DIR)"; fi && \
     mkdir --parents -- "$(GCC2_OBJ_DIR)" && \
     pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
     PATH=$(PATH_DIR):$$PATH \
@@ -917,7 +917,7 @@ GDB_INSTALL_TARGET := install
 
 $(GDB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
-	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf "$(GDB_SRC_DIR)"; fi && \
+	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf -- "$(GDB_SRC_DIR)"; fi && \
 	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GDB_TAR_FILE)" && \
 	popd >/dev/null && \
@@ -926,7 +926,7 @@ $(GDB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 
 $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)" && \
-	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf "$(GDB_OBJ_DIR)"; fi && \
+	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
 	$(GDB_SRC_DIR)/configure --help && \
@@ -1065,7 +1065,7 @@ $(TARGET_NAME_ALL): $(TARGET_ALL_SENTINEL)
 # does not work correctly.
 $(TARGET_NAME_CLEAN):
 	@echo "Deleting directory \"$(TOOLCHAIN_OBJ_DIR)\"..."
-	rm -rf "$(TOOLCHAIN_OBJ_DIR)"
+	rm -rf -- "$(TOOLCHAIN_OBJ_DIR)"
 	@echo "Finished. You may want to delete the toolchain installation directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
 
 
