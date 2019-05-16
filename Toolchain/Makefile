@@ -1025,6 +1025,7 @@ $(TARGET_NAME_HELP):
 	@echo "   builds GMP, MPFR and MPC itself by default."
 	@echo "   Consult GCC's and GDB's documentation for details."
 	@echo "   On Ubuntu/Debian systems, installing package 'build-essential' gets you a long way."
+	@echo "   Package 'libsource-highlight-dev' provides syntax highlighting in GDB."
 	@echo "   On Windows/Cygwin, install these packages: gcc-core gcc-g++ automake make curl patch libtool"
 	@echo
 	@echo "6) Run this makefile for target '$(TARGET_NAME_ALL)'. The recommended command is:"
