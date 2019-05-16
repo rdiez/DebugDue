@@ -108,6 +108,7 @@ add_generated_file_to_scripts ()
   # 2) Append to GDB.
 
   # GDB does not stop when a command fails, and there is no error indication either in the exit status.
+  # Later note: That has changed in GDB version 8.3: "GDB in batch mode now exits with status 1 if the last executed command failed."
   # That means any files received in a previous run may remain there, and the verify script may then succeed
   # after GDB has actually failed to do anything.
   # In order to avoid confusion, delete each previously-received file before starting the transfer.
