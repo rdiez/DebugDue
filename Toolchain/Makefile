@@ -924,7 +924,7 @@ $(GDB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
 	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
 	echo "Unpacking GDB finished."
 
-$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
+$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
@@ -936,6 +936,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	    $(CONFIG_CACHE_OPTION)  \
 	    $(HOST_FLAGS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	    --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
 	echo "The GDB configuration has finished."
