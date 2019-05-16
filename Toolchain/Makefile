@@ -71,14 +71,17 @@ endif
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-VERSION_SET := VersionSet1
+VERSION_SET := VersionSet2
 
 ifeq ($(VERSION_SET),VersionSet1)
 
   # This is the version set I have tested most.
 
   BINUTILS_VERSION := 2.30
+
+  # Unfortunately, GMP version 6.1.2 is known to fail "make check" test 't-get_d_2exp' when building with LTO.
   GMP_VERSION := 6.1.2
+
   MPFR_VERSION := 3.1.6
   MPC_VERSION := 1.0.3
   GCC_VERSION := 7.3.0
@@ -87,17 +90,21 @@ ifeq ($(VERSION_SET),VersionSet1)
 
 else ifeq ($(VERSION_SET),VersionSet2)
 
-  # I have not tested this version set thoroughly yet.
-  # I immediately hit the following GDB 8.1 bug, so I am waiting for GDB 8.2:
-  #   https://sourceware.org/bugzilla/show_bug.cgi?id=23010
+  BINUTILS_VERSION := 2.32
 
-  BINUTILS_VERSION := 2.31.1
+  # Unfortunately, GMP version 6.1.2 is known to fail "make check" test 't-get_d_2exp' when building with LTO.
   GMP_VERSION := 6.1.2
-  MPFR_VERSION := 3.1.6
+
+  MPFR_VERSION := 4.0.2
   MPC_VERSION := 1.1.0
-  GCC_VERSION := 8.2.0
-  NEWLIB_VERSION := 3.0.0.20180802
-  GDB_VERSION := 8.1.1
+  GCC_VERSION := 8.3.0
+  NEWLIB_VERSION := 3.1.0
+
+  # Do not use GDB versions 8.1.x or 8.2.x with GCC 8.x, or you will
+  # immediately hit the following issue when debugging binaries built with LTO:
+  #   Assertion: SYMBOL_LANGUAGE (sym) == DICT_LANGUAGE (dict)->la_language
+  #   https://sourceware.org/bugzilla/show_bug.cgi?id=23010
+  GDB_VERSION := 8.3
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
@@ -127,9 +134,8 @@ HF += -g0
 
 # The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
 # so we want to optimise them as much as we reasonably can.
-# In the future, when building the toolchain with GCC version 7 and onwards,
-# we should try and build with LTO.
-HF += -O3
+# If your host compiler ist GCC version 7 or newer, you can enable LTO builds here.
+HF += -O3 -flto
 
 # Building for the current CPU makes this toolchain not portable, but can yield
 # a good performance boost, especially on newer CPUs.
