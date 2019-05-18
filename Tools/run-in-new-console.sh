@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 
-declare -r VERSION_NUMBER="1.13"
+declare -r VERSION_NUMBER="1.15"
 declare -r SCRIPT_NAME="run-in-new-console.sh"
 
 declare -r RUN_IN_NEW_CONSOLE_TERMINAL_TYPE_ENV_VAR_NAME="RUN_IN_NEW_CONSOLE_TERMINAL_TYPE"
@@ -423,7 +423,7 @@ printf -v QUOTED_CMD_ARG "%q" "$CMD_ARG"
 
 # We promised the user that we would run his command with "bash -c", so do not concatenate the command string
 # or use 'eval' here, but issue a "bash -c" as promised.
-CMD3="echo $QUOTED_CMD_ARG && bash -c $QUOTED_CMD_ARG"
+CMD3="echo $QUOTED_CMD_ARG && echo && bash -c $QUOTED_CMD_ARG"
 
 
 if false; then
@@ -553,7 +553,7 @@ if $USE_MATE_TERMINAL; then
     # Unfortunately, mate-terminal does not support --icon anymore.
     # I submitted a request to get this option back:
     #   https://github.com/mate-desktop/mate-terminal/issues/246
-    abort "$PROGRAM_MATE_TERMINAL does not support setting an application icon with option --console-icon ."
+    echo "Warning: $PROGRAM_MATE_TERMINAL does not support setting an application icon with option --console-icon ." >&2
   fi
 
   if [ $CONSOLE_NO_CLOSE -ne 0 ]; then
