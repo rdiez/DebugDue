@@ -71,7 +71,7 @@ endif
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-VERSION_SET := VersionSet2
+VERSION_SET := VersionSet3
 
 ifeq ($(VERSION_SET),VersionSet1)
 
@@ -93,6 +93,7 @@ else ifeq ($(VERSION_SET),VersionSet2)
   BINUTILS_VERSION := 2.32
 
   # Unfortunately, GMP version 6.1.2 is known to fail "make check" test 't-get_d_2exp' when building with LTO.
+  # But it looks alright With the GMP version 6.2.0 and GCC 9.3, as used in VersionSet3 below.
   GMP_VERSION := 6.1.2
 
   MPFR_VERSION := 4.0.2
@@ -105,6 +106,16 @@ else ifeq ($(VERSION_SET),VersionSet2)
   #   Assertion: SYMBOL_LANGUAGE (sym) == DICT_LANGUAGE (dict)->la_language
   #   https://sourceware.org/bugzilla/show_bug.cgi?id=23010
   GDB_VERSION := 8.3
+
+else ifeq ($(VERSION_SET),VersionSet3)
+
+  BINUTILS_VERSION := 2.34
+  GMP_VERSION := 6.2.0
+  MPFR_VERSION := 4.0.2
+  MPC_VERSION := 1.1.0
+  GCC_VERSION := 9.3.0
+  NEWLIB_VERSION := 3.3.0
+  GDB_VERSION := 9.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
