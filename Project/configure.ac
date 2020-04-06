@@ -113,7 +113,24 @@ else
     if true; then
       # The GCC toolchain is built with --enable-lto. I hope that makes it build the C runtime library,
       # libstdc++, etc. with -flto. We should probably build newlib with LTO enabled too.
-      BUILD_FLAGS+=" -flto"
+
+      # GCC's option "-flto=jobserver" only works properly if the make recipe starts with the special character '+',
+      # so that GNU Make passes the jobserver file descriptors to the child process.
+      #   LTO_PARALLEL_LEVEL="jobserver"
+      # Unfortunately, that is not possible with Automake 1.15.1. I asked in the Automake mailing list to no avail:
+      #   Subject: Prepending '+' to the recipe line when linking with GCC's -flto=jobserver
+      #   URL: https://lists.gnu.org/archive/html/automake/2020-02/msg00012.html
+      # As a workaround, I am requesting as many threads as CPU cores + 1. This is not ideal if you are using
+      # a top-level jobserver to build several projects like this one in parallel.
+      LTO_PARALLEL_LEVEL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+
+      BUILD_FLAGS+=" -flto=$LTO_PARALLEL_LEVEL"
+
+      # Compilation is faster without "fat LTO objects", and the .o files are also significantly smaller.
+      # The following option is not really necessary, because that mode is actually the default in our toolchain,
+      # but the option and this comment acts as a reminder, so that I do not have to think about it again.
+      # Note that you cannot perform a regular, non-LTO link with non-fat object files.
+      BUILD_FLAGS+=" -fno-fat-lto-objects"
     fi
 
     IS_DEBUG_BUILD=false
