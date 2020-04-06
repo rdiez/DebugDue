@@ -447,9 +447,10 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   IS_GCC_6_X   := $(filter 6.%,$(GCC_VERSION))
   IS_GCC_7_X   := $(filter 7.%,$(GCC_VERSION))
   IS_GCC_8_X   := $(filter 8.%,$(GCC_VERSION))
+  IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
 
-  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X) )" ""
-    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x, 8.x
+  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X) )" ""
+    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x, 8.x, 9.x
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
     $(error Unknown GCC version)
