@@ -165,6 +165,7 @@ fi
 # Create or update the symbolic link to the ASF.
 # Using a symbolic link is the only way I found that works well with Automake's option 'subdir-objects'.
 # Otherwise, trying to compile files that live out of the source tree will give you strange warnings at the very least.
+# Later note: This might have been fixed in Automake version 1.16.
 ASF_LINK="$srcdir/AsfSrc"
 ln --symbolic --no-dereference --force -- "$ASF_BASEDIR" "$ASF_LINK"
 
