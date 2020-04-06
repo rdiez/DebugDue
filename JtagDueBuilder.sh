@@ -836,7 +836,12 @@ do_build ()
 
   MAKE_CMD+=" --no-builtin-rules"
 
-  # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment this line out:
+  # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment the following line out.
+  #
+  # Note that you should be using GNU Make 4.3 or later, because older GNU Make versions have issues with parallel builds:
+  #   A change to how pipe waiting works promises to speed up parallel kernel builds - always a kernel developer's favorite
+  #   workload - but can also trigger a bug with old versions of GNU Make.
+  #   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0ddad21d3e99
   MAKE_CMD+=" --output-sync=recurse"
 
   add_make_parallel_jobs_flag
