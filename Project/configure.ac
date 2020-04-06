@@ -367,16 +367,25 @@ AC_CONFIG_FILES(
 AC_OUTPUT
 
 
-SHOW_AUTOTOOLS_VERSIONS=false
+# Optionally show the Autotools versions this script is using.
 
-if $SHOW_AUTOTOOLS_VERSIONS; then
-  echo "Autotools versions:"
+SHOW_TOOL_VERSIONS=false
+
+if $SHOW_TOOLS_VERSIONS; then
+
+  echo "Tool versions:"
+
+  TMP_TXT="$(make --version)"
+  head -n 1 - <<<"- $TMP_TXT"
 
   TMP_TXT="$(autoconf --version)"
   head -n 1 - <<<"- $TMP_TXT"
 
   TMP_TXT="$(automake --version)"
   head -n 1 - <<<"- $TMP_TXT"
+
+  # We could also show the libtool version here, but we are not using it at all,
+  # so it may not even be installed.
 fi
 
 
