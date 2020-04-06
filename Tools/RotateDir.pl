@@ -2,7 +2,7 @@
 
 =head1 OVERVIEW
 
-RotateDir version 2.08
+RotateDir version 2.09
 
 This tool makes room for a new slot, deleting older slots if necessary. Each slot is just a directory on disk.
 
@@ -228,7 +228,7 @@ use IO::Handle;
 use Pod::Usage;
 use Class::Struct;
 
-use constant SCRIPT_VERSION => "2.07";  # If you update it, update also the perldoc text above.
+use constant SCRIPT_VERSION => "2.09";  # If you update it, update also the perldoc text above.
 
 use constant EXIT_CODE_SUCCESS       => 0;
 use constant EXIT_CODE_FAILURE_ARGS  => 1;
@@ -282,7 +282,7 @@ sub main ()
   my $arg_noSlotDeletion   = 0;
   my $arg_noSlotCreation   = 0;
 
-  Getopt::Long::Configure( "no_auto_abbrev",  "prefix_pattern=(--|-)" );
+  Getopt::Long::Configure( "no_auto_abbrev", "prefix_pattern=(--|-)", "no_ignore_case" );
 
   my $result = GetOptions(
                  'help'                =>  \$arg_help,

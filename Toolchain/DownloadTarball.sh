@@ -8,10 +8,13 @@ set -o pipefail
 
 
 declare -r SCRIPT_NAME="DownloadTarball.sh"
-declare -r VERSION_NUMBER="1.05"
+declare -r VERSION_NUMBER="1.08"
 
-declare -r EXIT_CODE_SUCCESS=0
-declare -r EXIT_CODE_ERROR=1
+declare -r -i EXIT_CODE_SUCCESS=0
+declare -r -i EXIT_CODE_ERROR=1
+
+declare -r -i BOOLEAN_TRUE=0
+declare -r -i BOOLEAN_FALSE=1
 
 declare -r DOWNLOAD_IN_PROGRESS_SUBDIRNAME="download-in-progress"
 
@@ -35,12 +38,32 @@ create_dir_if_not_exists ()
 }
 
 
+is_dir_empty ()
+{
+  shopt -s nullglob
+  shopt -s dotglob  # Include hidden files.
+
+  # Command 'local' is in a separate line, in order to prevent masking any error from the external command (or operation) invoked.
+  local -a FILES
+  FILES=( "$1"/* )
+
+  if [ ${#FILES[@]} -eq 0 ]; then
+    return $BOOLEAN_TRUE
+  else
+    if false; then
+      echo "Files found: ${FILES[*]}"
+    fi
+    return $BOOLEAN_FALSE
+  fi
+}
+
+
 display_help ()
 {
 cat - <<EOF
 
 $SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3
+Copyright (c) 2014-2019 R. Diez - Licensed under the GNU AGPLv3
 
 This script reliably downloads a tarball by testing its integrity before
 committing the downloaded file to the destination directory.
@@ -78,6 +101,9 @@ Options:
                               created with 'mktemp'. Otherwise, "tar --to-stdout" is used,
                               which should be just as reliable for test purposes.
                               This option makes no difference for .zip files.
+ --delete-download-dir  Delete the '$DOWNLOAD_IN_PROGRESS_SUBDIRNAME' subdirectory if
+                        successful and empty. Do not use this option if running
+                        several instances of this script in parallel.
 
 Usage example:
   % mkdir somedir
@@ -145,6 +171,9 @@ process_command_line_argument ()
     test-with-full-extraction)
         TEST_WITH_FULL_EXTRACTION=true
         ;;
+    delete-download-dir)
+       DELETE_DOWNLOAD_DIR=true
+       ;;
     *)  # We should actually never land here, because parse_command_line_arguments() already checks if an option is known.
         abort "Unknown command-line option \"--${OPTION_NAME}\".";;
   esac
@@ -218,6 +247,10 @@ parse_command_line_arguments ()
              OPTARG_AS_ARRAY=("")
              process_command_line_argument
            elif (( OPT_ARG_COUNT == 1 )); then
+             # If this is the last option, and its argument is missing, then OPTIND is out of bounds.
+             if (( OPTIND > $# )); then
+               abort "Option '--$OPTION_NAME' expects one argument, but it is missing."
+             fi
              OPTARG="${!OPTIND}"
              OPTARG_AS_ARRAY=("")
              process_command_line_argument
@@ -268,9 +301,11 @@ USER_LONG_OPTIONS_SPEC+=( [help]=0 )
 USER_LONG_OPTIONS_SPEC+=( [version]=0 )
 USER_LONG_OPTIONS_SPEC+=( [license]=0 )
 USER_LONG_OPTIONS_SPEC+=( [test-with-full-extraction]=0 )
+USER_LONG_OPTIONS_SPEC+=( [delete-download-dir]=0 )
 USER_LONG_OPTIONS_SPEC+=( [unpack-to]=1 )
 
 TEST_WITH_FULL_EXTRACTION=false
+DELETE_DOWNLOAD_DIR=false
 UNPACK_TO_DIR=""
 
 parse_command_line_arguments "$@"
@@ -295,6 +330,9 @@ FINAL_FILENAME="$DESTINATION_DIR_ABS/$NAME_ONLY"
 
 if [ -f "$FINAL_FILENAME" ]; then
   echo "Skipping file \"$URL\", as it already exists in the destination directory."
+
+  # If option --delete-download-dir was given, we could try to delete the directory here.
+
   exit $EXIT_CODE_SUCCESS
 fi
 
@@ -406,5 +444,13 @@ if [ $TAR_EXIT_CODE -ne 0 ]; then
 fi
 
 mv "$TEMP_FILENAME" "$FINAL_FILENAME"
+
+if $DELETE_DOWNLOAD_DIR; then
+  if is_dir_empty "$DOWNLOAD_IN_PROGRESS_PATH"; then
+    rmdir -- "$DOWNLOAD_IN_PROGRESS_PATH"
+  else
+    echo "Not deleting the download directory because it is not empty: $DOWNLOAD_IN_PROGRESS_PATH"
+  fi
+fi
 
 # echo "Finished downloading file \"$URL\" to \"$FINAL_FILENAME\"."

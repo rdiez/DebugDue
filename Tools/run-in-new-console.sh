@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 
-declare -r VERSION_NUMBER="1.15"
+declare -r VERSION_NUMBER="1.17"
 declare -r SCRIPT_NAME="run-in-new-console.sh"
 
 declare -r RUN_IN_NEW_CONSOLE_TERMINAL_TYPE_ENV_VAR_NAME="RUN_IN_NEW_CONSOLE_TERMINAL_TYPE"
@@ -89,6 +89,7 @@ Options:
                       - 'mate-terminal' for mate-terminal, the usual MATE Desktop terminal.
                       - 'konsole' for Konsole, the usual KDE terminal.
                       - 'xfce4-terminal' for xfce4-terminal, the usual Xfce terminal.
+                      - 'xterm'
 
  --console-title="my title"
 
@@ -271,6 +272,10 @@ parse_command_line_arguments ()
              OPTARG_AS_ARRAY=("")
              process_command_line_argument
            elif (( OPT_ARG_COUNT == 1 )); then
+             # If this is the last option, and its argument is missing, then OPTIND is out of bounds.
+             if (( OPTIND > $# )); then
+               abort "Option '--$OPTION_NAME' expects one argument, but it is missing."
+             fi
              OPTARG="${!OPTIND}"
              OPTARG_AS_ARRAY=("")
              process_command_line_argument
@@ -324,6 +329,7 @@ is_tool_installed ()
 declare -r PROGRAM_KONSOLE="konsole"
 declare -r PROGRAM_XFCE4_TERMINAL="xfce4-terminal"
 declare -r PROGRAM_MATE_TERMINAL="mate-terminal"
+declare -r PROGRAM_XTERM="xterm"
 
 automatically_determine_terminal_type ()
 {
@@ -343,6 +349,10 @@ automatically_determine_terminal_type ()
              return
            fi;;
 
+    XTERM)  if is_tool_installed "$PROGRAM_XTERM"; then
+             USE_XTERM=true
+             return
+           fi;;
     *) ;;
   esac
 
@@ -361,6 +371,11 @@ automatically_determine_terminal_type ()
 
   if is_tool_installed "$PROGRAM_XFCE4_TERMINAL"; then
     USE_XFCE4_TERMINAL=true
+    return
+  fi
+
+  if is_tool_installed "$PROGRAM_XTERM"; then
+    USE_XTERM=true
     return
   fi
 
@@ -399,6 +414,7 @@ parse_command_line_arguments "$@"
 USE_MATE_TERMINAL=false
 USE_KONSOLE=false
 USE_XFCE4_TERMINAL=false
+USE_XTERM=false
 
 
 if [[ $TERMINAL_TYPE == auto ]]; then
@@ -410,6 +426,7 @@ case "${TERMINAL_TYPE}" in
   mate-terminal)  USE_MATE_TERMINAL=true;;
   konsole)        USE_KONSOLE=true;;
   xfce4-terminal) USE_XFCE4_TERMINAL=true;;
+  xterm)          USE_XTERM=true;;
   *) abort "Unknown terminal type \"$TERMINAL_TYPE\".";;
 esac
 
@@ -563,6 +580,32 @@ if $USE_MATE_TERMINAL; then
   printf -v CMD5 "%q" "$CMD4"
 
   CONSOLE_CMD+=" --command=$CMD5"
+
+fi
+
+
+if $USE_XTERM; then
+
+  printf -v CONSOLE_CMD "%q" "$PROGRAM_XTERM"
+
+  if [[ $CONSOLE_TITLE != "" ]]; then
+    CONSOLE_CMD+=" -title $CONSOLE_TITLE_QUOTED"
+  fi
+
+  if [[ $CONSOLE_ICON != "" ]]; then
+    # CONSOLE_CMD+=" -xrm XTerm.iconName:\\ $CONSOLE_ICON_QUOTED"
+    # CONSOLE_CMD+=" -n $CONSOLE_ICON_QUOTED"
+    echo "Warning: I could not get $PROGRAM_XTERM to honour the icon set with option --console-icon ." >&2
+  fi
+
+  if [ $CONSOLE_NO_CLOSE -ne 0 ]; then
+    CONSOLE_CMD+=" -hold"
+  fi
+
+  printf -v CMD5 "%q" "$CMD4"
+
+  # Note that the -e option must be the last one.
+  CONSOLE_CMD+=" -e $CMD5"
 
 fi
 
