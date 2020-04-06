@@ -135,7 +135,10 @@ HF += -g0
 # The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
 # so we want to optimise them as much as we reasonably can.
 # If your host compiler ist GCC version 7 or newer, you can enable LTO builds here.
-HF += -O3 -flto
+# See the project's configure.ac file for more information about why we are
+# not using "-flto=jobserver" here.
+LTO_PARALLEL_LEVEL=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
+HF += -O3 -flto=$(LTO_PARALLEL_LEVEL)
 
 # Building for the current CPU makes this toolchain not portable, but can yield
 # a good performance boost, especially on newer CPUs.
