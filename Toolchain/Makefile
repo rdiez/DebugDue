@@ -6,13 +6,45 @@
 
 .DELETE_ON_ERROR:
 
-# This makefile has only been tested with bash.
-# Option 'pipefail' is necessary. Otherwise, piping to 'tee' would mask any errors on
-# the left side of the pipeline.
-SHELL := bash -o nounset -o pipefail
+
+# Setting option '--no-builtin-variables' inside the makefile has no effect, at least with GNU Make version 4.3.
+# I guess it is too late. That means that option '--no-builtin-rules' does not get automatically enabled either.
+# I recommend that you call this makefile with option '--no-builtin-variables'. This makes the makefile
+# more robust, because this makefile is designed to define all variables it needs.
+#   MAKEFLAGS += --no-builtin-variables
+
+# Disable all implicit rules, in case the user did not specify '--no-builtin-variables' in the command line.
+# This makefile defines all rules it needs because it is then easier to debug.
+# Besides, if implicit rules are active, GNU Make seems to look for many different possible source file types
+# when trying to find a suitable rule for each target file. That can trigger many stat syscalls per target file,
+# dramatically slowing down makefiles for large projects.
+# Turning implicit rules off at this point is actually a little late. If you run the makefile with option '--debug=a',
+# you will see messages like this:
+#   Considering target file 'Makefile'.
+#    Looking for an implicit rule for 'Makefile'.
+#    No implicit rule found for 'Makefile'.
+# But that only happens for the Makefile itself and it does not really matter.
+MAKEFLAGS += --no-builtin-rules
+
+# This makefile defines all variables that its recipes needs. Turning on the following warning
+# makes the makefile easier to debug.
+MAKEFLAGS += --warn-undefined-variables
+
+# Unfortunately, this option leads to long periods of time with no output, followed by large bursts of output.
+# It is annoying, but it is actually the only sane way of generating a build log.
+# This option is only available in GNU Make version 4.0 (released in 2013) or later.
+MAKEFLAGS += --output-sync=recurse
+
+
+# This makefile has only been tested with Bash.
+# Option 'pipefail' is necessary. Otherwise, piping to 'tee' would mask any errors on the left side of the pipeline.
+# Option 'nounset' helps us debug this makefile.
+# Option 'errexit' makes it pretty hard to ignore errors. For example, a recipe like "false; true" would now fail.
+# GNU Make appends option '-c' and a single argument with the command to execute.
+SHELL := bash  -o nounset  -o pipefail  -o errexit
 # This way of passing shell options is only available in modern GNU Make versions,
-# and not in version 3.81 shipped with Ubuntu 14.04:
-#   .SHELLFLAGS := -o nounset -o pipefail -e -c
+# and not in version 3.81 shipped with Ubuntu 14.04. Option -e is equivalent to "-o errexit":
+#   .SHELLFLAGS := -o nounset  -o pipefail  -e  -c
 
 
 # ------- Common variables -------
@@ -742,7 +774,9 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
+	echo "Help text from GCC's 'configure' script:" && \
 	$(GCC_SRC_DIR)/configure --help && \
+	echo "Configuring GCC:" && \
 	PATH=$(PATH_DIR):$$PATH \
 	  $(GCC_SRC_DIR)/configure \
 	    --enable-languages=c \
@@ -1056,11 +1090,9 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "   make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-14-bin\" \\"
 	@echo "       CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-14-build\" \\"
-	@echo "       --no-builtin-variables --warn-undefined-variables \\"
-	@echo "       --output-sync=recurse  -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\" \\"
+	@echo "       --no-builtin-variables \\"
+	@echo "       -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\" \\"
 	@echo "       $(TARGET_NAME_ALL)"
-	@echo
-	@echo "   Option '--output-sync=recurse' above is only available in GNU Make version 4.0 or later."
 	@echo
 	@echo "7) If you are worried whether the generated toolchain is reliable,"
 	@echo "   run target '$(TARGET_NAME_CHECK)' at the end."

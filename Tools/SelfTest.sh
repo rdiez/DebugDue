@@ -118,10 +118,13 @@ popd  >/dev/null
 
 pushd "$COPY_OF_TOOLCHAIN_DIRNAME" >/dev/null
 
-declare -r USUAL_ARGS="--no-builtin-variables  --warn-undefined-variables"
+# Option '--warn-undefined-variables' is no longer necessary below, because the makefile sets this itself.
+declare -r USUAL_ARGS="--no-builtin-variables"
 
 PARALLEL_COUNT="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
-declare -r PARALLEL_ARGS="--output-sync=recurse  -j $PARALLEL_COUNT"
+
+# Option '--output-sync=recurse' is no longer necessary below, because the makefile sets this itself.
+declare -r PARALLEL_ARGS="-j $PARALLEL_COUNT"
 
 
 # Running make without arguments should just display the help text.
