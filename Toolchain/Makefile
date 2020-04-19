@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2019 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2020 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 .DELETE_ON_ERROR:
@@ -135,6 +135,7 @@ INSTALL_TARGET := install-strip
 
 
 # These are the compilation flags for the toolchain itself when running on the cross-compiling PC.
+# HF stands for "Host Flags".
 HF :=
 
 # Building without debug information cuts the Binutils build time alone with GCC 5.4.0 and
@@ -247,25 +248,25 @@ TOOLCHAIN_OBJ_DIR_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Mk
 # WARNING: The following components must be ABI compatible, which means they must be compiled
 #          with similar CFLAGS:
 # - Newlib
-#   Keep in mind that Newlib's configure.host  may provide additional compilation flags.
+#   Keep in mind that Newlib's configure.host may provide additional compilation flags.
 #   The best thing to do is probably to run this makefile once and then look for the compilation flags
 #   in the log output of some Newlib source file like "strlen.c".
 # - GCC's libgcc und libstdc++
 # - Your operating system and application, so you will have to keep the CFLAGS/CXXFLAGS in your
 #   own makefile in sync with this one.
 
-COMMON_CFLAGS :=
+COMMON_CFLAGS_FOR_TARGET :=
 
 
 # --- Debug oder Release Toolchain.
 
 ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 0)
-  COMMON_CFLAGS += -g -Os
+  COMMON_CFLAGS_FOR_TARGET += -g -Os
   ifeq ($(IS_BUILDING),1)
     $(info Building a release (non-debug) toolchain.)
   endif
 else ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 1)
-  COMMON_CFLAGS += -g -Og -DDEBUG
+  COMMON_CFLAGS_FOR_TARGET += -g -Og -DDEBUG
   ifeq ($(IS_BUILDING),1)
     $(info Building a debug toolchain.)
   endif
@@ -279,13 +280,13 @@ endif
 FLAGS_NO_HARDWARE_FP := --without-fp --with-float=soft
 
 ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m0)
-  COMMON_CFLAGS += -mcpu=cortex-m0 -mthumb
+  COMMON_CFLAGS_FOR_TARGET += -mcpu=cortex-m0 -mthumb
   GCC_FLOATING_POINT_FLAGS := $(FLAGS_NO_HARDWARE_FP)
 else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m3)
-  COMMON_CFLAGS += -mcpu=cortex-m3 -mthumb
+  COMMON_CFLAGS_FOR_TARGET += -mcpu=cortex-m3 -mthumb
   GCC_FLOATING_POINT_FLAGS := $(FLAGS_NO_HARDWARE_FP)
 else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m4f)
-  COMMON_CFLAGS += -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+  COMMON_CFLAGS_FOR_TARGET += -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
   GCC_FLOATING_POINT_FLAGS := # No flags needed here.
 else
   $(error Variable TOOLCHAIN_TARGET_CPU has invalid value "$(TOOLCHAIN_TARGET_CPU)")
@@ -300,14 +301,14 @@ endif
 
 # Frame pointers are generally useful in order to investigate crash dumps or to debug an optimised build.
 # They do cost a little in terms of stack space, code space and performance, though.
-COMMON_CFLAGS += -fno-omit-frame-pointer
-COMMON_CFLAGS += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
-COMMON_CFLAGS += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
+COMMON_CFLAGS_FOR_TARGET += -fno-omit-frame-pointer
+COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
+COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
 # I did one quick test, and enabling exceptions here did not add any code when building the toolchain with -Os
 # and the application without exceptions enabled. Therefore, I am leaving exceptions enabled here
 # even though the application might never not use them.
-#   COMMON_CFLAGS += -fno-exceptions
+#   COMMON_CFLAGS_FOR_TARGET += -fno-exceptions
 
 
 # ------- Binutils flags -------
@@ -411,8 +412,8 @@ GCC2_MAKE_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Make2Sentinel
 GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc2InstallSentinel
 GCC2_CHECK_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc2CheckSentinel
 
-GCC_CFLAGS := $(COMMON_CFLAGS)
-# GCC_CFLAGS += -H  # Print the name of each header file included, useful during development of this makefile.
+GCC_CFLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+# GCC_CFLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
 
 COMMON_GCC_OPTIONS :=
 COMMON_GCC_OPTIONS += $(HOST_FLAGS)
@@ -492,8 +493,8 @@ NEWLIB_NEWLIB_INSTALL_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_P
 NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibUserImplementationOfAssert.patch
 NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibRemoveStrerrorMessages.patch
 
-# NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS)
-NEWLIB_CFLAGS := $(COMMON_CFLAGS)
+# NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
+NEWLIB_CFLAGS := $(COMMON_CFLAGS_FOR_TARGET)
 
 # Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
 # and we don't want that in our memory-constrained embedded environment.
@@ -888,7 +889,7 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
     $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-        CFLAGS_FOR_TARGET="$(GCC_CFLAGS)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS)" && \
+        CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
     echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
     echo "The GCC phase 2 build has finished."
 
@@ -909,7 +910,7 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
     $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
     PATH=$(PATH_DIR):$$PATH \
       $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
-        CFLAGS_FOR_TARGET="$(GCC_CFLAGS)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS)" && \
+        CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
     echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
     echo "The GCC phase 2 check has finished."
 
