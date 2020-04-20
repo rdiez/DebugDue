@@ -7,10 +7,13 @@
 .DELETE_ON_ERROR:
 
 
-# Setting option '--no-builtin-variables' inside the makefile has no effect, at least with GNU Make version 4.3.
-# I guess it is too late. That means that option '--no-builtin-rules' does not get automatically enabled either.
-# I recommend that you call this makefile with option '--no-builtin-variables'. This makes the makefile
-# more robust, because this makefile is designed to define all variables it needs.
+# Setting option '--no-builtin-variables' inside the makefile has no effect, at least when expanding
+# the top-level makefile expressions with GNU Make version 4.3. I guess it is too late to set
+# the option at this point. That means that option '--no-builtin-rules' does not get automatically enabled either.
+# Incidentally, '--no-builtin-variables' does seem to have an effect later on when executing the recipes, which
+# means its behaviour is then inconsistent and confusing if set here.
+# I recommend that you call this makefile with option '--no-builtin-variables' passed in the command-line. This makes
+# the makefile more robust, because this makefile is designed to define all variables it needs.
 #   MAKEFLAGS += --no-builtin-variables
 
 # Disable all implicit rules, in case the user did not specify '--no-builtin-variables' in the command line.
