@@ -57,10 +57,10 @@ THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
 
 
-verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
+# Kept in case I need this again:
+#  verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
 
 
-# Targets 'help', 'clean' and download-tarballs-from-* do not build, all other targets (usually 'all') do build.
 TARGET_NAME_ALL := all
 TARGET_NAME_HELP := help
 TARGET_NAME_CLEAN := clean
@@ -69,27 +69,31 @@ TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
 TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
 
-ifndef MAKECMDGOALS
-  # The default target is 'help'
-  # According to the GNU Make documentation, variable MAKECMDGOALS should be empty if no goals were specified,
-  # but it is actually undefined, at least with GNU Make 4.2.1.
-  IS_BUILDING := 0
-else ifeq ($(strip $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_HELP), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_CLEAN), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else ifneq ($(filter $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-  $(call verify_variable_is_defined,PATH_TO_TARBALLS_ON_FILE_SERVER)
-else ifneq ($(filter $(TARGET_NAME_TEST_MAKEFLAGS), $(MAKECMDGOALS)),)
-  IS_BUILDING := 0
-else
-  IS_BUILDING := 1
-endif
+
+# Note 1) If a variable may be poisoned, all variables using it must be "recursively expanded".
+#         Variables of type "simply expanded" will fail straight away (or maybe defer expansion of the poisoned variable).
+# Note 2) If the variable's value consists of only space characters, it will be considered empty too.
+#
+# If we only needed the "is defined" condition (and not the "is empty" too), we could use VAR ?= ... below.
+
+define poison_variable_if_undef_or_empty_needs_eval =
+
+  ifeq ($(origin $(1)),undefined)
+    $(1)=$$(error Variable '$(1)' is not defined, but it should be at this point)
+  else
+    ifeq ($($1),)
+      override $(1)=$$(error Variable '$(1)' is empty, but it should not be at this point)
+    endif
+  endif
+
+endef
+
+poison_variable_if_undef_or_empty = $(eval $(call poison_variable_if_undef_or_empty_needs_eval,$(1)))
+
+
+$(call poison_variable_if_undef_or_empty,CROSS_TOOLCHAIN_DIR)
+$(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
+
 
 
 # ------- User Configuration -------
@@ -236,14 +240,7 @@ SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 
 TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 
-# Check if variable CROSS_TOOLCHAIN_DIR is set, but only if the user asked for a build.
-ifeq ($(IS_BUILDING),1)
-  $(call verify_variable_is_defined,CROSS_TOOLCHAIN_DIR)
-  PATH_DIR := $(CROSS_TOOLCHAIN_DIR)/bin
-else
-  # Prevent some warnings when not building and using '--warn-undefined-variables'.
-  CROSS_TOOLCHAIN_DIR := this-value-should-not-be-used
-endif
+PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 
 
 # If you are not calling recursive makefiles, but running other unrelated makefiles, you do not normally
@@ -273,7 +270,7 @@ EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_
 
 # ------- Build directory definitions -------
 
-CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
+CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)BuildDirSentinel
 
 
 # ------- Common C/C++ Compilation flags -------
@@ -295,14 +292,10 @@ COMMON_CFLAGS_FOR_TARGET :=
 
 ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 0)
   COMMON_CFLAGS_FOR_TARGET += -g -Os
-  ifeq ($(IS_BUILDING),1)
-    $(info Building a release (non-debug) toolchain.)
-  endif
+  TOOLCHAIN_KIND := Release (non-debug) toolchain.
 else ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 1)
   COMMON_CFLAGS_FOR_TARGET += -g -Og -DDEBUG
-  ifeq ($(IS_BUILDING),1)
-    $(info Building a debug toolchain.)
-  endif
+  TOOLCHAIN_KIND := Debug toolchain.
 else
   $(error Variable ENABLE_DEBUG_TOOLCHAIN has invalid value "$(ENABLE_DEBUG_TOOLCHAIN)")
 endif
@@ -323,10 +316,6 @@ else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m4f)
   GCC_FLOATING_POINT_FLAGS := # No flags needed here.
 else
   $(error Variable TOOLCHAIN_TARGET_CPU has invalid value "$(TOOLCHAIN_TARGET_CPU)")
-endif
-
-ifeq ($(IS_BUILDING),1)
-  $(info Building toolchain for CPU "$(TOOLCHAIN_TARGET_CPU)".)
 endif
 
 
@@ -446,7 +435,7 @@ GCC2_CHECK_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc2CheckSenti
 GCC_CFLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
 # GCC_CFLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
 
-COMMON_GCC_OPTIONS :=
+COMMON_GCC_OPTIONS =
 COMMON_GCC_OPTIONS += $(HOST_FLAGS)
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
 COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
@@ -532,7 +521,7 @@ NEWLIB_CFLAGS := $(COMMON_CFLAGS_FOR_TARGET)
 NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 
-NEWLIB_CFG_FLAGS :=
+NEWLIB_CFG_FLAGS =
 
 NEWLIB_CFG_FLAGS += $(HOST_FLAGS)
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
@@ -612,11 +601,13 @@ GDB_INSTALL_TARGET := install
 
 # ----------------- Create the directory where the toolchain build files (object files, etc) will land -----------------
 
-# This rules just creates a directory. Instead of a sentinel file for this rule, we could use an "order-only prerequisite".
+# This rule used to just creates a directory. Instead of a sentinel file for this rule, we could have used an "order-only prerequisite".
+# But now other files are created inside that directory.
 $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL):
 	echo && \
 	echo "Creating directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\"..." && \
 	mkdir --parents -- "$(CROSS_TOOLCHAIN_BUILD_DIR)" && \
+	{ echo "Target CPU: $(TOOLCHAIN_TARGET_CPU)" && echo "Toolchain kind: $(TOOLCHAIN_KIND)"; } >"$(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainInfo.txt" && \
 	echo "Creation of directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\" finished." >"$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)"
 
 
