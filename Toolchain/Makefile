@@ -56,10 +56,6 @@ THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
 
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
 
-# The name above is documented in the help text. Alternatively, we could rename all occurences
-# of TOOLCHAIN_OBJ_DIR in this makefile to CROSS_TOOLCHAIN_BUILD_DIR:
-TOOLCHAIN_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)
-
 
 verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
 
@@ -208,7 +204,7 @@ ENABLE_DEBUG_TOOLCHAIN := 0
 TOOLCHAIN_TARGET_CPU := cortex-m3
 
 # Not really used, see below for more information.
-CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-file.cache
+CONFIGURE_CACHE_FILENAME := $(CROSS_TOOLCHAIN_BUILD_DIR)/build-toolchain-local-cache-file.cache
 
 # I have decided not to share a common cache file. Reasons are:
 # 1) The 'configure' scripts from different projects are potentially called in parallel,
@@ -218,8 +214,10 @@ CONFIGURE_CACHE_FILENAME := $(TOOLCHAIN_OBJ_DIR)/build-toolchain-local-cache-fil
 #   CONFIG_CACHE_OPTION := --cache-file="$(CONFIGURE_CACHE_FILENAME)"
 CONFIG_CACHE_OPTION := --config-cache
 
+# Removing all error messages returned by strerror() saves program space on the target.
 REMOVE_STRERROR_MESSAGES := 1
 
+# Disabling the CPP exception buffer saves RAM on the target.
 DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
 
 # Recent GCC versions may require newer versions of the GMP, MPFR and MPC
@@ -275,7 +273,7 @@ EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_
 
 # ------- Build directory definitions -------
 
-TOOLCHAIN_OBJ_DIR_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
+CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)MkdirSentinel
 
 
 # ------- Common C/C++ Compilation flags -------
@@ -346,10 +344,10 @@ COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate d
 #   COMMON_CFLAGS_FOR_TARGET += -fno-exceptions
 
 
-# ------- Binutils flags -------
+# ------- Binutils configuration -------
 
-BINUTILS_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)
-BINUTILS_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/binutils-$(BINUTILS_VERSION)-obj
+BINUTILS_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/binutils-$(BINUTILS_VERSION)
+BINUTILS_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.xz
 
 # Option --enable-plugins is necessary for Gold to understand the --plugin command-line switch that the GCC driver passes.
@@ -362,10 +360,10 @@ BINUTILS_INSTALL_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Binu
 BINUTILS_CHECK_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)CheckSentinel
 
 
-# ------- GMP lib flags -------
+# ------- GMP lib configuration -------
 
-GMP_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gmp-$(GMP_VERSION)
-GMP_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gmp-$(GMP_VERSION)-obj
+GMP_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gmp-$(GMP_VERSION)
+GMP_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gmp-$(GMP_VERSION)-obj
 GMP_TAR_FILE := gmp-$(GMP_VERSION).tar.bz2
 
 GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -386,14 +384,12 @@ GMP_CHECK_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpCheckSentinel
 FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS := --disable-shared --enable-static
 
 
-# ------- MPFR lib flags -------
+# ------- MPFR lib configuration -------
 #
-# Version 4.0.x has been released in the meantime, but I could not get
-# version 4.0.1 to work with GCC 8.2.0.
 # Older versions are still available on the website under "history", or on ftp://ftp.gnu.org/gnu/mpfr/ .
 
-MPFR_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)
-MPFR_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpfr-$(MPFR_VERSION)-obj
+MPFR_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpfr-$(MPFR_VERSION)
+MPFR_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpfr-$(MPFR_VERSION)-obj
 MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
 
 MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -403,13 +399,13 @@ MPFR_INSTALL_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrInstallS
 MPFR_CHECK_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrCheckSentinel
 
 
-# ------- MPC lib flags -------
+# ------- MPC lib configuration -------
 #
 # This libray can be downloaded from http://www.multiprecision.org/
 # Version 1.1.0 has been released in the meantime, so that it builds against MPFR 4.0.x .
 
-MPC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)
-MPC_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/mpc-$(MPC_VERSION)-obj
+MPC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)
+MPC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)-obj
 MPC_TAR_FILE := mpc-$(MPC_VERSION).tar.gz
 
 MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -419,7 +415,7 @@ MPC_INSTALL_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcInstallSent
 MPC_CHECK_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcCheckSentinel
 
 
-# ------- GCC flags -------
+# ------- GCC configuration -------
 
 # This enables building a debug version of GCC in phase 2, instead of a release version,
 # which is only useful if you need to debug GCC itself.
@@ -432,16 +428,16 @@ else
   GCC_DEBUG_BUILD_FLAGS :=
 endif
 
-GCC_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)
+GCC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.xz
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 
-GCC1_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)-obj-phase1
+GCC1_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase1
 GCC1_MAKEFILE := $(GCC1_OBJ_DIR)/Makefile
 GCC1_MAKE_SENTINEL := $(GCC1_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Make1Sentinel
 GCC1_INSTALL_SENTINEL := $(GCC1_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc1InstallSentinel
 
-GCC2_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gcc-$(GCC_VERSION)-obj-phase2
+GCC2_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase2
 GCC2_MAKEFILE := $(GCC2_OBJ_DIR)/Makefile
 GCC2_MAKE_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Make2Sentinel
 GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)Gcc2InstallSentinel
@@ -513,12 +509,12 @@ else
 endif
 
 
-# ------- Newlib flags -------
+# ------- Newlib configuration -------
 
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
-NEWLIB_UNTAR_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
-NEWLIB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)
-NEWLIB_NEWLIB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/newlib-$(NEWLIB_VERSION)-obj
+NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
+NEWLIB_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
+NEWLIB_NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
 
 NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
 NEWLIB_NEWLIB_MAKEFILE := $(NEWLIB_NEWLIB_OBJ_DIR)/Makefile
@@ -535,294 +531,6 @@ NEWLIB_CFLAGS := $(COMMON_CFLAGS_FOR_TARGET)
 # and we don't want that in our memory-constrained embedded environment.
 NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
-
-# ------- GDB flags -------
-
-GDB_SRC_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)
-GDB_OBJ_DIR := $(TOOLCHAIN_OBJ_DIR)/gdb-$(GDB_VERSION)-obj
-GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
-
-GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
-GDB_MAKEFILE := $(GDB_OBJ_DIR)/Makefile
-GDB_MAKE_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GdbInstallSentinel
-
-
-# ----------------- Create the directory where the toolchain build files (object files, etc) will land -----------------
-
-$(TOOLCHAIN_OBJ_DIR_SENTINEL):
-	echo "Creating directory \"$(TOOLCHAIN_OBJ_DIR)\"..." && \
-	mkdir --parents -- "$(TOOLCHAIN_OBJ_DIR)" && \
-	echo "Creation of directory \"$(TOOLCHAIN_OBJ_DIR)\" finished." >"$(TOOLCHAIN_OBJ_DIR_SENTINEL)"
-
-# ----------------- Build Binutils -----------------
-
-$(BINUTILS_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
-	echo "Unpacking $(BINUTILS_TAR_FILE) ..." && \
-	if [ -d "$(BINUTILS_SRC_DIR)" ]; then rm -rf -- "$(BINUTILS_SRC_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(BINUTILS_TAR_FILE)" && \
-	popd >/dev/null && \
-	echo "Unpacking Binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
-	echo "Unpacking Binutils finished."
-
-$(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
-	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
-	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
-	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
-	$(BINUTILS_SRC_DIR)/configure --help && \
-	$(BINUTILS_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --target=$(ARM_TARGET) \
-	  $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
-	  --disable-nls && \
-	popd >/dev/null && \
-	echo "The Binutils configuration has finished."
-
-$(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
-	echo "Building Binutils ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
-	echo "The Binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
-	echo "The Binutils build has finished."
-
-$(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
-	echo "Installing Binutils ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
-	echo "The Binutils installation has finished."
-
-$(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
-	echo "Checking Binutils ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" check && \
-	echo "The Binutils check has finished." >"$(BINUTILS_CHECK_SENTINEL)" && \
-	echo "The Binutils check has finished."
-
-# ----------------- Build GMP -----------------
-
-$(GMP_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
-	echo "Unpacking $(GMP_TAR_FILE) ..." && \
-	if [ -d "$(GMP_SRC_DIR)" ]; then rm -rf -- "$(GMP_SRC_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GMP_TAR_FILE)" && \
-	popd >/dev/null && \
-	echo "Unpacking GMP finished." >"$(GMP_UNTAR_SENTINEL)" && \
-	echo "Unpacking GMP finished."
-
-$(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
-	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)" && \
-	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
-	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
-	$(GMP_SRC_DIR)/configure --help && \
-	$(GMP_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
-	popd >/dev/null && \
-	echo "The GMP configuration has finished."
-
-$(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
-	echo "Building GMP ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" && \
-	echo "The GMP build has finished." >"$(GMP_MAKE_SENTINEL)" && \
-	echo "The GMP build has finished."
-
-$(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
-	echo "Installing GMP ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
-	echo "The GMP installation has finished."
-
-$(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
-	echo "Checking GMP ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" check && \
-	echo "The GMP check has finished." >"$(GMP_CHECK_SENTINEL)" && \
-	echo "The GMP check has finished."
-
-
-# ----------------- Build MPFR -----------------
-
-$(MPFR_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
-	echo "Unpacking $(MPFR_TAR_FILE) ..." && \
-	if [ -d "$(MPFR_SRC_DIR)" ]; then rm -rf -- "$(MPFR_SRC_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPFR_TAR_FILE)" && \
-	popd >/dev/null && \
-	echo "Unpacking MPFR finished." >"$(MPFR_UNTAR_SENTINEL)" && \
-	echo "Unpacking MPFR finished."
-
-$(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
-	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)" && \
-	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
-	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
-	$(MPFR_SRC_DIR)/configure --help && \
-	$(MPFR_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
-	popd >/dev/null && \
-	echo "The MPFR configuration has finished."
-
-$(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
-	echo "Building MPFR ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" && \
-	echo "The MPFR build has finished." >"$(MPFR_MAKE_SENTINEL)" && \
-	echo "The MPFR build has finished."
-
-$(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
-	echo "Installing MPFR ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
-	echo "The MPFR installation has finished."
-
-$(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
-	echo "Checking MPFR ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
-	echo "The MPFR check has finished." >"$(MPFR_CHECK_SENTINEL)" && \
-	echo "The MPFR check has finished."
-
-
-# ----------------- Build MPC -----------------
-
-$(MPC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
-	echo "Unpacking $(MPC_TAR_FILE) ..." && \
-	if [ -d "$(MPC_SRC_DIR)" ]; then rm -rf -- "$(MPC_SRC_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPC_TAR_FILE)" && \
-	popd >/dev/null && \
-	echo "Unpacking MPC finished." >"$(MPC_UNTAR_SENTINEL)" && \
-	echo "Unpacking MPC finished."
-
-$(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
-	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)" && \
-	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
-	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
-	$(MPC_SRC_DIR)/configure --help && \
-	$(MPC_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
-	popd >/dev/null && \
-	echo "The MPC configuration has finished."
-
-$(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
-	echo "Building MPC ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" && \
-	echo "The MPC build has finished." >"$(MPC_MAKE_SENTINEL)" && \
-	echo "The MPC build has finished."
-
-$(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
-	echo "Installing MPC ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
-	echo "The MPC installation has finished."
-
-$(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
-	echo "Checking MPC ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" check && \
-	echo "The MPC check has finished." >"$(MPC_CHECK_SENTINEL)" && \
-	echo "The MPC check has finished."
-
-
-# ----------------- GCC phase 1 -----------------
-
-$(GCC_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
-	echo "Unpacking $(GCC_TAR_FILE) ..." && \
-	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf -- "$(GCC_SRC_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GCC_TAR_FILE)" && \
-	popd >/dev/null && \
-	pushd "$(GCC_SRC_DIR)" >/dev/null && \
-	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
-	  echo "Applying patch \"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)\" ..." && \
-	  patch -p0 --forward <"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
-	fi && \
-	popd >/dev/null && \
-	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
-	echo "Unpacking GCC finished."
-
-# Note that GCC's ./configure script will find at least some of
-# the Binutils tools under the --prefix directory,
-# even if the PATH is not set.
-
-ifeq ($(BUILD_GMP_MPFR_MPC),1)
-  $(GCC1_MAKEFILE): $(MPC_INSTALL_SENTINEL)
-endif
-
-$(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
-	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)" && \
-	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
-	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
-	echo "Help text from GCC's 'configure' script:" && \
-	$(GCC_SRC_DIR)/configure --help && \
-	echo "Configuring GCC:" && \
-	PATH=$(PATH_DIR):$$PATH \
-	  $(GCC_SRC_DIR)/configure \
-	    --enable-languages=c \
-	    --without-headers \
-	    $(COMMON_GCC_OPTIONS) && \
-	popd >/dev/null && \
-	echo "The GCC phase 1 configuration has finished."
-
-$(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
-	echo "Building GCC phase 1 ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
-    echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
-    echo "The GCC phase 1 build has finished."
-
-$(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
-	echo "Installing GCC phase 1 ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
-    echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
-    echo "The GCC phase 1 installation has finished."
-
-
-# ----------------- Build Newlib -----------------
-
-$(NEWLIB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
-	echo "Unpacking $(NEWLIB_TAR_FILE) ..." && \
-	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf -- "$(NEWLIB_UNTAR_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
-	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(NEWLIB_TAR_FILE)" && \
-	popd >/dev/null && \
-	pushd "$(NEWLIB_SRC_DIR)" >/dev/null && \
-	echo "Applying patch \"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)\" ..." && \
-	patch -p0 --forward <"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)" && \
-	if [ $(REMOVE_STRERROR_MESSAGES) -ne 0 ]; then \
-	  echo "Applying patch \"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)\" ..." && \
-	  patch -p0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
-	fi && \
-	popd >/dev/null && \
-	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
-	echo "Unpacking Newlib finished."
 
 NEWLIB_CFG_FLAGS :=
 
@@ -869,90 +577,18 @@ NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io  # Warning: you lose suppo
 NEWLIB_CFG_FLAGS += --disable-libgloss
 NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
-$(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
-	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
-	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
-	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
-	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
-	$(NEWLIB_SRC_DIR)/configure --help && \
-	echo "Help text from 'configure' script for the newlib/ subdir:" && \
-	$(NEWLIB_SRC_DIR)/newlib/configure --help && \
-	echo "Configuring Newlib:" && \
-	PATH=$(PATH_DIR):$$PATH \
-          CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
-          $(NEWLIB_SRC_DIR)/configure \
-            $(NEWLIB_CFG_FLAGS) && \
-	popd >/dev/null && \
-	echo "The Newlib configuration has finished."
 
-$(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
-	echo "Building Newlib ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
-	echo "The Newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
-	echo "The Newlib build has finished."
+# ------- GDB configuration -------
 
-$(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
-	echo "Installing Newlib ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
-	echo "The Newlib installation has finished."
+GDB_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gdb-$(GDB_VERSION)
+GDB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gdb-$(GDB_VERSION)-obj
+GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
 
+GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+GDB_MAKEFILE := $(GDB_OBJ_DIR)/Makefile
+GDB_MAKE_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
+GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GdbInstallSentinel
 
-# ----------------- GCC phase 2 -----------------
-
-# Note that GCC's ./configure script will find at least some of
-# the Binutils tools under the --prefix directory,
-# even if the PATH is not set.
-$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
-	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)" && \
-    if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf -- "$(GCC2_OBJ_DIR)"; fi && \
-    mkdir --parents -- "$(GCC2_OBJ_DIR)" && \
-    pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(GCC_SRC_DIR)/configure \
-        $(GCC_DEBUG_BUILD_FLAGS) \
-        --enable-languages=c,c++ \
-        $(COMMON_GCC_OPTIONS) && \
-    popd >/dev/null && \
-    echo "The GCC phase 2 configuration has finished."
-
-$(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
-	echo "Building GCC phase 2 ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-        CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
-    echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
-    echo "The GCC phase 2 build has finished."
-
-# NOTE: We should not install GCC phase 2 over phase 1, we should clean it first,
-#       but to do that properly would mean making this makefile a lot more complicated,
-#       and I have not made the effort yet.
-
-$(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
-	echo "Installing GCC phase 2 ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-    echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
-    echo "The GCC phase 2 installation has finished."
-
-$(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
-	echo "Checking GCC phase 2 ..." && \
-    $(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-    PATH=$(PATH_DIR):$$PATH \
-      $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
-        CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
-    echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
-    echo "The GCC phase 2 check has finished."
-
-
-# ----------------- Build GDB -----------------
 
 # This enables building a debug version of GDB, instead of a release version,
 # which is only useful if you need to debug GDB itself.
@@ -967,28 +603,447 @@ endif
 
 
 # We cannot use INSTALL_TARGET here, because unfortunately GDB does not support the 'install-strip' target,
-# at least as of version 8.1. The error message is about not finding makefile recipes for targets
-# 'install-strip-readline' and 'install-strip-sim'.
+# at least as of versions 8.1 and 9.1. The error message is about not finding makefile recipes for targets
+# 'install-strip', or 'install-strip-readline' and 'install-strip-sim'.
+# I reported this issue, and the fix is targetted at GDB version 10.1:
+#   https://sourceware.org/bugzilla/show_bug.cgi?id=24572
 GDB_INSTALL_TARGET := install
 
 
-# GDB does not need Binutils, the GCC cross-compiler, or anything else. It just needs a C compiler on the host.
+# ----------------- Create the directory where the toolchain build files (object files, etc) will land -----------------
 
-$(GDB_UNTAR_SENTINEL): $(TOOLCHAIN_OBJ_DIR_SENTINEL)
+# This rules just creates a directory. Instead of a sentinel file for this rule, we could use an "order-only prerequisite".
+$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL):
+	echo && \
+	echo "Creating directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\"..." && \
+	mkdir --parents -- "$(CROSS_TOOLCHAIN_BUILD_DIR)" && \
+	echo "Creation of directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\" finished." >"$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)"
+
+
+# ----------------- Build Binutils -----------------
+
+$(BINUTILS_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(BINUTILS_TAR_FILE) ..." && \
+	if [ -d "$(BINUTILS_SRC_DIR)" ]; then rm -rf -- "$(BINUTILS_SRC_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(BINUTILS_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking Binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
+	echo "Unpacking Binutils finished."
+
+$(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
+	echo && \
+	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
+	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
+	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
+	echo "Help text from the 'configure' script:" && \
+	$(BINUTILS_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Configuring:" && \
+	$(BINUTILS_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	  --target=$(ARM_TARGET) \
+	  $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
+	  --disable-nls && \
+	popd >/dev/null && \
+	echo "The Binutils configuration has finished."
+
+$(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
+	echo && \
+	echo "Building Binutils ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
+	echo "The Binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
+	echo "The Binutils build has finished."
+
+$(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
+	echo && \
+	echo "Installing Binutils ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
+	echo "The Binutils installation has finished."
+
+$(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
+	echo && \
+	echo "Checking Binutils ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" check && \
+	echo "The Binutils check has finished." >"$(BINUTILS_CHECK_SENTINEL)" && \
+	echo "The Binutils check has finished."
+
+
+# ----------------- Build GMP -----------------
+
+$(GMP_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(GMP_TAR_FILE) ..." && \
+	if [ -d "$(GMP_SRC_DIR)" ]; then rm -rf -- "$(GMP_SRC_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GMP_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking GMP finished." >"$(GMP_UNTAR_SENTINEL)" && \
+	echo "Unpacking GMP finished."
+
+$(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
+	echo && \
+	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)" && \
+	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
+	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
+	echo "Help text from the 'configure' script:" && \
+	$(GMP_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Configuring:" && \
+	$(GMP_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
+	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
+	popd >/dev/null && \
+	echo "The GMP configuration has finished."
+
+$(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
+	echo && \
+	echo "Building GMP ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" && \
+	echo "The GMP build has finished." >"$(GMP_MAKE_SENTINEL)" && \
+	echo "The GMP build has finished."
+
+$(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
+	echo && \
+	echo "Installing GMP ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
+	echo "The GMP installation has finished."
+
+$(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
+	echo && \
+	echo "Checking GMP ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(GMP_OBJ_DIR)" check && \
+	echo "The GMP check has finished." >"$(GMP_CHECK_SENTINEL)" && \
+	echo "The GMP check has finished."
+
+
+# ----------------- Build MPFR -----------------
+
+$(MPFR_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(MPFR_TAR_FILE) ..." && \
+	if [ -d "$(MPFR_SRC_DIR)" ]; then rm -rf -- "$(MPFR_SRC_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPFR_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking MPFR finished." >"$(MPFR_UNTAR_SENTINEL)" && \
+	echo "Unpacking MPFR finished."
+
+$(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
+	echo && \
+	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)" && \
+	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
+	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
+	echo "Help text from the 'configure' script:" && \
+	$(MPFR_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Configuring:" && \
+	$(MPFR_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
+	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
+	popd >/dev/null && \
+	echo "The MPFR configuration has finished."
+
+$(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
+	echo && \
+	echo "Building MPFR ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" && \
+	echo "The MPFR build has finished." >"$(MPFR_MAKE_SENTINEL)" && \
+	echo "The MPFR build has finished."
+
+$(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
+	echo && \
+	echo "Installing MPFR ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
+	echo "The MPFR installation has finished."
+
+$(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
+	echo && \
+	echo "Checking MPFR ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
+	echo "The MPFR check has finished." >"$(MPFR_CHECK_SENTINEL)" && \
+	echo "The MPFR check has finished."
+
+
+# ----------------- Build MPC -----------------
+
+$(MPC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(MPC_TAR_FILE) ..." && \
+	if [ -d "$(MPC_SRC_DIR)" ]; then rm -rf -- "$(MPC_SRC_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPC_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking MPC finished." >"$(MPC_UNTAR_SENTINEL)" && \
+	echo "Unpacking MPC finished."
+
+$(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
+	echo && \
+	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)" && \
+	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
+	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
+	echo "Help text from the 'configure' script:" && \
+	$(MPC_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Configuring:" && \
+	$(MPC_SRC_DIR)/configure \
+	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
+	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
+	popd >/dev/null && \
+	echo "The MPC configuration has finished."
+
+$(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
+	echo && \
+	echo "Building MPC ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" && \
+	echo "The MPC build has finished." >"$(MPC_MAKE_SENTINEL)" && \
+	echo "The MPC build has finished."
+
+$(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
+	echo && \
+	echo "Installing MPC ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
+	echo "The MPC installation has finished."
+
+$(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
+	echo && \
+	echo "Checking MPC ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(MPC_OBJ_DIR)" check && \
+	echo "The MPC check has finished." >"$(MPC_CHECK_SENTINEL)" && \
+	echo "The MPC check has finished."
+
+
+# ----------------- GCC phase 1 -----------------
+
+$(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(GCC_TAR_FILE) ..." && \
+	if [ -d "$(GCC_SRC_DIR)" ]; then rm -rf -- "$(GCC_SRC_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GCC_TAR_FILE)" && \
+	popd >/dev/null && \
+	pushd "$(GCC_SRC_DIR)" >/dev/null && \
+	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
+	  echo "Applying patch \"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)\" ..." && \
+	  patch -p0 --forward <"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
+	fi && \
+	popd >/dev/null && \
+	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
+	echo "Unpacking GCC finished."
+
+# Note that GCC's ./configure script will find at least some of
+# the Binutils tools under the --prefix directory,
+# even if the PATH is not set.
+
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  $(GCC1_MAKEFILE): $(MPC_INSTALL_SENTINEL)
+endif
+
+$(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
+	echo && \
+	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)" && \
+	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
+	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
+	echo "Help text from the 'configure' script:" && \
+	$(GCC_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Configuring:" && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(GCC_SRC_DIR)/configure \
+	    --enable-languages=c \
+	    --without-headers \
+	    $(COMMON_GCC_OPTIONS) && \
+	popd >/dev/null && \
+	echo "The GCC phase 1 configuration has finished."
+
+$(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
+	echo && \
+	echo "Building GCC phase 1 ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
+	echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
+	echo "The GCC phase 1 build has finished."
+
+$(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
+	echo && \
+	echo "Installing GCC phase 1 ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	$(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
+	echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
+	echo "The GCC phase 1 installation has finished."
+
+
+# ----------------- Build Newlib -----------------
+
+$(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(NEWLIB_TAR_FILE) ..." && \
+	if [ -d "$(NEWLIB_UNTAR_DIR)" ]; then rm -rf -- "$(NEWLIB_UNTAR_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(NEWLIB_TAR_FILE)" && \
+	popd >/dev/null && \
+	pushd "$(NEWLIB_SRC_DIR)" >/dev/null && \
+	echo "Applying patch \"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)\" ..." && \
+	patch -p0 --forward <"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)" && \
+	if [ $(REMOVE_STRERROR_MESSAGES) -ne 0 ]; then \
+	  echo "Applying patch \"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)\" ..." && \
+	  patch -p0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
+	fi && \
+	popd >/dev/null && \
+	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
+	echo "Unpacking Newlib finished."
+
+$(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
+	echo && \
+	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
+	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
+	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
+	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
+	$(NEWLIB_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Help text from 'configure' script for the newlib/ subdir:" && \
+	$(NEWLIB_SRC_DIR)/newlib/configure --help && \
+	echo && \
+	echo "Configuring Newlib:" && \
+	PATH=$(PATH_DIR):$$PATH \
+	CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+	  $(NEWLIB_SRC_DIR)/configure \
+	    $(NEWLIB_CFG_FLAGS) && \
+	popd >/dev/null && \
+	echo "The Newlib configuration has finished."
+
+$(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
+	echo && \
+	echo "Building Newlib ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
+	echo "The Newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
+	echo "The Newlib build has finished."
+
+$(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
+	echo && \
+	echo "Installing Newlib ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
+	echo "The Newlib installation has finished."
+
+
+# ----------------- GCC phase 2 -----------------
+
+# Note that GCC's ./configure script will find at least some of
+# the Binutils tools under the --prefix directory,
+# even if the PATH is not set.
+$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
+	echo && \
+	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)" && \
+	if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf -- "$(GCC2_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(GCC2_OBJ_DIR)" && \
+	pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(GCC_SRC_DIR)/configure \
+	    $(GCC_DEBUG_BUILD_FLAGS) \
+	    --enable-languages=c,c++ \
+	    $(COMMON_GCC_OPTIONS) && \
+	popd >/dev/null && \
+	echo "The GCC phase 2 configuration has finished."
+
+$(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
+	echo && \
+	echo "Building GCC phase 2 ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(GCC2_OBJ_DIR)" \
+	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
+	echo "The GCC phase 2 build has finished."
+
+# NOTE: We should not install GCC phase 2 over phase 1, we should clean it first,
+#       but to do that properly would mean making this makefile a lot more complicated,
+#       and I have not made the effort yet.
+
+$(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
+	echo && \
+	echo "Installing GCC phase 2 ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
+	echo "The GCC phase 2 installation has finished."
+
+$(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
+	echo && \
+	echo "Checking GCC phase 2 ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PATH_DIR):$$PATH \
+	  $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
+	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
+	echo "The GCC phase 2 check has finished."
+
+
+# ----------------- Build GDB -----------------
+
+# Note that GDB runs on the host and does not need Binutils or the GCC cross-compiler.
+
+$(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
 	echo "Unpacking $(GDB_TAR_FILE) ..." && \
 	if [ -d "$(GDB_SRC_DIR)" ]; then rm -rf -- "$(GDB_SRC_DIR)"; fi && \
-	pushd "$(TOOLCHAIN_OBJ_DIR)" >/dev/null && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GDB_TAR_FILE)" && \
 	popd >/dev/null && \
 	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
 	echo "Unpacking GDB finished."
 
 $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
+	echo && \
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
+	echo "Help text from the 'configure' script:" && \
 	$(GDB_SRC_DIR)/configure --help && \
+	echo && \
+	echo "Configuring:" && \
 	PATH=$(PATH_DIR):$$PATH \
 	  $(GDB_SRC_DIR)/configure \
 	    $(GDB_DEBUG_BUILD_FLAGS) \
@@ -1001,6 +1056,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 	echo "The GDB configuration has finished."
 
 $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
+	echo && \
 	echo "Building GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GDB_OBJ_DIR)" && \
@@ -1008,6 +1064,7 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	echo "The GDB build has finished."
 
 $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
+	echo && \
 	echo "Installing GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(MAKE) -C "$(GDB_OBJ_DIR)" "$(GDB_INSTALL_TARGET)" && \
@@ -1106,12 +1163,13 @@ $(TARGET_NAME_HELP):
 	@echo
 
 
-TARGET_ALL_SENTINEL := $(TOOLCHAIN_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)TargetAllSentinel
+TARGET_ALL_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)TargetAllSentinel
 
 $(TARGET_ALL_SENTINEL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
-	@echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." && \
-	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." >"$(TARGET_ALL_SENTINEL)"
-	@if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
+	@echo && \
+	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." && \
+	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." >"$(TARGET_ALL_SENTINEL)" && \
+	if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
 	echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
 	fi
 
@@ -1123,9 +1181,10 @@ $(TARGET_NAME_ALL): $(TARGET_ALL_SENTINEL)
 # but a toolchain takes long to build and the user may want to save it in case the new one
 # does not work correctly.
 $(TARGET_NAME_CLEAN):
-	@echo "Deleting directory \"$(TOOLCHAIN_OBJ_DIR)\"..."
-	rm -rf -- "$(TOOLCHAIN_OBJ_DIR)"
-	@echo "Finished. You may want to delete the toolchain installation directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
+	@echo && \
+	echo "Deleting directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\"..." && \
+	rm -rf -- "$(CROSS_TOOLCHAIN_BUILD_DIR)" && \
+	echo "Finished. You may want to delete the toolchain installation directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
 
 
 GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
@@ -1134,6 +1193,7 @@ DOWNLOAD_TARBALL_TOOL_PATH := $(THIS_MAKEFILE_DIR)/DownloadTarball.sh
 
 # An alternative to this target could be script contrib/download_prerequisites in the GCC sources.
 $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
+	@echo
 	mkdir --parents -- "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/binutils/$(BINUTILS_TAR_FILE)"           "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gcc/gcc-$(GCC_VERSION)/$(GCC_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)"
@@ -1147,6 +1207,7 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
 	@echo "Finished downloading tarballs from the Internet."
 
 $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
+	@echo
 	mkdir --parents -- "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(BINUTILS_TAR_FILE)" "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GCC_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"

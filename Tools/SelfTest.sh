@@ -133,13 +133,17 @@ declare -r PARALLEL_ARGS="-j $PARALLEL_COUNT"
 run_cmd "Testing running 'make' with no arguments..." "make" "$ROTATED_DIR/toolchain-make-no-targets.txt"  stdout
 
 printf -v CMD "make %s"  "$USUAL_ARGS"
-run_cmd "Testing running 'make' with with the usual arguments and no targets..."  "$CMD"  "$ROTATED_DIR/toolchain-make-usual-no-targets.txt"  stdout
+run_cmd "Testing running 'make' with the usual arguments and no targets..."  "$CMD"  "$ROTATED_DIR/toolchain-make-usual-no-targets.txt"  stdout
 
 # Check that "make help" does not fail.
 run_cmd "Testing 'make help' with no arguments..." "make help" "$ROTATED_DIR/toolchain-make-help.txt"  stdout
 
 printf -v CMD "make %s  help"  "$USUAL_ARGS"
 run_cmd "Testing 'make help' with the usual arguments..."  "$CMD" "$ROTATED_DIR/toolchain-make-usual-help.txt"  stdout
+
+# Check that "make test-makeflags" works.
+printf -v CMD "make %s  %s  test-makeflags"  "$USUAL_ARGS"  "$PARALLEL_ARGS"
+run_cmd "Testing 'make test-makeflags'..." "$CMD" "$ROTATED_DIR/toolchain-make-test-makeflags.txt"  stdout
 
 run_cmd "Testing 'make clean' with nothing to clean..."  "make clean"  "$ROTATED_DIR/toolchain-make-clean.txt"  stdout
 
