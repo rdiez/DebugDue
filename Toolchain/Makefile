@@ -260,6 +260,8 @@ PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 # filter out the rest with built-in function 'wordlist'.
 #
 # We also want to pass flag '--output-sync=xxx' (aka '-Oxxx'), if present.
+#
+# Perhaps we should run the "make install" commands without any parallel flags at all, just in case.
 
 EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS = $(strip $(filter -j%,$(MAKEFLAGS)) \
                                                 $(filter --jobserver-fds=%,$(MAKEFLAGS)) \
@@ -346,6 +348,7 @@ BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarS
 BINUTILS_MAKEFILE := $(BINUTILS_OBJ_DIR)/Makefile
 BINUTILS_MAKE_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 BINUTILS_INSTALL_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)BinutilsInstallSentinel
+BINUTILS_INSTALL_SENTINEL_PHASE_1 := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)BinutilsInstallSentinelPhase1
 BINUTILS_CHECK_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)CheckSentinel
 
 
@@ -417,6 +420,56 @@ else
   GCC_DEBUG_BUILD_FLAGS :=
 endif
 
+
+# Usually, you install the GCC phase 1 to the same directory where everything else goes.
+# Later on, GCC phase 2 will be installed in the same place, and will overwrite phase 1.
+#
+# However, it is cleaner to install GCC phase 1 separately. After all, you never know
+# if all files from phase 1 will be correctly overwritten. Even if that is true today,
+# it may change in the future. Besides, you may configure GCC phase 2 differently,
+# so that it does not match all installed files from phase 1. For example, you may decide
+# that you only need the C++ compiler in the final toolchain, in order to reduce the total
+# toolchain build time and save disk space for the final toolchain. The C compiler from
+# phase 1, needed to build the C runtime library, would then be left behind.
+#
+# The GCC configuration script finds the Binutils for the target using the '--prefix=/some/dir'
+# configuration setting. Binutils does not need to be on the PATH when configuring or building GCC.
+# For example, it will find tool /some/dir/arm-none-eabi/bin/ar .
+#
+# Option '--with-build-time-tools=/some/dir' did not work for me, but it may be worth
+# investigating it further.
+#
+# The easiest solution I found is to install Binutils twice: once in the final --prefix destination
+# for the final toolchain, and again into a separate phase 1 bin directory.
+# I am using Binutils's "make install" option 'DESTDIR=/my/path' at the moment,
+# which mirrors the full directory path inside that directory again.
+#
+# Notes kept about alternative option 'tooldir=/some/dir':
+#   Binutils's "make install" option 'tooldir=/some/dir' installs only the short names like 'bin/ar'.
+#   There is also a 'lib' subdirectory.
+#   There is no 'arm-none-eabi' subdirectory.
+#   The man pages are not installed there.
+#   I wonder whether the 'arm-none-eabi' subdir and the man pages are still installed to the
+#   --prefix=/some/dir specified during configuration.
+#
+# In case the separate phase 1 installation directory breaks, you can use variable
+# INSTALL_GCC_PHASE_1_TO_SEPARATE_DIR to revert to the old method.
+
+INSTALL_GCC_PHASE_1_TO_SEPARATE_DIR := 1
+
+ifeq ($(INSTALL_GCC_PHASE_1_TO_SEPARATE_DIR),1)
+  PHASE_1_DESTDIR     := $(CROSS_TOOLCHAIN_BUILD_DIR)/Phase1Bin
+  # Note that $(CROSS_TOOLCHAIN_DIR) already starts with '/'.
+  PHASE_1_INSTALL_DIR  = $(CROSS_TOOLCHAIN_BUILD_DIR)/Phase1Bin$(CROSS_TOOLCHAIN_DIR)
+  PHASE_1_PATH_DIR     = $(CROSS_TOOLCHAIN_BUILD_DIR)/Phase1Bin$(CROSS_TOOLCHAIN_DIR)/bin
+  GCC_PHASE_2_SET_PATH_DIR = PATH=$(PHASE_1_PATH_DIR):$$PATH
+else
+  PHASE_1_INSTALL_DIR  = $(CROSS_TOOLCHAIN_DIR)
+  PHASE_1_PATH_DIR     = $(PATH_DIR)
+  GCC_PHASE_2_PATH_DIR =
+endif
+
+
 GCC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.xz
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -438,7 +491,6 @@ GCC_CFLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
 COMMON_GCC_OPTIONS =
 COMMON_GCC_OPTIONS += $(HOST_FLAGS)
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
-COMMON_GCC_OPTIONS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 
 COMMON_GCC_OPTIONS += --target=$(ARM_TARGET)
 COMMON_GCC_OPTIONS += $(GCC_FLOATING_POINT_FLAGS)
@@ -625,7 +677,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 
 $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	echo && \
-	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)" && \
+	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)/" && \
 	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
@@ -659,6 +711,14 @@ $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
 	echo "The Binutils installation has finished."
 
+$(BINUTILS_INSTALL_SENTINEL_PHASE_1): $(BINUTILS_MAKE_SENTINEL)
+	echo && \
+	echo "Installing Binutils to separate phase 1 directory..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" DESTDIR="$(PHASE_1_DESTDIR)" "$(INSTALL_TARGET)" && \
+	echo "The Binutils phase 1 installation has finished." >"$(BINUTILS_INSTALL_SENTINEL_PHASE_1)" && \
+	echo "The Binutils phase 1 installation has finished."
+
 $(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
 	echo "Checking Binutils ..." && \
@@ -682,7 +742,7 @@ $(GMP_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 
 $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	echo && \
-	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)" && \
+	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)/" && \
 	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
 	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
@@ -737,7 +797,7 @@ $(MPFR_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 
 $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	echo && \
-	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)" && \
+	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)/" && \
 	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
 	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
@@ -793,7 +853,7 @@ $(MPC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 
 $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
 	echo && \
-	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)" && \
+	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)/" && \
 	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
 	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
@@ -854,17 +914,19 @@ $(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
 	echo "Unpacking GCC finished."
 
-# Note that GCC's ./configure script will find at least some of
-# the Binutils tools under the --prefix directory,
-# even if the PATH is not set.
-
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
   $(GCC1_MAKEFILE): $(MPC_INSTALL_SENTINEL)
 endif
 
-$(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
+ifeq ($(INSTALL_GCC_PHASE_1_TO_SEPARATE_DIR),1)
+  $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL_PHASE_1)
+else
+  $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL)
+endif
+
+$(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL)
 	echo && \
-	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)" && \
+	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)/" && \
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
@@ -872,10 +934,10 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	$(GCC_SRC_DIR)/configure --help && \
 	echo && \
 	echo "Configuring:" && \
-	PATH=$(PATH_DIR):$$PATH \
 	  $(GCC_SRC_DIR)/configure \
 	    --enable-languages=c \
 	    --without-headers \
+	    --prefix="$(PHASE_1_INSTALL_DIR)" \
 	    $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
 	echo "The GCC phase 1 configuration has finished."
@@ -884,7 +946,6 @@ $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	echo && \
 	echo "Building GCC phase 1 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
 	  $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
 	echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
 	echo "The GCC phase 1 build has finished."
@@ -893,8 +954,7 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GCC phase 1 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
-	$(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
+	  $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
 	echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
 	echo "The GCC phase 1 installation has finished."
 
@@ -921,7 +981,7 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 
 $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
-	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)" && \
+	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)/" && \
 	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
@@ -932,8 +992,9 @@ $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	$(NEWLIB_SRC_DIR)/newlib/configure --help && \
 	echo && \
 	echo "Configuring Newlib:" && \
-	PATH=$(PATH_DIR):$$PATH \
-	CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+	PATH=$(PHASE_1_PATH_DIR):$$PATH \
+	  CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+	  CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
 	  $(NEWLIB_SRC_DIR)/configure \
 	    $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
@@ -943,7 +1004,7 @@ $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
 	echo && \
 	echo "Building Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
+	PATH=$(PHASE_1_PATH_DIR):$$PATH \
 	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
 	echo "The Newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
 	echo "The Newlib build has finished."
@@ -952,7 +1013,7 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
+	PATH=$(PHASE_1_PATH_DIR):$$PATH \
 	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
 	echo "The Newlib installation has finished."
@@ -960,19 +1021,27 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 
 # ----------------- GCC phase 2 -----------------
 
-# Note that GCC's ./configure script will find at least some of
-# the Binutils tools under the --prefix directory,
-# even if the PATH is not set.
-$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
+# The GCC phase 2 target needs to depend on BINUTILS_INSTALL_SENTINEL, in case we are installing
+# GCC phase 1 and Binutils phase 1 into a separate directory. Remember that GCC finds
+# the Binutils for the target using the '--prefix=/some/dir' configuration setting,
+# so another copy of Binutils needs to be already installed at the final destination directory.
+#
+# Similarly, building GCC phase 2 requires GCC phase 1, so phase 1 GCC needs to be on the PATH.
+#
+# There might be some confusion, because both instances of Binutils are available,
+# once over the '--prefix' directory, and one over PATH. But both instances are identical anyway.
+
+$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	echo && \
-	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)" && \
+	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)/" && \
 	if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf -- "$(GCC2_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GCC2_OBJ_DIR)" && \
 	pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
-	PATH=$(PATH_DIR):$$PATH \
+	$(GCC_PHASE_2_SET_PATH_DIR) \
 	  $(GCC_SRC_DIR)/configure \
 	    $(GCC_DEBUG_BUILD_FLAGS) \
 	    --enable-languages=c,c++ \
+	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
 	echo "The GCC phase 2 configuration has finished."
@@ -981,15 +1050,15 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	echo && \
 	echo "Building GCC phase 2 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	PATH=$(PATH_DIR):$$PATH \
+	$(GCC_PHASE_2_SET_PATH_DIR) \
 	  $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
+	    CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
 	echo "The GCC phase 2 build has finished."
 
-# NOTE: We should not install GCC phase 2 over phase 1, we should clean it first,
-#       but to do that properly would mean making this makefile a lot more complicated,
-#       and I have not made the effort yet.
+# The "make install" step needs the PATH set because it uses Binutils tools like 'arm-none-eabi-ranlib',
+# and it does not seem able to find them via the configured '--prefix' directory.
 
 $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo && \
@@ -1006,7 +1075,8 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PATH_DIR):$$PATH \
 	  $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
-	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)"  CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
+	    CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
 	echo "The GCC phase 2 check has finished."
 
@@ -1027,7 +1097,7 @@ $(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 
 $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 	echo && \
-	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)" && \
+	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)/" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
@@ -1035,14 +1105,13 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 	$(GDB_SRC_DIR)/configure --help && \
 	echo && \
 	echo "Configuring:" && \
-	PATH=$(PATH_DIR):$$PATH \
-	  $(GDB_SRC_DIR)/configure \
-	    $(GDB_DEBUG_BUILD_FLAGS) \
-	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS) \
-	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	    --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
-	    --target=$(ARM_TARGET) && \
+	$(GDB_SRC_DIR)/configure \
+	  $(GDB_DEBUG_BUILD_FLAGS) \
+	  $(CONFIG_CACHE_OPTION)  \
+	  $(HOST_FLAGS) \
+	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
+	  --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
 	echo "The GDB configuration has finished."
 
