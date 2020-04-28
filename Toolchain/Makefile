@@ -580,7 +580,32 @@ NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(ARM_TARGET)
 NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
 NEWLIB_CFG_FLAGS += --disable-libssp
-NEWLIB_CFG_FLAGS += --enable-newlib-reent-small
+
+
+# "reent small" means that sizeof(_reent) decreases from 1064 bytes to 240 bytes (tested with Newlib version 3.3.0).
+# Because we are not using multithreading, these savings are only realised once.
+# Unfortunately, "reent small" also means that some routines which need the lost space allocate it with malloc on first touch.
+# For example, the first time you call rand(), it will call malloc. That is unexpected and my not be safe in all circumstances.
+# Calling malloc inside an interrupt handler is normally unsafe.
+# Therefore, if you are not really short on memory, this option should stay disabled (which is actually the default).
+#
+# If you need to enable "reent small", keep in mind that you will need to provide __assert_func() even in release builds
+# (even if NDEBUG is defined), because Newlib calls it if malloc() fails when allocating any missing data from the _reent structure.
+# I find this implementation choice unfortunate, because __assert_func should only be meant for assertions, and because
+# of the implication that __assert_func() must always stop the firmware. I would have chosen another kind of 'abort' routine.
+# Newlib version 3.1.0 did not require __assert_func(), and did not check whether malloc() failed, but Newlib version 3.3.0 does.
+# You can disable this requirement in version 3.3.0 with --disable-newlib-reent-check-verify , but then you also lose such malloc() checks,
+# which makes it unsafe.
+
+ENABLE_NEWLIB_REENT_SMALL := 0
+
+ifeq ($(ENABLE_NEWLIB_REENT_SMALL),1)
+  NEWLIB_CFG_FLAGS += --enable-newlib-reent-small
+else
+  NEWLIB_CFG_FLAGS += --disable-newlib-reent-small
+endif
+
+
 NEWLIB_CFG_FLAGS += --disable-newlib-multithread
 NEWLIB_CFG_FLAGS += --enable-newlib-io-pos-args
 NEWLIB_CFG_FLAGS += --enable-newlib-io-c99-formats
