@@ -217,7 +217,10 @@ AM_CONDITIONAL([IS_JTAG_DUE], [test $IS_JTAG_DUE = true])
 
 ARCH_FLAGS=" -mcpu=cortex-m3 -mthumb"  # Switch "-march=armv7-m" could also be an option.
 
-EXTRA_C_AND_CXX_FLAGS=""
+EXTRA_CPP_FLAGS=""       # Preprocessor flags.
+EXTRA_C_FLAGS=""         # C flags.
+EXTRA_CXX_FLAGS=""       # C++ flags.
+EXTRA_C_AND_CXX_FLAGS="" # Flags for both C and C++.
 
 # WARNING: All flags that affect the ABI must match those specified when building the toolchain.
 
@@ -227,7 +230,6 @@ EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 # but that's what the Arduino Framework does:
 EXTRA_C_AND_CXX_FLAGS+=" --param max-inline-insns-single=500"
 
-EXTRA_CPP_FLAGS=""
 
 EXTRA_CPP_FLAGS+=" -DBOARD=ARDUINO_DUE_X"
 
@@ -308,21 +310,31 @@ else
   EXTRA_C_AND_CXX_FLAGS+=" -Wabi"  # Avoid too many warnings with GCC 7.3.
 fi
 
-EXTRA_C_FLAGS=""
 EXTRA_C_FLAGS+=" -Wc++-compat"
 EXTRA_C_FLAGS+=" -Wstrict-prototypes"
 EXTRA_C_FLAGS+=" -Wmissing-prototypes"
 EXTRA_C_FLAGS+=" -Wpointer-to-int-cast"
 
 EXTRA_C_FLAGS+=" -std=gnu11"
-# With -std=c++11 you do not get vsnprintf.
-EXTRA_CXX_FLAGS=" -std=gnu++14"
+
+if $IS_GCC_8_OR_LATER; then
+  EXTRA_CXX_FLAGS+=" -std=gnu++17"
+  # Disable warning "ISO C++17 does not allow 'register' storage class specifier",
+  # which appears often in CMSIS source files.
+  EXTRA_CXX_FLAGS+=" -Wno-register"
+else
+  # With -std=c++11 you do not get vsnprintf.
+  EXTRA_CXX_FLAGS+=" -std=gnu++14"
+fi
 
 # Turn off warnings that occur too often in the libraries.
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 
-EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_list' has changed in GCC 4.4".
-                                      # I do not know yet if this warning should be taken seriously.
+# You may want to disable this warning with certain versions of GCC:
+if false; then
+  EXTRA_C_AND_CXX_FLAGS+=" -Wno-psabi"  # Suppresses warning "the mangling of 'va_list' has changed in GCC 4.4".
+                                        # I do not know yet if this warning should be taken seriously.
+fi
 
 # This GCC option apparently does not work with LTO, at least with GCC 4.9.3:
 #   #pragma GCC diagnostic ignored "-Wframe-larger-than="
