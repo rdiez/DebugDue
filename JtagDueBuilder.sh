@@ -1070,7 +1070,7 @@ check_openocd_job_still_running ()
     printf "%s" "$JOBS_OUTPUT"
 
     MSG="OpenOCD failed to initialise."
-    if [ ! -z "$LAST_JOB_STATUS" ]; then
+    if [ -n "$LAST_JOB_STATUS" ]; then
       MSG+=" Its job result was: "
       MSG+="$LAST_JOB_STATUS"
     fi
