@@ -251,6 +251,7 @@ else
 
 fi
 
+add_gdb_arg "--command=\"arduino-due-gdb-cmds.txt\""
 add_gdb_cmd "target remote :3333"
 
 if (( ${#BREAKPOINTS[*]} > 0 )); then
@@ -260,16 +261,9 @@ if (( ${#BREAKPOINTS[*]} > 0 )); then
 fi
 
 if $DEBUG_FROM_THE_START_SPECIFIED; then
-  add_gdb_cmd "monitor my_reset_and_halt"
-
-  # Force GDB to update its register cache. Otherwise, the right values are
-  # shown only after the first 'step' command.
-  add_gdb_cmd flushregs
-
-  add_gdb_echo_cmd "Stopped as soon as possible upon start-up."
+  add_gdb_cmd "myhaltafterreset"
 else
-  add_gdb_cmd "monitor my_reset_and_halt"
-  add_gdb_cmd "cont"
+  add_gdb_cmd "myreset"
 fi
 
 # If GDB cannot find the .elf file, it will print an error, but it will not stop.

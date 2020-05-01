@@ -550,6 +550,8 @@ Try the modified script out with the following command:
 
 That should build the firmware from scratch, send it to the target device and start debugging it.
 
+In the GDB window, press Ctrl+C to halt the firmware. You can then use commands I<< myreset >> or I<< myhaltafterreset >> to restart the firmware.
+
 The idea is that, no matter what development environment you are using (Emacs, Vim, Eclipse, ...),
 you should configure the usual compile/run/etc. keys to run the script with different arguments. For example:
 

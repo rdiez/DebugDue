@@ -1385,7 +1385,7 @@ do_program_and_debug ()
     else
       local FLASH_ADDR="0x00080000"
 
-      add_openocd_cmd "my_reset_and_halt"
+      add_openocd_cmd "arduino_due_reset_and_halt"
 
       # Delete the old cached file in case programming fails, and you end up with a corrupt firmware on the target.
       if $CACHE_FILE_EXISTS_BUT_DIFFERENT; then
