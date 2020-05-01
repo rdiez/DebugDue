@@ -199,11 +199,15 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
     // With my slow Bus Pirate (at 'normal' speed, instead of 'fast'), and with a non-optimised
     // JtagDue firmware, I need around 34 ms. If you have a fast JTAG probe, you can probably
     // lower this time in order to get faster overall boot times.
+    // When using a second Arduino Due, we need more time. 110 ms seems enough.
     //
     // If you do not need to debug the firmware from the very beginning, or if you do not place
-    // breakpoints somewhere during the initialisation code, then you can comment-out this busy wait.
-    const unsigned BUSY_WAIT_LOOP_US = 36 * 1000;
-    BusyWaitLoop( GetBusyWaitLoopIterationCountFromUs( BUSY_WAIT_LOOP_US ) );
+    // breakpoints somewhere during the initialisation code, then you can disable this busy wait.
+    if ( true )
+    {
+      const unsigned BUSY_WAIT_LOOP_US = 120 * 1000;
+      BusyWaitLoop( GetBusyWaitLoopIterationCountFromUs( BUSY_WAIT_LOOP_US ) );
+    }
 
 
     // Relocate the initialised data from flash to SRAM.
