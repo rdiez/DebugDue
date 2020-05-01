@@ -300,6 +300,7 @@ Step 2, build operations:
              files beforehand if necessary.
   --install  Runs "make install". Normally not needed.
   --atmel-software-framework="<path>"  Directory where the ASF is installed.
+  --show-build-commands  Show the full compilation commands during the build.
   --disassemble  Generate extra information files from the just-built ELF file:
                  complete disassembly, list of objects sorted by size,
                  sorted list of strings (with 'strings' command):
@@ -329,7 +330,7 @@ Step 4, debug operations:
                             interface to GDB).
   --debug-from-the-start  Breaks as soon as possible after starting the firmware.
   --add-breakpoint="function name or line position like Main.cpp:123"
-  --openocd-path="openocd-0.8.0/bin/openocd"  Path to the OpenOCD executable.
+  --openocd-path="openocd-0.10.0/bin/openocd"  Path to the OpenOCD executable.
 
 Global options:
   --project="<project name>"  Specify 'JtagDue' (the default) or 'EmptyFirmware'.
