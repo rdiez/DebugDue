@@ -519,14 +519,9 @@ do_configure_if_necessary ()
 }
 
 
-add_toolchain_dir_to_path ()
+check_whether_compiler_is_present ()
 {
-  local TOOLCHAIN_DIR="$1"
-
-  local TOOLCHAIN_BIN_DIR="$TOOLCHAIN_DIR/bin"
   local COMPILER_NAME="$TARGET_ARCH-gcc"
-
-  PATH="$TOOLCHAIN_BIN_DIR:$PATH"
 
   # If you don't get the PATH right, the ./configure script will not find the right compiler,
   # and the error message you'll get much further down is not immediately obvious.
@@ -534,6 +529,11 @@ add_toolchain_dir_to_path ()
   if ! type "$COMPILER_NAME" >/dev/null 2>&1 ;
   then
     abort "Could not find compiler \"$COMPILER_NAME\", did you get the toolchain path right? I am using: $TOOLCHAIN_DIR"
+  fi
+
+  if false; then
+    echo "Compiler \"$COMPILER_NAME\" exists. The version is:"
+    "$COMPILER_NAME" -v
   fi
 }
 
@@ -575,6 +575,7 @@ process_command_line_argument ()
     cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
     debug) DEBUG_SPECIFIED=true;;
     debug-from-the-start) DEBUG_FROM_THE_START_SPECIFIED=true;;
+    show-build-commands) SHOW_BUILD_COMMANDS=true;;
 
     path-to-bossac)
         if [[ $OPTARG = "" ]]; then
@@ -788,7 +789,6 @@ do_build ()
 
   # Normally, the build commands are not shown, see AM_SILENT_RULES in configure.ac .
   # Passing "V=1" in CPPFLAGS is not enough, you need to remove "-s" too.
-  local SHOW_BUILD_COMMANDS=false
   if $SHOW_BUILD_COMMANDS; then
     MAKE_CMD+=" V=1"
   else
@@ -836,6 +836,8 @@ do_build ()
 
   MAKE_CMD+=" --no-builtin-rules"
 
+  add_make_parallel_jobs_flag
+
   # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment the following line out.
   #
   # Note that you should be using GNU Make 4.3 or later, because older GNU Make versions have issues with parallel builds:
@@ -843,8 +845,6 @@ do_build ()
   #   workload - but can also trigger a bug with old versions of GNU Make.
   #   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0ddad21d3e99
   MAKE_CMD+=" --output-sync=recurse"
-
-  add_make_parallel_jobs_flag
 
   local TARGETS=""
 
@@ -1340,6 +1340,12 @@ do_program_and_debug ()
     add_openocd_arg "--debug=3 "
   fi
 
+  # OpenOCD's documentation states the following:
+  #   By default, OpenOCD will listen on the loopback interface only.
+  # But my OpenOCD version 0.10.0 is listening on all IP addresses, which makes it a security risk.
+  # Therefore, force localhost-only listening here.
+  add_openocd_cmd "bindto localhost"
+
   case "$JTAG_ADAPTER" in
     JtagDue)
       add_openocd_cmd "set JTAGDUE_SERIAL_PORT \"$JTAGDUE_SERIAL_PORT\""
@@ -1451,6 +1457,7 @@ USER_LONG_OPTIONS_SPEC+=( [program-with-bossac]=0 )
 USER_LONG_OPTIONS_SPEC+=( [cache-programmed-file]=0 )
 USER_LONG_OPTIONS_SPEC+=( [debug]=0 )
 USER_LONG_OPTIONS_SPEC+=( [debug-from-the-start]=0 )
+USER_LONG_OPTIONS_SPEC+=( [show-build-commands]=0 )
 USER_LONG_OPTIONS_SPEC+=( [build-type]=1 )
 USER_LONG_OPTIONS_SPEC+=( [toolchain-dir]=1 )
 USER_LONG_OPTIONS_SPEC+=( [atmel-software-framework]=1 )
@@ -1473,6 +1480,7 @@ PROGRAM_WITH_BOSSAC_SPECIFIED=false
 CACHE_PROGRAMMED_FILE_SPECIFIED=false
 DEBUG_SPECIFIED=false
 DEBUG_FROM_THE_START_SPECIFIED=false
+SHOW_BUILD_COMMANDS=false
 PROJECT="$DEFAULT_PROJECT"
 declare -ag BREAKPOINTS=()
 
@@ -1539,7 +1547,8 @@ else
 fi
 
 if $NEED_TOOLCHAIN; then
-  add_toolchain_dir_to_path "$TOOLCHAIN_DIR"
+  PATH="$TOOLCHAIN_DIR/bin:$PATH"
+  check_whether_compiler_is_present
 fi
 
 
