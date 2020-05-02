@@ -13,9 +13,7 @@ user_config ()
 {
   DEFAULT_TOOLCHAIN_DIR="$HOME/SomeDir/JtagDueToolchain"
 
-  DEFAULT_ASF_DIR="$HOME/SomeDir/asf-standalone-archive-3.19.0.95"
-
-  DEFAULT_PATH_TO_OPENOCD="$HOME/SomeDir/openocd-0.8.0-bin/bin/openocd"
+  DEFAULT_PATH_TO_OPENOCD="$HOME/SomeDir/openocd-0.10.0-bin/bin/openocd"
 
   # This setting only matters when using the 'bossac' tool.
   DEFAULT_PATH_TO_BOSSAC="bossac"
@@ -462,7 +460,10 @@ do_configure_if_necessary ()
       # echo "Creating a release build..."
     fi
 
-    CONFIG_CMD+=" --with-atmel-software-framework=\"$ASF_DIR\""
+    if [ -n "$ASF_DIR" ]; then
+      CONFIG_CMD+=" --with-atmel-software-framework=\"$ASF_DIR\""
+    fi
+
     CONFIG_CMD+=" --with-project=\"$PROJECT_NAME\""
 
     CONFIG_CMD+=" --host=\"$TARGET_ARCH\""
@@ -1432,7 +1433,7 @@ UPTIME_BEGIN="$CURRENT_UPTIME"
 user_config
 
 TOOLCHAIN_DIR="$DEFAULT_TOOLCHAIN_DIR"
-ASF_DIR="$DEFAULT_ASF_DIR"
+ASF_DIR=""
 PATH_TO_OPENOCD="$DEFAULT_PATH_TO_OPENOCD"
 BUILD_TYPE="$DEFAULT_BUILD_TYPE"
 DEBUGGER_TYPE="$DEFAULT_DEBUGGER_TYPE"
@@ -1522,7 +1523,7 @@ PROJECT_NAME_LOWERCASE="${PROJECT,,}"
 case "${PROJECT_NAME_LOWERCASE}" in
   jtagdue)       PROJECT_NAME="JtagDue" ;;
   emptyfirmware) PROJECT_NAME="EmptyFirmware" ;;
-  *) abort "Invalid project name of \"$PROJECT\"." ;;
+  *) abort "Invalid project name \"$PROJECT\"." ;;
 esac
 
 
