@@ -144,6 +144,31 @@ BUILD_FLAGS+=" -Wall"
 ASSERT_TYPE=ASSERT_TYPE_FULL
 
 
+# ----------- Project Name -----------
+
+AC_ARG_WITH(project,
+[AS_HELP_STRING([--with-project=project-name],
+		[see the --project option in the top-level build script.])])
+
+if test "x$with_project" == x; then
+  AC_MSG_ERROR([Please specify the --with-project=project-name configuration switch.])
+fi
+
+PROJECT_NAME_LOWERCASE="${with_project,,}"
+
+IS_EMPTY_FIRMWARE=false
+IS_JTAG_DUE=false
+
+case "$PROJECT_NAME_LOWERCASE" in
+  emptyfirmware) IS_EMPTY_FIRMWARE=true ;;
+  jtagdue)       IS_JTAG_DUE=true ;;
+  *) AC_MSG_ERROR([Invalid project name "$with_project".]) ;;
+esac
+
+AM_CONDITIONAL([IS_EMPTY_FIRMWARE], [test $IS_EMPTY_FIRMWARE = true])
+AM_CONDITIONAL([IS_JTAG_DUE], [test $IS_JTAG_DUE = true])
+
+
 # ----------- Path to the Atmel Software Framework -----------
 
 AC_ARG_WITH(atmel-software-framework,
@@ -185,31 +210,6 @@ fi
 
 TARGET_ARCH="$with_target_arch"
 AC_SUBST(TARGET_ARCH)
-
-
-# ----------- project name -----------
-
-AC_ARG_WITH(project,
-[AS_HELP_STRING([--with-project=project-name],
-		[specify 'JtagDue' or 'EmptyFirmware'.])])
-
-if test "x$with_project" == x; then
-  AC_MSG_ERROR([Please specify the --with-project=project-name configuration switch.])
-fi
-
-PROJECT_NAME_LOWERCASE="${with_project,,}"
-
-IS_EMPTY_FIRMWARE=false
-IS_JTAG_DUE=false
-
-case "$PROJECT_NAME_LOWERCASE" in
-  jtagdue)       IS_JTAG_DUE=true ;;
-  emptyfirmware) IS_EMPTY_FIRMWARE=true ;;
-  *) AC_MSG_ERROR([Invalid project name of "$with_project".]) ;;
-esac
-
-AM_CONDITIONAL([IS_EMPTY_FIRMWARE], [test $IS_EMPTY_FIRMWARE = true])
-AM_CONDITIONAL([IS_JTAG_DUE], [test $IS_JTAG_DUE = true])
 
 
 # ----------------------------------------
