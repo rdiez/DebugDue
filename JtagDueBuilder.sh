@@ -885,10 +885,17 @@ add_openocd_cmd ()
   # The following makes every line return an empty list, which then prints nothing,
   # effectively suppressing printing the function result.
   # I have not found a better way yet to achieve this.
-  TCL_SUPPRESS_PRINTING_RESULT_SUFFIX="; list"
+
+  local -r SUPPRESS_PRINTING_RESULT=true
 
   local QUOTED
-  printf -v QUOTED "%q" "$1 $TCL_SUPPRESS_PRINTING_RESULT_SUFFIX"
+
+  if $SUPPRESS_PRINTING_RESULT; then
+    local -r TCL_SUPPRESS_PRINTING_RESULT_SUFFIX="; list"
+    printf -v QUOTED  "%q"  "$1 $TCL_SUPPRESS_PRINTING_RESULT_SUFFIX"
+  else
+    printf -v QUOTED  "%q"  "$1"
+  fi
 
   add_openocd_arg "--command $QUOTED"
 }
