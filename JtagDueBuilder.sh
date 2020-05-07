@@ -78,6 +78,27 @@ str_starts_with ()
 }
 
 
+quote_and_append_args ()
+{
+  local -n VAR="$1"
+  shift
+
+  local STR
+
+  # Shell-quote all arguments before joining them into a single string.
+  printf -v STR  "%q "  "$@"
+
+  # Remove the last character, which is one space too much.
+  STR="${STR::-1}"
+
+  if [ -z "$VAR" ]; then
+    VAR="$STR"
+  else
+    VAR+="  $STR"
+  fi
+}
+
+
 delete_dir_if_exists ()
 {
   # $1 = dir name
@@ -331,7 +352,7 @@ Step 4, debug operations:
   --openocd-path="openocd-0.10.0/bin/openocd"  Path to the OpenOCD executable.
 
 Global options:
-  --project="<project name>"  Specify 'JtagDue' (the default) or 'EmptyFirmware'.
+  --project="<project name>"  Specify 'JtagDue' (the default), 'EmptyFirmware' or 'QemuFirmware'.
   --toolchain-dir="<path>"
   --build-type="<type>"  Build types are "debug" and "release".
 
@@ -1432,6 +1453,12 @@ do_program_and_debug ()
 }
 
 
+do_run_in_qemu ()
+{
+  abort "Not implemented yet."
+}
+
+
 # ------- Entry point -------
 
 get_uptime
@@ -1530,6 +1557,7 @@ PROJECT_NAME_LOWERCASE="${PROJECT,,}"
 case "${PROJECT_NAME_LOWERCASE}" in
   jtagdue)       PROJECT_NAME="JtagDue" ;;
   emptyfirmware) PROJECT_NAME="EmptyFirmware" ;;
+  qemufirmware) PROJECT_NAME="QemuFirmware" ;;
   *) abort "Invalid project name \"$PROJECT\"." ;;
 esac
 
@@ -1596,36 +1624,50 @@ fi
 
 # ---------  Step 3 and 4: Program and Debug ---------
 
-SAME_FILE_THEREFORE_SKIP_PROGRAMMING=false
-CACHE_FILE_EXISTS_BUT_DIFFERENT=false
+if [[ $PROJECT_NAME_LOWERCASE = "qemufirmware" ]]; then
 
-if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
-
-  if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
-    if [ -e "$CACHED_PROGRAMMED_FILE_FILENAME" ]; then
-      set +o errexit
-      cmp --quiet "$CACHED_PROGRAMMED_FILE_FILENAME" "$BIN_FILEPATH"
-      CMP_EXIT_CODE="$?"
-      set -o errexit
-
-      case "$CMP_EXIT_CODE" in
-        0) SAME_FILE_THEREFORE_SKIP_PROGRAMMING=true;;
-        1) CACHE_FILE_EXISTS_BUT_DIFFERENT=true;;
-        *) abort "Error comparing files \"$CACHED_PROGRAMMED_FILE_FILENAME\" and \"$BIN_FILEPATH\", cmp exited with a status code of $CMP_EXIT_CODE";;
-      esac
-    fi
-  else
-    delete_file_if_exists "$CACHED_PROGRAMMED_FILE_FILENAME"
+  if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
+    abort "Cannot program a Qemu firmware. You can only run it with option '--debug'."
   fi
 
-fi
+  if $DEBUG_SPECIFIED; then
+    do_run_in_qemu
+  fi
 
-if $PROGRAM_OVER_JTAG_SPECIFIED || $DEBUG_SPECIFIED; then
-  do_program_and_debug
-fi
+else
 
-if $PROGRAM_WITH_BOSSAC_SPECIFIED; then
-  do_bossac
+  SAME_FILE_THEREFORE_SKIP_PROGRAMMING=false
+  CACHE_FILE_EXISTS_BUT_DIFFERENT=false
+
+  if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
+
+    if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
+      if [ -e "$CACHED_PROGRAMMED_FILE_FILENAME" ]; then
+        set +o errexit
+        cmp --quiet "$CACHED_PROGRAMMED_FILE_FILENAME" "$BIN_FILEPATH"
+        CMP_EXIT_CODE="$?"
+        set -o errexit
+
+        case "$CMP_EXIT_CODE" in
+          0) SAME_FILE_THEREFORE_SKIP_PROGRAMMING=true;;
+          1) CACHE_FILE_EXISTS_BUT_DIFFERENT=true;;
+          *) abort "Error comparing files \"$CACHED_PROGRAMMED_FILE_FILENAME\" and \"$BIN_FILEPATH\", cmp exited with a status code of $CMP_EXIT_CODE";;
+        esac
+      fi
+    else
+      delete_file_if_exists "$CACHED_PROGRAMMED_FILE_FILENAME"
+    fi
+
+  fi
+
+  if $PROGRAM_OVER_JTAG_SPECIFIED || $DEBUG_SPECIFIED; then
+    do_program_and_debug
+  fi
+
+  if $PROGRAM_WITH_BOSSAC_SPECIFIED; then
+    do_bossac
+  fi
+
 fi
 
 get_uptime

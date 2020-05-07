@@ -20,7 +20,7 @@
 
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/BusyWait.h>
-#include <BareMetalSupport/BoardInit.h>
+#include <BareMetalSupport/BoardInitUtils.h>
 #include <BareMetalSupport/StackCheck.h>
 #include <BareMetalSupport/Uptime.h>
 #include <BareMetalSupport/IoUtils.h>
@@ -28,6 +28,8 @@
 #include <BareMetalSupport/SerialPortAsyncTx.h>
 #include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/MainLoopSleep.h>
+
+#include <ArduinoDueUtils/ArduinoDueUtils.h>
 
 #include "Globals.h"
 #include "UsbConnection.h"

@@ -178,7 +178,12 @@ declare -r INSTALLATION_DIR="$ROTATED_DIR/bin"
 
 declare -r SKIP_TOOLCHAIN_BUILD=false
 
-if ! $SKIP_TOOLCHAIN_BUILD; then
+if $SKIP_TOOLCHAIN_BUILD; then
+
+  TOOLCHAIN_BIN_DIR="$OUTPUT_BASE_DIR/CurrentToolchain/bin"
+  # TOOLCHAIN_BIN_DIR="$HOME/some-other-toolchain-when-testing-this-script"
+
+else
 
   printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  all" \
        "$USUAL_ARGS" \
@@ -202,6 +207,8 @@ if ! $SKIP_TOOLCHAIN_BUILD; then
   if ! [[ $OUTPUT_FILE_CONTENTS =~ $NOTHING_TO_DO_REGEX ]]; then
     abort "Trying to run the makefile as second time still finds something to be built."
   fi
+
+  TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR"
 
 fi
 
@@ -274,24 +281,23 @@ else
 
 fi
 
-TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR"
-# TOOLCHAIN_BIN_DIR="$HOME/some-other-toolchain-when-testing-this-script"
 
 pushd "$COPY_OF_REPOSITORY" >/dev/null
 
 
-printf -v BUILD_BASE_CMD "%q --atmel-software-framework=%q  --toolchain-dir=%q"  "$COPY_OF_REPOSITORY/JtagDueBuilder.sh"  "$ASF_PATH" "$TOOLCHAIN_BIN_DIR"
+printf -v BUILD_BASE_CMD "%q  --toolchain-dir=%q"  "$COPY_OF_REPOSITORY/JtagDueBuilder.sh"  "$TOOLCHAIN_BIN_DIR"
 
-run_cmd "Building JtagDue, debug build..."  "$BUILD_BASE_CMD  --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-debug.txt" both
+printf -v BUILD_BASE_ASF_CMD "%s  --atmel-software-framework=%q"  "$BUILD_BASE_CMD"  "$ASF_PATH"
 
-run_cmd "Building JtagDue, debug build with disassemble..."  "$BUILD_BASE_CMD  --build-type=debug --build --disassemble"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-debug-disassemble.txt"  both
+run_cmd "Building JtagDue, debug build..."  "$BUILD_BASE_ASF_CMD  --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-debug.txt" both
 
-run_cmd "Building JtagDue, release build..."  "$BUILD_BASE_CMD  --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-release.txt" both
+run_cmd "Building JtagDue, debug build with disassemble..."  "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-debug-disassemble.txt"  both
 
-run_cmd "Building EmptyFirmware, debug build..."  "$BUILD_BASE_CMD  --project=EmptyFirmware --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-debug.txt"  both
+run_cmd "Building JtagDue, release build..."  "$BUILD_BASE_ASF_CMD  --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-release.txt" both
 
-run_cmd "Building EmptyFirmware, release build..."  "$BUILD_BASE_CMD  --project=EmptyFirmware --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-release.txt"  both
+run_cmd "Building EmptyFirmware, debug build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-debug.txt"  both
 
+run_cmd "Building EmptyFirmware, release build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-release.txt"  both
 
 popd >/dev/null
 

@@ -28,27 +28,29 @@ MAP_FILENAME := $(ELF_BASENAME).map
 
 firmware_elf_CPPFLAGS := $(AM_CPPFLAGS)
 
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pio
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/rstc
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/wdt
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/adc
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/uart
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/boards
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/boards
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
-firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/utils
+if !IS_QEMU_FIRMWARE
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pio
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/rstc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/wdt
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/adc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/uart
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/boards
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/boards
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/utils
+endif
 
 firmware_elf_CPPFLAGS += -I$(srcdir)/UserImplementationOfAssert
 
@@ -60,15 +62,19 @@ firmware_elf_SOURCES :=
 
 # ----- CMSIS library.
 
-firmware_elf_SOURCES += \
+if !IS_QEMU_FIRMWARE
+  firmware_elf_SOURCES += \
     AsfSrc/sam/utils/cmsis/sam3x/source/templates/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
+endif
 
 
 # ----- Bare Metal Support library, which I have written myself.
 
 # Note that files NewlibSyscalls.cpp and crt0.cpp are missing here, see below.
 
-firmware_elf_SOURCES += \
+if !IS_QEMU_FIRMWARE
+
+  firmware_elf_SOURCES += \
     BareMetalSupport/AssertionUtils.cpp \
     BareMetalSupport/Miscellaneous.cpp \
     BareMetalSupport/MiscellaneousAsm.S \
@@ -77,7 +83,6 @@ firmware_elf_SOURCES += \
     BareMetalSupport/SerialPortUtils.cpp \
     BareMetalSupport/SerialPrint.cpp \
     BareMetalSupport/SerialPortAsyncTx.cpp \
-    BareMetalSupport/BoardInit.cpp \
     BareMetalSupport/StackCheck.cpp \
     BareMetalSupport/TextParsingUtils.cpp \
     BareMetalSupport/GenericSerialConsole.cpp \
@@ -86,10 +91,21 @@ firmware_elf_SOURCES += \
     BareMetalSupport/BusyWait.cpp \
     BareMetalSupport/MainLoopSleep.cpp
 
+  firmware_elf_SOURCES += \
+    ArduinoDueUtils/ArduinoDueUtils.cpp
+
+endif
+
+firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/BoardInit.cpp
+
+firmware_elf_SOURCES += BareMetalSupport/BoardInitUtils.cpp
+
 
 # ----- The ASF library comes from Atmel and has a very liberal license.
 
-firmware_elf_SOURCES += \
+if !IS_QEMU_FIRMWARE
+
+  firmware_elf_SOURCES += \
      AsfSrc/sam/drivers/pmc/pmc.c \
      AsfSrc/sam/drivers/pio/pio.c \
      AsfSrc/sam/drivers/wdt/wdt.c \
@@ -97,6 +113,8 @@ firmware_elf_SOURCES += \
      AsfSrc/sam/drivers/uart/uart.c \
      AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
      AsfSrc/common/services/clock/sam3x/sysclk.c
+
+endif
 
 
 # ------------------------------------
@@ -112,6 +130,12 @@ if IS_EMPTY_FIRMWARE
 
 endif
 
+if IS_QEMU_FIRMWARE
+
+  firmware_elf_SOURCES += \
+    QemuFirmware/Main.cpp
+
+endif
 
 if IS_JTAG_DUE
 
@@ -194,7 +218,7 @@ firmware_elf_SOURCES += BareMetalSupport/NewlibSyscalls.cpp
 # and check that a new firmware binary with the new version number gets built automatically.
 $(firmware_elf_OBJECTS): Makefile
 
-LINKER_SCRIPT_FILENAME := $(BARE_METAL_SUPPORT_DIR)/flash.ld
+LINKER_SCRIPT_FILENAME := $(abs_srcdir)/$(BOARD_SUPPORT_DIR)/flash.ld
 
 # Note that the linking order specified in xxx_LDADD is important: if library libfoo.a has an undefined symbol,
 # and that symbol is in libbar.a, you need to put libfoo.a before libbar.a on the command line.

@@ -14,15 +14,15 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "BoardInit.h"  // Include file for this module comes first.
+#include <BareMetalSupport/BoardInitUtils.h>
 
 #include <assert.h>
 
 #include <sam3xa.h>
 
-#include "BusyWait.h"
-#include "IoUtils.h"
-#include "AssertionUtils.h"
+#include <BareMetalSupport/BusyWait.h>
+#include <BareMetalSupport/IoUtils.h>
+#include <BareMetalSupport/AssertionUtils.h>
 
 #ifndef __ARM_FEATURE_UNALIGNED
   #error "You should specify GCC switch -munaligned-access"
@@ -154,35 +154,6 @@ static void SetupCpuClock ( void )
     // that would be 375 Main Clock ticks for every Slow Clock tick.
     // In 16 Slow Clock ticks, we have 6000 Main Clock ticks then. On my board, the value read
     // is 6601, which is around 10 % off.
-}
-
-
-// Tell GCC never to inline this routine. It may not be necessary,
-// but I just want to make sure the stack frame and C++ exception frame
-// are correct at this point. The caller routine initialises them,
-// therefore, if GCC makes assumptions and reorder code, it may not be right
-// before this routine is called.
-
-static void RunUserCode ( void ) __attribute__ ((noinline));
-
-void RunUserCode ( void )
-{
-    #ifdef __EXCEPTIONS  // If the compiler supports C++ exceptions...
-
-      try
-      {
-        StartOfUserCode();
-      }
-      catch ( ... )
-      {
-        Panic( "C++ exception from user code." );
-      }
-
-    #else
-
-        StartOfUserCode();
-
-    #endif
 }
 
 
@@ -384,25 +355,3 @@ static const DeviceVectors ExceptionTable =
 	(void*) CAN0_Handler,    /* 43 CAN Controller 0 */
 	(void*) CAN1_Handler    /* 44 CAN Controller 1 */
 };
-
-
-// According to the documentation:
-//  "TDO pin is set in input mode when the Cortex-M3 Core is not in debug mode. Thus the internal
-//   pull-up corresponding to this PIO line must be enabled to avoid current consumption due to floating input."
-// Pin TDO/TRACESWO = PB30 = Pin number 30 (in the 144-ball LFBGA pinout).
-// Upon reset, the pull-up should be active, and this routine should be called in order to assert
-// that it returns true.
-
-bool IsJtagTdoPullUpActive ( void )
-{
-  Pio * const pioPtr = PIOB;
-
-  const uint8_t PIN_NUMBER = 30;
-
-  // This pin is used for JTAG purposes and must not be controlled by the PIO Controller.
-  assert( !IsPinControlledByPio( pioPtr, PIN_NUMBER ) );
-
-  // The pull-ups can be enabled or disabled regardless of the pin configuration.
-  // The pull-up should be active.
-  return IsPullUpEnabled( pioPtr, PIN_NUMBER );
-}

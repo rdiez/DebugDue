@@ -18,8 +18,10 @@
 
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/Miscellaneous.h>
-#include <BareMetalSupport/BoardInit.h>
+#include <BareMetalSupport/BoardInitUtils.h>
 #include <BareMetalSupport/SerialPortUtils.h>
+
+#include <ArduinoDueUtils/ArduinoDueUtils.h>
 
 #include <sam3xa.h>  // All interrupt handlers must probably be extern "C", so include their declarations here.
 
