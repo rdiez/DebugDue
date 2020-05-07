@@ -14,7 +14,7 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "AssertionUtils.h"  // Include file for this module comes first.
+#include <BareMetalSupport/AssertionUtils.h>  // Include file for this module comes first.
 
 #include <stddef.h>  // For NULL.
 

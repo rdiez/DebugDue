@@ -75,7 +75,6 @@ endif
 if !IS_QEMU_FIRMWARE
 
   firmware_elf_SOURCES += \
-    BareMetalSupport/AssertionUtils.cpp \
     BareMetalSupport/Miscellaneous.cpp \
     BareMetalSupport/MiscellaneousAsm.S \
     BareMetalSupport/IntegerPrintUtils.cpp \
@@ -97,6 +96,7 @@ if !IS_QEMU_FIRMWARE
 endif
 
 firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/BoardInit.cpp
+firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/AssertionUtils.cpp
 
 firmware_elf_SOURCES += BareMetalSupport/BoardInitUtils.cpp
 
