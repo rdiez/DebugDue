@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <stdexcept>
 
+#include <BareMetalSupport/DebugConsoleEol.h>
+
 #include "Globals.h"
 
 

@@ -16,6 +16,7 @@
 #include <BareMetalSupport/BusyWait.h>
 #include <BareMetalSupport/SerialPortUtils.h>
 #include <BareMetalSupport/IntegerPrintUtils.h>
+#include <BareMetalSupport/DebugConsoleEol.h>
 
 #include "Globals.h"
 #include "BusPirateOpenOcdMode.h"

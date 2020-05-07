@@ -2,6 +2,8 @@
 #include "ArduinoDueUtils.h"  // The include file for this module should come first.
 
 #include <BareMetalSupport/IoUtils.h>
+#include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/DebugConsoleEol.h>
 
 
 // According to the documentation:
@@ -23,4 +25,19 @@ bool IsJtagTdoPullUpActive ( void ) throw()
   // The pull-ups can be enabled or disabled regardless of the pin configuration.
   // The pull-up should be active.
   return IsPullUpEnabled( pioPtr, PIN_NUMBER );
+}
+
+
+void PrintPanicMsg ( const char * const msg ) throw()
+{
+  // This routine is called with interrupts disabled and should rely
+  // on as little other code as possible.
+  SerialSyncWriteStr( EOL );
+  SerialSyncWriteStr( "PANIC: " );
+  SerialSyncWriteStr( msg );
+  SerialSyncWriteStr( EOL );
+
+  // Here it would be a good place to print a stack backtrace,
+  // but I have not been able to figure out yet how to do that
+  // with the ARM Thumb platform.
 }

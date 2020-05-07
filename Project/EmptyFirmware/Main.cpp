@@ -20,6 +20,7 @@
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/BoardInitUtils.h>
 #include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/DebugConsoleEol.h>
 
 #include <ArduinoDueUtils/ArduinoDueUtils.h>
 
@@ -28,28 +29,7 @@
 #include <pio.h>
 
 
-#define EOL "\r\n"  // Carriage Return, 0x0D, followed by a Line Feed, 0x0A.
-
-
 static const bool ENABLE_DEBUG_CONSOLE = true;
-
-
-static void PrintPanicMsg ( const char * const msg )
-{
-  if ( ENABLE_DEBUG_CONSOLE )
-  {
-    // This routine is called with interrupts disabled and should rely
-    // on as little other code as possible.
-    SerialSyncWriteStr( EOL );
-    SerialSyncWriteStr( "PANIC: " );
-    SerialSyncWriteStr( msg );
-    SerialSyncWriteStr( EOL );
-
-    // Here it would be a good place to print a stack backtrace,
-    // but I have not been able to figure out yet how to do that
-    // with the ARM Thumb platform.
-  }
-}
 
 
 static void Configure ( void )
@@ -68,9 +48,9 @@ static void Configure ( void )
 
     SerialSyncWriteStr( "--- EmptyDue " PACKAGE_VERSION " ---" EOL );
     SerialSyncWriteStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
-  }
 
-  SetUserPanicMsgFunction( &PrintPanicMsg );
+    SetUserPanicMsgFunction( &PrintPanicMsg );
+  }
 
 
   // ------- Perform some assorted checks -------

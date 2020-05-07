@@ -61,21 +61,6 @@ static uint32_t GetWdtPeriod ( const uint32_t dwMs )
 }
 
 
-static void PrintPanicMsg ( const char * const msg )
-{
-  // This routine is called with interrupts disabled and should rely
-  // on as little other code as possible.
-  SerialSyncWriteStr( EOL );
-  SerialSyncWriteStr( "PANIC: " );
-  SerialSyncWriteStr( msg );
-  SerialSyncWriteStr( EOL );
-
-  // Here it would be a good place to print a stack backtrace,
-  // but I have not been able to figure out yet how to do that
-  // with the ARM Thumb platform.
-}
-
-
 static void Configure ( void )
 {
   // ------- Configure the UART connected to the AVR controller -------

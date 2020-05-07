@@ -20,6 +20,7 @@
 #include <BareMetalSupport/SerialPortUtils.h>
 #include <BareMetalSupport/GenericSerialConsole.h>
 #include <BareMetalSupport/MainLoopSleep.h>
+#include <BareMetalSupport/DebugConsoleEol.h>
 
 #include <stdexcept>
 #include <string.h>

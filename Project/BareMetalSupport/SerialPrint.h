@@ -9,6 +9,8 @@
 #include <stdarg.h>
 #include <stddef.h>  // For size_t.
 
+#include <BareMetalSupport/DebugConsoleEol.h>
+
 
 void SerialPrintStr ( const char * msg );
 
