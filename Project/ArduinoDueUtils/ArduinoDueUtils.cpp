@@ -28,6 +28,20 @@ bool IsJtagTdoPullUpActive ( void ) throw()
 }
 
 
+// ------- Configure the UART connected to the AVR controller -------
+
+void InitDebugConsoleUart ( const bool enableRxInterrupt ) throw()
+{
+  VERIFY( pio_configure( PIOA, PIO_PERIPH_A,
+                         PIO_PA8A_URXD | PIO_PA9A_UTXD, PIO_DEFAULT ) );
+
+  // Enable the pull-up resistor for RX0.
+  pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
+
+  InitSerialPort( enableRxInterrupt );
+}
+
+
 void PrintPanicMsg ( const char * const msg ) throw()
 {
   // This routine is called with interrupts disabled and should rely
@@ -40,4 +54,31 @@ void PrintPanicMsg ( const char * const msg ) throw()
   // Here it would be a good place to print a stack backtrace,
   // but I have not been able to figure out yet how to do that
   // with the ARM Thumb platform.
+}
+
+
+// Perform some assorted checks on start-up.
+
+void StartUpChecks ( void ) throw()
+{
+  assert( IsJtagTdoPullUpActive() );
+
+  // Check that the brown-out detector is active.
+  #ifndef NDEBUG
+    const uint32_t supcMr = SUPC->SUPC_MR;
+    assert( ( supcMr & SUPC_MR_BODDIS   ) == SUPC_MR_BODDIS_ENABLE   );
+    assert( ( supcMr & SUPC_MR_BODRSTEN ) == SUPC_MR_BODRSTEN_ENABLE );
+  #endif
+
+
+  // This is actually not specific to Arduino Due, but is common to all Cortex-M3 cores.
+
+  // SerialPrintf( "CCR: 0x%08X" EOL, unsigned( SCB->CCR ) );
+
+  #ifdef __ARM_FEATURE_UNALIGNED
+    assert( 0 == ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
+  #else
+    assert( 0 != ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
+    #error "We normally do not expect this scenario."
+  #endif
 }

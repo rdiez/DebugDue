@@ -63,16 +63,10 @@ static uint32_t GetWdtPeriod ( const uint32_t dwMs )
 
 static void Configure ( void )
 {
-  // ------- Configure the UART connected to the AVR controller -------
+  InitDebugConsoleUart( true );
 
-  VERIFY( pio_configure( PIOA, PIO_PERIPH_A,
-                         PIO_PA8A_URXD | PIO_PA9A_UTXD, PIO_DEFAULT ) );
-
-  // Enable the pull-up resistor for RX0.
-  pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
-
-  InitSerialPort( true );
   InitSerialPortAsyncTx( EOL );
+
   // Print this msg only on serial port, and not on USB port:
   SerialPrintf( "--- JtagDue %s ---" EOL, PACKAGE_VERSION );
   SerialPrintStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
@@ -117,30 +111,12 @@ static void Configure ( void )
   #endif
 
 
-  // ------- Perform some assorted checks -------
+  StartUpChecks();
 
   assert( IsBusyWaitAsmLoopAligned() );
 
-  assert( IsJtagTdoPullUpActive() );
-
-  // Check that the brown-out detector is active.
-  #ifndef NDEBUG
-    const uint32_t supcMr = SUPC->SUPC_MR;
-    assert( ( supcMr & SUPC_MR_BODDIS   ) == SUPC_MR_BODDIS_ENABLE   );
-    assert( ( supcMr & SUPC_MR_BODRSTEN ) == SUPC_MR_BODRSTEN_ENABLE );
-  #endif
-
 
   // ------- Adjust and check some SCB CCR flags -------
-
-  // SerialPrintf( "CCR: 0x%08X" EOL, unsigned( SCB->CCR ) );
-
-  #ifdef __ARM_FEATURE_UNALIGNED
-    assert( 0 == ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
-  #else
-    assert( 0 != ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
-    #error "We normally do not expect this scenario."
-  #endif
 
   // We could clear here bit STKALIGN in the SCB CCR register in order to save 4 bytes per interrupt stack frame.
 

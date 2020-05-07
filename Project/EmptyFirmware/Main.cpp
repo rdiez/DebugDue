@@ -34,17 +34,9 @@ static const bool ENABLE_DEBUG_CONSOLE = true;
 
 static void Configure ( void )
 {
-  // ------- Configure the UART connected to the AVR controller -------
-
   if ( ENABLE_DEBUG_CONSOLE )
   {
-    VERIFY( pio_configure( PIOA, PIO_PERIPH_A,
-                           PIO_PA8A_URXD | PIO_PA9A_UTXD, PIO_DEFAULT ) );
-
-    // Enable the pull-up resistor for RX0.
-    pio_pull_up( PIOA, PIO_PA8A_URXD, ENABLE ) ;
-
-    InitSerialPort( false );
+    InitDebugConsoleUart( false );
 
     SerialSyncWriteStr( "--- EmptyDue " PACKAGE_VERSION " ---" EOL );
     SerialSyncWriteStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
@@ -52,21 +44,9 @@ static void Configure ( void )
     SetUserPanicMsgFunction( &PrintPanicMsg );
   }
 
+  StartUpChecks();
 
-  // ------- Perform some assorted checks -------
-
-  assert( IsJtagTdoPullUpActive() );
-
-  // Check that the brown-out detector is active.
-  #ifndef NDEBUG
-    const uint32_t supcMr = SUPC->SUPC_MR;
-    assert( ( supcMr & SUPC_MR_BODDIS   ) == SUPC_MR_BODDIS_ENABLE   );
-    assert( ( supcMr & SUPC_MR_BODRSTEN ) == SUPC_MR_BODRSTEN_ENABLE );
-  #endif
-
-
-  // ------- Configure the watchdog -------
-
+  // Configure the watchdog.
   WDT->WDT_MR = WDT_MR_WDDIS;
 }
 
