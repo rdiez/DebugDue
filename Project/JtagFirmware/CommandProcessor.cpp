@@ -14,10 +14,12 @@
 #include <BareMetalSupport/StackCheck.h>
 #include <BareMetalSupport/TextParsingUtils.h>
 #include <BareMetalSupport/BusyWait.h>
-#include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/DebugConsoleSerialSync.h>
 #include <BareMetalSupport/IntegerPrintUtils.h>
 #include <BareMetalSupport/DebugConsoleEol.h>
 #include <BareMetalSupport/LinkScriptSymbols.h>
+
+#include <BoardSupport-ArduinoDue/DebugConsoleSupport.h>
 
 #include "Globals.h"
 #include "BusPirateOpenOcdMode.h"

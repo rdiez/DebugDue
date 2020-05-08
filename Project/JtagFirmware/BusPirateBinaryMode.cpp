@@ -19,7 +19,6 @@
 #include <assert.h>
 #include <stdexcept>
 
-#include <BareMetalSupport/SerialPortUtils.h>
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/IoUtils.h>

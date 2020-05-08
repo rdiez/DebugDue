@@ -14,13 +14,9 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "SerialPortUtils.h"  // The include file for this module should come first.
+#include "DebugConsoleSupport.h"  // The include file for this module should come first.
 
-#include <assert.h>
-
-#include "Miscellaneous.h"
-#include "IntegerPrintUtils.h"
-#include "AssertionUtils.h"
+#include <BareMetalSupport/AssertionUtils.h>
 
 #include <sam3xa.h>
 #include <pmc.h>
@@ -29,13 +25,13 @@
 
 static bool s_isSerialPortInitialised = false;
 
-bool WasSerialPortInitialised ( void )
+bool WasSerialPortInitialised ( void ) throw()
 {
   return s_isSerialPortInitialised;
 }
 
 
-void InitSerialPort ( const bool enableRxInterrupt )
+void InitSerialPort ( const bool enableRxInterrupt ) throw()
 {
   assert( !WasSerialPortInitialised() );
   s_isSerialPortInitialised = true;
@@ -67,7 +63,7 @@ void InitSerialPort ( const bool enableRxInterrupt )
 }
 
 
-static void WaitForTxReady ( void )
+static void WaitForTxReady ( void ) throw()
 {
   while ( (UART->UART_SR & UART_SR_TXRDY) != UART_SR_TXRDY )
   {
@@ -75,7 +71,7 @@ static void WaitForTxReady ( void )
 }
 
 
-void SerialWaitForDataSent ( void )
+void SerialWaitForDataSent ( void ) throw()
 {
   while ( (UART->UART_SR & UART_SR_TXEMPTY) != UART_SR_TXEMPTY )
   {
@@ -83,28 +79,11 @@ void SerialWaitForDataSent ( void )
 }
 
 
-static void WriteSerialPortCharSync ( const uint8_t uc_data )
+void WriteSerialPortCharSync ( const uint8_t c ) throw()
 {
   assert( WasSerialPortInitialised() );
 
   WaitForTxReady();
 
-  UART->UART_THR = uc_data;
+  UART->UART_THR = c;
 }
-
-
-void SerialSyncWriteStr ( const char * const msg )
-{
-  for ( const char * p = msg; *p != '\0'; ++p )
-    WriteSerialPortCharSync( *p );
-}
-
-
-void SerialSyncWriteUint32Hex ( const uint32_t val )
-{
-  char hexBuffer[CONVERT_UINT32_TO_HEX_BUFSIZE];
-  ConvertUint32ToHex( val, hexBuffer, false );
-  SerialSyncWriteStr( hexBuffer );
-}
-
-

@@ -17,7 +17,6 @@
 #include "BusPirateConnection.h"  // The include file for this module should come first.
 
 #include <BareMetalSupport/Miscellaneous.h>
-#include <BareMetalSupport/SerialPortUtils.h>
 #include <BareMetalSupport/GenericSerialConsole.h>
 #include <BareMetalSupport/MainLoopSleep.h>
 #include <BareMetalSupport/DebugConsoleEol.h>

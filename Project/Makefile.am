@@ -79,7 +79,6 @@ if !IS_QEMU_FIRMWARE
     BareMetalSupport/MiscellaneousAsm.S \
     BareMetalSupport/IntegerPrintUtils.cpp \
     BareMetalSupport/IoUtils.cpp \
-    BareMetalSupport/SerialPortUtils.cpp \
     BareMetalSupport/SerialPrint.cpp \
     BareMetalSupport/SerialPortAsyncTx.cpp \
     BareMetalSupport/StackCheck.cpp \
@@ -97,8 +96,10 @@ endif
 
 firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/BoardInit.cpp
 firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/AssertionUtils.cpp
+firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/DebugConsoleSupport.cpp
 
 firmware_elf_SOURCES += BareMetalSupport/BoardInitUtils.cpp
+firmware_elf_SOURCES += BareMetalSupport/DebugConsoleSerialSyncCommon.cpp
 
 
 # ----- The ASF library comes from Atmel and has a very liberal license.
@@ -132,8 +133,8 @@ endif
 
 if IS_QEMU_FIRMWARE
 
-  firmware_elf_SOURCES += \
-    QemuFirmware/Main.cpp
+  firmware_elf_SOURCES += QemuFirmware/Main.cpp
+  firmware_elf_SOURCES += QemuFirmware/InterruptHandlers.cpp
 
 endif
 

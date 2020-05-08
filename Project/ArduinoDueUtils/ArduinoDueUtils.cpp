@@ -2,10 +2,12 @@
 #include "ArduinoDueUtils.h"  // The include file for this module should come first.
 
 #include <BareMetalSupport/IoUtils.h>
-#include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/DebugConsoleSerialSync.h>
 #include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/DebugConsoleEol.h>
 #include <BareMetalSupport/LinkScriptSymbols.h>
+
+#include <BoardSupport-ArduinoDue/DebugConsoleSupport.h>
 
 
 // According to the documentation:

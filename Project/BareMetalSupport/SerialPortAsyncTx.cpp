@@ -22,7 +22,8 @@
 #include "AssertionUtils.h"
 #include "Miscellaneous.h"
 #include "CircularBuffer.h"
-#include "SerialPortUtils.h"
+
+#include <BoardSupport-ArduinoDue/DebugConsoleSupport.h>
 
 #include <sam3xa.h>
 #include <uart.h>

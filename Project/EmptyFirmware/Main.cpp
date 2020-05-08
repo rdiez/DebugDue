@@ -19,7 +19,7 @@
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/BoardInitUtils.h>
-#include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/DebugConsoleSerialSync.h>
 #include <BareMetalSupport/DebugConsoleEol.h>
 
 #include <ArduinoDueUtils/ArduinoDueUtils.h>

@@ -24,7 +24,7 @@
 #include <BareMetalSupport/StackCheck.h>
 #include <BareMetalSupport/Uptime.h>
 #include <BareMetalSupport/IoUtils.h>
-#include <BareMetalSupport/SerialPortUtils.h>
+#include <BareMetalSupport/DebugConsoleSerialSync.h>
 #include <BareMetalSupport/SerialPortAsyncTx.h>
 #include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/MainLoopSleep.h>
