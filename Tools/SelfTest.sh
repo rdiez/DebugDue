@@ -299,6 +299,10 @@ run_cmd "Building EmptyFirmware, debug build..."  "$BUILD_BASE_ASF_CMD  --projec
 
 run_cmd "Building EmptyFirmware, release build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-release.txt"  both
 
+run_cmd "Building QemuFirmware, debug build..."  "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-QemuFirmware-debug.txt"  both
+
+run_cmd "Building QemuFirmware, release build..."  "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-QemuFirmware-release.txt"  both
+
 popd >/dev/null
 
 echo
