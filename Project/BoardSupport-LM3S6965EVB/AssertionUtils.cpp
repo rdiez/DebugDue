@@ -56,5 +56,11 @@ void ForeverHangAfterPanic ( void )
     // If this is a debug build, assume that we are debugging, and freeze here.
     // This helps to see the assertion messages and gives you the option
     // to attach a debugger and see the call stack.
+    //
+    // On real hardware, instruction WFE breaks debugging over JTAG.
+    // When running under Qemu, WFE is ignored, which yields a busy wait.
+    // But WFI under Qemu does seem to pause the simulated CPU, so that
+    // the host CPU is no longer busy.
+    asm volatile ("wfi":::"memory");
   }
 }
