@@ -3,7 +3,6 @@
 
 #include <BareMetalSupport/IoUtils.h>
 #include <BareMetalSupport/DebugConsoleSerialSync.h>
-#include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/DebugConsoleEol.h>
 #include <BareMetalSupport/LinkScriptSymbols.h>
 
@@ -85,37 +84,4 @@ void StartUpChecks ( void ) throw()
     assert( 0 != ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
     #error "We normally do not expect this scenario."
   #endif
-}
-
-
-// This "sync" variant should not be used if the firmware uses the "Serial Port Tx Buffer".
-
-void PrintFirmwareSegmentSizesSync ( void ) throw()
-{
-  const unsigned codeSize     = unsigned( uintptr_t( &__etext      ) - uintptr_t( &_sfixed        ) );
-  const unsigned initDataSize = unsigned( uintptr_t( &__data_end__ ) - uintptr_t( &__data_start__ ) );
-  const unsigned bssDataSize  = unsigned( uintptr_t( &__bss_end__  ) - uintptr_t( &__bss_start__  ) );
-
-  SerialSyncWriteStr( "Code size: 0x" );
-  SerialSyncWriteUint32Hex( codeSize );
-  SerialSyncWriteStr( ", initialised data size: 0x" );
-  SerialSyncWriteUint32Hex( initDataSize );
-  SerialSyncWriteStr( ", BSS size: 0x" );
-  SerialSyncWriteUint32Hex( bssDataSize );
-  SerialSyncWriteStr( "." EOL );
-}
-
-
-// This "async" variant uses vsnprintf() and brings in more of the C runtime library (makes the firmware bigger).
-
-void PrintFirmwareSegmentSizesAsync ( void ) throw()
-{
-  const unsigned codeSize     = unsigned( uintptr_t( &__etext      ) - uintptr_t( &_sfixed        ) );
-  const unsigned initDataSize = unsigned( uintptr_t( &__data_end__ ) - uintptr_t( &__data_start__ ) );
-  const unsigned bssDataSize  = unsigned( uintptr_t( &__bss_end__  ) - uintptr_t( &__bss_start__  ) );
-
-  SerialPrintf( "Code size: %u, initialised data size: %u, BSS size: %u." EOL,
-                codeSize,
-                initDataSize,
-                bssDataSize );
 }

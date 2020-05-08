@@ -13,3 +13,6 @@ void StartOfUserCode ( void );
 void RunUserCode ( void ) __attribute__ ((noinline));
 
 void InitDataSegments ( void ) throw();
+
+void PrintFirmwareSegmentSizesSync  ( void ) throw();
+void PrintFirmwareSegmentSizesAsync ( void ) throw();
