@@ -82,6 +82,6 @@ void StartUpChecks ( void ) throw()
     assert( 0 == ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
   #else
     assert( 0 != ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
-    #error "We normally do not expect this scenario."
+    #error "We normally do not expect this scenario. Did you forget to specify GCC switch -munaligned-access?"
   #endif
 }
