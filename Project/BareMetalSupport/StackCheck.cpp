@@ -19,25 +19,21 @@
 #include <string.h>  // For memset().
 #include <assert.h>
 
+#include <BareMetalSupport/LinkScriptSymbols.h>
+
 #include "Miscellaneous.h"
 #include "AssertionUtils.h"
-
-
-// These symbols are defined in the linker script file.
-extern "C" int _end;  // End of the code and data in SRAM (one byte beyond the end), start of the heap (malloc region).
-//extern "C" int _sstack;  // Start of the stack region.
-extern "C" int _estack;  // End   of the stack region (one byte beyond the end).
 
 
 // The stack is at the top of SRAM1, and the heap grows upwards. These routines check that the growing heap
 // never reaches the stack area. Otherwise, a Panic() is triggered.
 static size_t s_stackSize = 1024;  // The default stack size, can be any size.
-static uintptr_t s_heapEndAddr = uintptr_t( &_end );  // At the beginning the heap is 0 bytes long.
+static uintptr_t s_heapEndAddr = uintptr_t( &__end__ );  // At the beginning the heap is 0 bytes long.
 
 
 static uintptr_t CalculateStackStartAddr ( const size_t stackSize )
 {
-    return uintptr_t( &_estack ) - stackSize;
+    return uintptr_t( &__StackTop ) - stackSize;
 }
 
 
@@ -119,7 +115,7 @@ bool CheckStackCanary ( const size_t canarySize ) throw()
 size_t GetStackSizeUsageEstimate ( void ) throw()
 {
     const uint8_t * const startAddr = (const uint8_t *) GetStackStartAddr();
-    const uint8_t * const endAddr   = (const uint8_t *) &_estack;
+    const uint8_t * const endAddr   = (const uint8_t *) &__StackTop;
 
     for ( const uint8_t * scan = startAddr;
           scan < endAddr;
@@ -139,6 +135,6 @@ size_t GetStackSizeUsageEstimate ( void ) throw()
 size_t GetCurrentStackDepth ( void ) throw()
 {
     const uintptr_t currentStackPtr = uintptr_t( __builtin_frame_address(0) );
-    assert( currentStackPtr < uintptr_t( &_estack ) );
-    return uintptr_t( &_estack ) - currentStackPtr;
+    assert( currentStackPtr < uintptr_t( &__StackTop ) );
+    return uintptr_t( &__StackTop ) - currentStackPtr;
 }

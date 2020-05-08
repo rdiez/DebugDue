@@ -192,29 +192,13 @@ static void PeriodicAction ( void )
 }
 
 
-// These symbols are defined in the linker script file.
-extern "C" int _sfixed;
-extern "C" int _etext;
-extern "C" int _sbss;
-extern "C" int _ebss;
-extern "C" int _srelocate;
-extern "C" int _erelocate;
-
-
 void StartOfUserCode ( void )
 {
     Configure();
 
     if ( true )
     {
-      const unsigned codeSize     = unsigned( uintptr_t( &_etext     ) - uintptr_t( &_sfixed    ) );
-      const unsigned initDataSize = unsigned( uintptr_t( &_erelocate ) - uintptr_t( &_srelocate ) );
-      const unsigned bssDataSize  = unsigned( uintptr_t( &_ebss      ) - uintptr_t( &_sbss      ) );
-
-      SerialPrintf( "Code size: %u, initialised data size: %u, BSS size: %u." EOL,
-                    codeSize,
-                    initDataSize,
-                    bssDataSize );
+      PrintFirmwareSegmentSizes();
     }
 
 

@@ -23,20 +23,11 @@
 #include <BareMetalSupport/BusyWait.h>
 #include <BareMetalSupport/IoUtils.h>
 #include <BareMetalSupport/AssertionUtils.h>
+#include <BareMetalSupport/LinkScriptSymbols.h>
 
 #ifndef __ARM_FEATURE_UNALIGNED
   #error "You should specify GCC switch -munaligned-access"
 #endif
-
-// These symbols are defined in the linker script file.
-extern "C" int _sfixed;
-extern "C" int _efixed;
-extern "C" int _etext;
-extern "C" int _srelocate;
-extern "C" int _erelocate;
-extern "C" int _szero;
-extern "C" int _ezero;
-extern "C" int _estack;
 
 
 static void SetupCpuClock ( void )
@@ -181,26 +172,8 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
     }
 
 
-    // Relocate the initialised data from flash to SRAM.
 
-    const uint32_t * relocSrc  = (const uint32_t *)&_etext;
-          uint32_t * relocDest = (      uint32_t *)&_srelocate;
-
-    if ( relocSrc != relocDest )
-    {
-        while ( relocDest < (const uint32_t *) &_erelocate )
-        {
-            *relocDest++ = *relocSrc++;
-        }
-    }
-
-
-    // Clear the zero segment (BSS).
-
-    for ( uint32_t * zeroSegPtr = (uint32_t *)&_szero;  zeroSegPtr < (const uint32_t *) &_ezero;  ++zeroSegPtr )
-    {
-      *zeroSegPtr = 0;
-    }
+    InitDataSegments();
 
 
     // Set the vector table base address.
@@ -248,7 +221,7 @@ __attribute__ ((section(".vectors"),used))
 static const DeviceVectors ExceptionTable =
 {
 	/* Configure Initial Stack Pointer, using linker-generated symbols */
-	(void*) (&_estack),
+	(void*) (&__StackTop),
 	(void*) BareMetalSupport_Reset_Handler,
 
 	(void*) NMI_Handler,

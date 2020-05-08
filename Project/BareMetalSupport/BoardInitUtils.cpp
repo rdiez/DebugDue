@@ -17,8 +17,10 @@
 #include "BoardInitUtils.h"  // Include file for this module comes first.
 
 #include <assert.h>
+#include <stdint.h>
 
 #include <BareMetalSupport/AssertionUtils.h>
+#include <BareMetalSupport/LinkScriptSymbols.h>
 
 
 void RunUserCode ( void )
@@ -39,4 +41,37 @@ void RunUserCode ( void )
     StartOfUserCode();
 
   #endif
+}
+
+
+void InitDataSegments ( void ) throw()
+{
+  // Relocate the initialised data from flash to SRAM.
+
+  const uint32_t * relocSrc  = (const uint32_t *)&__etext;
+        uint32_t * relocDest = (      uint32_t *)&__data_start__;
+
+  if ( relocSrc == relocDest )
+  {
+    // This may be the case on a full-blown PC, but we do not expect this on an embedded device.
+    assert( false );
+  }
+  else
+  {
+    const uint32_t * const relocDestEnd = (const uint32_t *) &__data_end__;
+
+    while ( relocDest < relocDestEnd )
+    {
+      *relocDest++ = *relocSrc++;
+    }
+  }
+
+  // Clear the zero segment (BSS).
+
+  const uint32_t * const zeroSegEnd = (const uint32_t *) &__bss_end__;
+
+  for ( uint32_t * zeroSegPtr = (uint32_t *)&__bss_start__;  zeroSegPtr < zeroSegEnd;  ++zeroSegPtr )
+  {
+    *zeroSegPtr = 0;
+  }
 }

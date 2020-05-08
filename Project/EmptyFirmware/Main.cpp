@@ -51,32 +51,13 @@ static void Configure ( void )
 }
 
 
-// These symbols are defined in the linker script file.
-extern "C" int _sfixed;
-extern "C" int _etext;
-extern "C" int _sbss;
-extern "C" int _ebss;
-extern "C" int _srelocate;
-extern "C" int _erelocate;
-
-
 void StartOfUserCode ( void )
 {
     Configure();
 
     if ( ENABLE_DEBUG_CONSOLE )
     {
-      const unsigned codeSize     = unsigned( uintptr_t( &_etext     ) - uintptr_t( &_sfixed    ) );
-      const unsigned initDataSize = unsigned( uintptr_t( &_erelocate ) - uintptr_t( &_srelocate ) );
-      const unsigned bssDataSize  = unsigned( uintptr_t( &_ebss      ) - uintptr_t( &_sbss      ) );
-
-      SerialSyncWriteStr( "Code size: 0x" );
-      SerialSyncWriteUint32Hex( codeSize );
-      SerialSyncWriteStr( ", initialised data size: 0x" );
-      SerialSyncWriteUint32Hex( initDataSize );
-      SerialSyncWriteStr( ", BSS size: 0x" );
-      SerialSyncWriteUint32Hex( bssDataSize );
-      SerialSyncWriteStr( "." EOL );
+      PrintFirmwareSegmentSizes();
     }
 
 

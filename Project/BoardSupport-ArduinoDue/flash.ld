@@ -110,32 +110,33 @@ SECTIONS
     PROVIDE_HIDDEN (__exidx_end = .);
 
     . = ALIGN(4);
-    _etext = .;
+    __etext = .;
 
-    .relocate : AT (_etext)
+    .relocate : AT (__etext)
     {
         . = ALIGN(4);
-        _srelocate = .;
-        *(.data .data.*);
+        __data_start__ = .;
+
+        *(.data)
+        *(.data.*);
         . = ALIGN(4);
-        _erelocate = .;
+        __data_end__ = .;
     } > ram
 
     /* .bss section which is used for uninitialized data */
     .bss ALIGN(4) (NOLOAD) :
     {
         . = ALIGN(4);
-        _sbss = . ;
-        _szero = .;
-        *(.bss .bss.*)
+        __bss_start__ = .;
+        *(.bss)
+        *(.bss.*)
         *(COMMON)
         . = ALIGN(4);
-        _ebss = . ;
-        _ezero = .;
+        __bss_end__ = .;
     } > ram
 
     . = ALIGN(4);
-    _end = . ;  /* Symbol _end marks the start of newlib's malloc heap. */
+    __end__ = . ;  /* Symbol _end marks the start of Newlib's malloc heap. */
 
     /* .stack_dummy section doesn't contains any symbols. It is only
        used for linker to calculate size of stack sections, and assign

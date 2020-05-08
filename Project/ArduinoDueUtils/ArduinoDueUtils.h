@@ -9,3 +9,5 @@ void InitDebugConsoleUart ( bool enableRxInterrupt ) throw();
 void PrintPanicMsg ( const char * const msg ) throw();
 
 void StartUpChecks ( void ) throw();
+
+void PrintFirmwareSegmentSizes ( void ) throw();

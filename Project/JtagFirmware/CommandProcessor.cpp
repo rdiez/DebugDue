@@ -17,6 +17,7 @@
 #include <BareMetalSupport/SerialPortUtils.h>
 #include <BareMetalSupport/IntegerPrintUtils.h>
 #include <BareMetalSupport/DebugConsoleEol.h>
+#include <BareMetalSupport/LinkScriptSymbols.h>
 
 #include "Globals.h"
 #include "BusPirateOpenOcdMode.h"
@@ -26,9 +27,6 @@
 
 
 static const char SPACE_AND_TAB[] = " \t";
-
-// This symbol is defined in the linker script file.
-extern "C" int _end;
 
 
 uint8_t g_usbSpeedTestBuffer[ 1000 ];
@@ -732,7 +730,7 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_MEMORY_USAGE, false, false, &extraParamsFound ) )
   {
-    const unsigned heapSize = unsigned( GetHeapEndAddr() - uintptr_t( &_end ) );
+    const unsigned heapSize = unsigned( GetHeapEndAddr() - uintptr_t( &__end__ ) );
 
     Printf( "Partitions: malloc heap: %u bytes, free: %u bytes, stack: %u bytes." EOL,
                heapSize,

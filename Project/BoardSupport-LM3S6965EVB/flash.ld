@@ -99,6 +99,8 @@ SECTIONS
 {
   .text :
   {
+    _sfixed = .;
+
     KEEP(*(.vectors))
     *(.text*)
 
@@ -190,6 +192,10 @@ SECTIONS
     *(.data)
     *(.data.*)
 
+
+    /* I am not sure that these init and fini arrays should be in the data section.
+       Others place in the .text section. */
+
     . = ALIGN(4);
     /* preinit data */
     PROVIDE_HIDDEN (__preinit_array_start = .);
@@ -210,6 +216,7 @@ SECTIONS
     KEEP(*(SORT(.fini_array.*)))
     KEEP(*(.fini_array))
     PROVIDE_HIDDEN (__fini_array_end = .);
+
 
     KEEP(*(.jcr*))
     . = ALIGN(4);

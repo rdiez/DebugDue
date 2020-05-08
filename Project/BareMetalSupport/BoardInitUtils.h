@@ -11,3 +11,5 @@ void StartOfUserCode ( void );
 // before this routine is called.
 
 void RunUserCode ( void ) __attribute__ ((noinline));
+
+void InitDataSegments ( void ) throw();
