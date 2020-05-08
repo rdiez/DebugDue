@@ -21,10 +21,6 @@
 
 #include <BoardSupport-LM3S6965EVB/ExceptionHandlers.h>
 
-#ifndef __ARM_FEATURE_UNALIGNED
-  #error "You should specify GCC switch -munaligned-access"
-#endif
-
 
 extern "C" void __libc_init_array ( void );  // Provided by some GCC library.
 
@@ -35,7 +31,18 @@ extern "C" void BareMetalSupport_Reset_Handler ( void )
   // Initialize the C/C++ support by calling all registered constructors.
   __libc_init_array();
 
+
   // From this point on, all C/C++ support has been initialised, and the user code can run.
+
+
+  // We do not use the CMSIS yet, so we have not got the definitions for the SCB register yet.
+  #ifdef __ARM_FEATURE_UNALIGNED
+    // assert( 0 == ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
+  #else
+    // assert( 0 != ( SCB->CCR & SCB_CCR_UNALIGN_TRP_Msk ) );
+    #error "We normally do not expect this scenario. Did you forget to specify GCC switch -munaligned-access?"
+  #endif
+
 
   RunUserCode();
 
