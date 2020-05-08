@@ -17,11 +17,9 @@
 #include "StackCheck.h"  // Include file for this module comes first.
 
 #include <string.h>  // For memset().
-#include <assert.h>
 
 #include <BareMetalSupport/LinkScriptSymbols.h>
 
-#include "Miscellaneous.h"
 #include "AssertionUtils.h"
 
 
@@ -71,8 +69,6 @@ static const uint8_t STACK_CANARY_VAL = 0xBA;
 
 void FillStackCanary ( void ) throw()
 {
-    assert( !AreInterruptsEnabled() );
-
     const uintptr_t SAFETY_MARGIN = 32;
     const uintptr_t stackStartAddr = GetStackStartAddr();
 

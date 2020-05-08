@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_STACK_CHECK_H_INCLUDED
-#define BMS_STACK_CHECK_H_INCLUDED
+#pragma once
 
 #include <stddef.h>  // For size_t.
 #include <stdint.h>
@@ -31,5 +28,3 @@ void FillStackCanary ( void ) throw();
 bool CheckStackCanary ( size_t canarySize ) throw() __attribute__ ((optimize("O2")));
 size_t GetStackSizeUsageEstimate ( void ) throw();
 size_t GetCurrentStackDepth ( void ) throw();
-
-#endif  // Include this header file only once.

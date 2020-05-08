@@ -81,7 +81,6 @@ if !IS_QEMU_FIRMWARE
     BareMetalSupport/IoUtils.cpp \
     BareMetalSupport/SerialPrint.cpp \
     BareMetalSupport/SerialPortAsyncTx.cpp \
-    BareMetalSupport/StackCheck.cpp \
     BareMetalSupport/TextParsingUtils.cpp \
     BareMetalSupport/GenericSerialConsole.cpp \
     BareMetalSupport/Uptime.cpp \
@@ -100,6 +99,7 @@ firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/DebugConsoleSupport.cpp
 
 firmware_elf_SOURCES += BareMetalSupport/BoardInitUtils.cpp
 firmware_elf_SOURCES += BareMetalSupport/DebugConsoleSerialSyncCommon.cpp
+firmware_elf_SOURCES += BareMetalSupport/StackCheck.cpp
 
 
 # ----- The ASF library comes from Atmel and has a very liberal license.
