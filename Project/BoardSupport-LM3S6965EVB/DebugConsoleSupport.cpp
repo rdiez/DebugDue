@@ -24,5 +24,6 @@ void WriteSerialPortCharSync ( const uint8_t c ) throw()
 {
   // This only works under Qemu. On the real hardware, we would have to set the UART up
   // beforehand and check its flags before writing new data.
+  // Alternatively, we could use Qemu's semihosting, see SYS_WRITEC and SYS_WRITE0.
   *UART0DR = c;
 }

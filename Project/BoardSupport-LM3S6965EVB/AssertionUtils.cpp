@@ -1,5 +1,5 @@
 
-// Copyright (C) 2012 R. Diez
+// Copyright (C) 2012-2020 R. Diez
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the Affero GNU General Public License version 3
@@ -19,7 +19,6 @@
 #include <stddef.h>  // For NULL.
 
 
-
 // When the firmware starts, it will probably be too early to print an assertion message to
 // the debug console. After the serial port has been initialised and so on,
 // the user can set the following function in order to deliver such a message to the user.
@@ -28,34 +27,34 @@ static UserPanicMsgFunction s_UserPanicMsgFunction = NULL;
 
 void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer )
 {
-    s_UserPanicMsgFunction = functionPointer;
+  s_UserPanicMsgFunction = functionPointer;
 }
 
 
 void Panic ( const char * const msg )
 {
-    if ( s_UserPanicMsgFunction )
-        s_UserPanicMsgFunction( msg );
+  if ( s_UserPanicMsgFunction )
+  {
+    s_UserPanicMsgFunction( msg );
+  }
 
-    // If a JTAG debugger is connected, GDB will stop here.
-    // If no debugger is connected, the ARM core may execute the HardFault vector
-    // when it sees the following BKPT instruction. Therefore, the HardFault vector
-    // should also call ForeverHangAfterPanic(), otherwise you may enter an infinite loop
-    // that keeps running the HardFault vector over and over.
-    // An alternative to BKPT could be GCC's __builtin_trap().
-    asm volatile( "BKPT" );
 
-    ForeverHangAfterPanic();
+  // I could not find a way to tell Qemu to make GDB stop here.
+  // With a JTAG connection, the BKPT instruction would do the trick.
+  // There is an ARM Angel / semihosting command TARGET_SYS_EXIT, with argument ADP_Stopped_BreakPoint,
+  // but that makes Qemu quit.
+
+  ForeverHangAfterPanic();
 }
 
 
 void ForeverHangAfterPanic ( void )
 {
-    // Forever hang.
-    for ( ; ; )
-    {
-      // If this is a debug build, assume that we are debugging, and freeze here.
-      // This helps to see the assertion messages and gives you the option
-      // to attach a debugger and see the call stack.
-    }
+  // Forever hang.
+  for ( ; ; )
+  {
+    // If this is a debug build, assume that we are debugging, and freeze here.
+    // This helps to see the assertion messages and gives you the option
+    // to attach a debugger and see the call stack.
+  }
 }

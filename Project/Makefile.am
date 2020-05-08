@@ -72,7 +72,11 @@ endif
 
 # Note that files NewlibSyscalls.cpp and crt0.cpp are missing here, see below.
 
-if !IS_QEMU_FIRMWARE
+if IS_QEMU_FIRMWARE
+
+  firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/AngelInterface.cpp
+
+else
 
   firmware_elf_SOURCES += \
     BareMetalSupport/Miscellaneous.cpp \
