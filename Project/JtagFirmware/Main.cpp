@@ -198,7 +198,7 @@ void StartOfUserCode ( void )
 
     if ( true )
     {
-      PrintFirmwareSegmentSizes();
+      PrintFirmwareSegmentSizesAsync();
     }
 
 

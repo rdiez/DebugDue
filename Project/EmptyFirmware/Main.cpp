@@ -57,7 +57,7 @@ void StartOfUserCode ( void )
 
     if ( ENABLE_DEBUG_CONSOLE )
     {
-      PrintFirmwareSegmentSizes();
+      PrintFirmwareSegmentSizesSync();
     }
 
 
