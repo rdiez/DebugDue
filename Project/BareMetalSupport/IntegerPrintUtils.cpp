@@ -27,7 +27,7 @@ static const char NULL_CHAR = '\0';
 
 void ConvertUint32ToHex ( const uint32_t val,
                           char * const buffer,
-                          const bool useLowercaseHexChars )
+                          const bool useLowercaseHexChars ) throw()
 {
   const unsigned CHAR_COUNT = sizeof( val ) * 2;
   STATIC_ASSERT( CONVERT_UINT32_TO_HEX_BUFSIZE == CHAR_COUNT + 1, "Wrong buffer size." );
@@ -51,7 +51,7 @@ void ConvertUint32ToHex ( const uint32_t val,
 
 char * convert_unsigned_to_dec_th ( uint64_t val,
                                     char * const buffer,
-                                    const char thousandSepChar )
+                                    const char thousandSepChar ) throw()
 {
   static_assert( sizeof(val) <= 8, "" );
   // Sonst brauchen wir eine höhere Anzahl an Zeichen hier:

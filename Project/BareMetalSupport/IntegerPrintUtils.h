@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_INTEGER_PRINT_UTILS_H_INCLUDED
-#define BMS_INTEGER_PRINT_UTILS_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 #include <assert.h>
@@ -25,7 +22,7 @@
 // Converts a number in the range [0-15] to an uppercase hex digit.
 
 inline char ConvertDigitToHex ( const unsigned digitValue,
-                                const bool useLowercaseHexChars )
+                                const bool useLowercaseHexChars ) throw()
 {
   assert( digitValue <= 15 );
 
@@ -36,15 +33,19 @@ inline char ConvertDigitToHex ( const unsigned digitValue,
   else
   {
     if ( useLowercaseHexChars )
+    {
       return (char)( 'a' + digitValue - 10 );
+    }
     else
+    {
       return (char)( 'A' + digitValue - 10 );
+    }
   }
 }
 
 #define CONVERT_UINT32_TO_HEX_BUFSIZE ( 8 + 1 )
 
-void ConvertUint32ToHex ( uint32_t val, char * buffer, bool useLowercaseHexChars );
+void ConvertUint32ToHex ( uint32_t val, char * buffer, bool useLowercaseHexChars ) throw();
 
 
 //------------------------------------------------------------------------
@@ -67,6 +68,4 @@ void ConvertUint32ToHex ( uint32_t val, char * buffer, bool useLowercaseHexChars
 // Thefore, the pointer to the number's beginning is returned.
 char * convert_unsigned_to_dec_th ( uint64_t val,
                                     char * buffer,
-                                    char thousandSepChar );
-
-#endif  // Include this header file only once.
+                                    char thousandSepChar ) throw();
