@@ -60,12 +60,11 @@ void StartOfUserCode ( void )
       PrintFirmwareSegmentSizesSync();
     }
 
-
     // ------ Main loop ------
 
     if ( ENABLE_DEBUG_CONSOLE )
     {
-      SerialSyncWriteStr( "Entering the main loop, which just waits forever." EOL );
+      SerialSyncWriteStr( "Entering the main loop, which just waits forever consuming CPU cycles (busy wait)." EOL );
     }
 
     for (;;)
