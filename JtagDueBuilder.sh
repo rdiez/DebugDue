@@ -455,14 +455,14 @@ do_configure_if_necessary ()
 
     pushd "$PROJECT_OBJ_DIR" >/dev/null
 
-    local CONFIG_CMD
+    local CONFIG_CMD=""
 
-    CONFIG_CMD+="CONFIG_SHELL=/bin/bash"
-    CONFIG_CMD+=" $CONFIGURE_SCRIPT_PATH"
+    quote_and_append_args CONFIG_CMD "CONFIG_SHELL=/bin/bash"
+    quote_and_append_args CONFIG_CMD "$CONFIGURE_SCRIPT_PATH"
 
     if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
       echo "Using configure cache file \"$CONFIGURE_CACHE_FILENAME\"."
-      CONFIG_CMD+=" --cache-file=\"$CONFIGURE_CACHE_FILENAME\""
+      quote_and_append_args CONFIG_CMD "--cache-file=$CONFIGURE_CACHE_FILENAME"
     else
       # If the cache file to use comes as a command-line argument, then the user
       # is responsible for the cache file's lifetime.
@@ -471,33 +471,33 @@ do_configure_if_necessary ()
       delete_file_if_exists "$DEFAULT_CONFIGURE_CACHE_FILENAME"
     fi
 
-    CONFIG_CMD+=" --prefix=\"$PROJECT_BIN_DIR\""
+    quote_and_append_args CONFIG_CMD "--prefix=$PROJECT_BIN_DIR"
 
     if [[ $BUILD_TYPE = debug ]]; then
-      CONFIG_CMD+=" --enable-debug=yes"
+      quote_and_append_args CONFIG_CMD "--enable-debug=yes"
       # echo "Creating a debug build..."
     else
-      CONFIG_CMD+=" --enable-debug=no"
+      quote_and_append_args CONFIG_CMD "--enable-debug=no"
       # echo "Creating a release build..."
     fi
 
     if [ -n "$ASF_DIR" ]; then
-      CONFIG_CMD+=" --with-atmel-software-framework=\"$ASF_DIR\""
+      quote_and_append_args CONFIG_CMD "--with-atmel-software-framework=$ASF_DIR"
     fi
 
-    CONFIG_CMD+=" --with-project=\"$PROJECT_NAME\""
+    quote_and_append_args CONFIG_CMD "--with-project=$PROJECT_NAME"
 
-    CONFIG_CMD+=" --host=\"$TARGET_ARCH\""
+    quote_and_append_args CONFIG_CMD "--host=$TARGET_ARCH"
     # I have not figured out yet how to get the value passed as --host to configure.ac ,
     # so I am passing it again in a separate command-line option.
-    CONFIG_CMD+=" --with-target-arch=\"$TARGET_ARCH\""
+    quote_and_append_args CONFIG_CMD "--with-target-arch=$TARGET_ARCH"
 
     # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
     # they will complain about a missing plug-in to process object files compiled for LTO.
     # These are however no longer needed, because we are not using libtool anymore.
     if false; then
-      CONFIG_CMD+=" AR=\"$TARGET_ARCH-gcc-ar\""
-      CONFIG_CMD+=" RANLIB=\"$TARGET_ARCH-gcc-ranlib\""
+      quote_and_append_args CONFIG_CMD "AR=$TARGET_ARCH-gcc-ar"
+      quote_and_append_args CONFIG_CMD "RANLIB=$TARGET_ARCH-gcc-ranlib"
     fi
 
     if $ENABLE_CCACHE_SPECIFIED; then
@@ -521,8 +521,8 @@ do_configure_if_necessary ()
 
       CCACHE_NAME="ccache"
       if type "$CCACHE_NAME" >/dev/null 2>&1 ; then
-        CONFIG_CMD+=" CC=\"$CCACHE_NAME $TARGET_ARCH-gcc\""
-        CONFIG_CMD+=" CXX=\"$CCACHE_NAME $TARGET_ARCH-g++\""
+        quote_and_append_args CONFIG_CMD "CC=$CCACHE_NAME $TARGET_ARCH-gcc"
+        quote_and_append_args CONFIG_CMD "CXX=$CCACHE_NAME $TARGET_ARCH-g++"
       else
         abort "Tool '$CCACHE_NAME' not found."
       fi
@@ -787,7 +787,7 @@ add_make_parallel_jobs_flag ()
   if $SHOULD_ADD_PARALLEL_FLAG; then
     local MAKE_J_VAL
     MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
-    MAKE_CMD+=" -j \"$MAKE_J_VAL\""
+    quote_and_append_args MAKE_CMD "-j" "$MAKE_J_VAL"
   fi
 }
 
@@ -796,7 +796,9 @@ do_build ()
 {
   pushd "$PROJECT_OBJ_DIR" >/dev/null
 
-  local MAKE_CMD="make "
+  local MAKE_CMD=""
+
+  quote_and_append_args MAKE_CMD "make"
 
   if false; then
     # Possible flags:
@@ -807,15 +809,15 @@ do_build ()
     #   j for details on invocation of commands
     #   m for debugging while remaking makefiles.
     local DEBUG_FLAGS="a"
-    MAKE_CMD+=" --debug=$DEBUG_FLAGS"
+    quote_and_append_args MAKE_CMD "--debug=$DEBUG_FLAGS"
   fi
 
   # Normally, the build commands are not shown, see AM_SILENT_RULES in configure.ac .
   # Passing "V=1" in CPPFLAGS is not enough, you need to remove "-s" too.
   if $SHOW_BUILD_COMMANDS; then
-    MAKE_CMD+=" V=1"
+    quote_and_append_args MAKE_CMD "V=1"
   else
-    MAKE_CMD+=" -s"
+    quote_and_append_args MAKE_CMD "-s"
   fi
 
 
@@ -854,10 +856,10 @@ do_build ()
 
   if [[ $EXTRA_CPPFLAGS != "" ]]; then
     # The user's CPPFLAGS comes at the end, so that the user always has the last word.
-    MAKE_CMD+=" CPPFLAGS=\"$EXTRA_CPPFLAGS${CPPFLAGS:-}\""
+    quote_and_append_args MAKE_CMD "CPPFLAGS=$EXTRA_CPPFLAGS${CPPFLAGS:-}"
   fi
 
-  MAKE_CMD+=" --no-builtin-rules"
+  quote_and_append_args MAKE_CMD "--no-builtin-rules"
 
   add_make_parallel_jobs_flag
 
@@ -867,19 +869,15 @@ do_build ()
   #   A change to how pipe waiting works promises to speed up parallel kernel builds - always a kernel developer's favorite
   #   workload - but can also trigger a bug with old versions of GNU Make.
   #   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0ddad21d3e99
-  MAKE_CMD+=" --output-sync=recurse"
-
-  local TARGETS=""
+  quote_and_append_args MAKE_CMD "--output-sync=recurse"
 
   if $INSTALL_SPECIFIED; then
-    TARGETS+=" install"
+    quote_and_append_args MAKE_CMD "install"
   fi
 
   if $DISASSEMBLE_SPECIFIED; then
-    TARGETS+=" disassemble"
+    quote_and_append_args MAKE_CMD "disassemble"
   fi
-
-  MAKE_CMD+=" $TARGETS"
 
   echo "$MAKE_CMD"
   eval "$MAKE_CMD"
@@ -890,12 +888,6 @@ do_build ()
   printf "Resulting binary: \"$BIN_FILEPATH\", size: %'d bytes.\\n" "$PROG_SIZE"
 
   popd >/dev/null
-}
-
-
-add_openocd_arg ()
-{
-  OPEN_OCD_CMD+=" $1"
 }
 
 
@@ -913,12 +905,10 @@ add_openocd_cmd ()
 
   if $SUPPRESS_PRINTING_RESULT; then
     local -r TCL_SUPPRESS_PRINTING_RESULT_SUFFIX="; list"
-    printf -v QUOTED  "%q"  "$1 $TCL_SUPPRESS_PRINTING_RESULT_SUFFIX"
+    quote_and_append_args OPEN_OCD_CMD "--command" "$1 $TCL_SUPPRESS_PRINTING_RESULT_SUFFIX"
   else
-    printf -v QUOTED  "%q"  "$1"
+    quote_and_append_args OPEN_OCD_CMD "--command" "$1"
   fi
-
-  add_openocd_arg "--command $QUOTED"
 }
 
 
@@ -968,33 +958,33 @@ do_bossac ()
 
   local PORT_WITHOUT_PREFIX="${PROGRAMMING_USB_VIRTUAL_SERIAL_PORT:$PREFIX_LEN}"
 
-  local SERIAL_PORT_CONFIG_CMD
+  local SERIAL_PORT_CONFIG_CMD=""
 
   # Trigger an erase first. Otherwise, the SAM-BA bootloader will probably not be present
   # on the 'programming' USB virtual serial port and tool 'bossac' will fail.
-  SERIAL_PORT_CONFIG_CMD="stty -F \"$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT\" 1200"
+  quote_and_append_args SERIAL_PORT_CONFIG_CMD "stty" "-F" "$PROGRAMMING_USB_VIRTUAL_SERIAL_PORT" "1200"
   echo "$SERIAL_PORT_CONFIG_CMD"
   eval "$SERIAL_PORT_CONFIG_CMD"
 
-  local CMD
-  CMD="\"$PATH_TO_BOSSAC\" --port=\"$PORT_WITHOUT_PREFIX\""
+  local CMD=""
+  quote_and_append_args CMD "$PATH_TO_BOSSAC" "--port=$PORT_WITHOUT_PREFIX"
   # bossac's option "--force_usb_port" means "Enable  automatic detection of the target's USB port"
   # and is turned on by default. We are specifying the exact path to the port,
   # so we do not want any guessing.
-  CMD+=" --force_usb_port=false"
+  quote_and_append_args CMD "--force_usb_port=false"
 
   # If you suspect your target is not getting flashed correctly, you can
   # turn verification on. It is normally disabled because it takes a long time.
   if false; then
-    CMD+=" --verify"
+    quote_and_append_args CMD "--verify"
   fi
 
-  CMD+=" --write \"$BIN_FILEPATH\""
-  CMD+=" --boot=1"
+  quote_and_append_args CMD "--write" "$BIN_FILEPATH"
+  quote_and_append_args CMD "--boot=1"
 
   # You could make the reset step optional, so that the new firmware does not start immediately.
   if true; then
-   CMD+=" --reset"
+   quote_and_append_args CMD "--reset"
   fi
 
   echo "$CMD"
@@ -1021,7 +1011,7 @@ do_bossac ()
 
   if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
     echo "Keeping a copy of pogrammed file \"$BIN_FILEPATH\" at \"$CACHED_PROGRAMMED_FILE_FILENAME\" ..."
-    cp "$BIN_FILEPATH" "$CACHED_PROGRAMMED_FILE_FILENAME"
+    cp -- "$BIN_FILEPATH" "$CACHED_PROGRAMMED_FILE_FILENAME"
    fi
 }
 
@@ -1137,19 +1127,17 @@ build_gdb_command ()
   printf  -v GDB_CMD  "cd %q  &&  ./DebuggerStarterHelper.sh"  "$OPENOCD_CONFIG_DIR"
 
   if $DEBUG_FROM_THE_START_SPECIFIED; then
-    GDB_CMD+=" --debug-from-the-start"
+    quote_and_append_args GDB_CMD "--debug-from-the-start"
   fi
 
   if (( ${#BREAKPOINTS[*]} > 0 )); then
     local BP
     for BP in "${BREAKPOINTS[@]}"; do
-      GDB_CMD+=" --add-breakpoint \"$BP\""
+      quote_and_append_args GDB_CMD "--add-breakpoint" "$BP"
     done
   fi
 
-  local TMP
-  printf  -v TMP  "%s %s %s"  "$TOOLCHAIN_DIR" "$ELF_FILEPATH" "$DEBUGGER_TYPE"
-  GDB_CMD+=" $TMP"
+  quote_and_append_args GDB_CMD  "$TOOLCHAIN_DIR"  "$ELF_FILEPATH"  "$DEBUGGER_TYPE"
 }
 
 
@@ -1289,10 +1277,12 @@ debug_target ()
 
 
   if false; then
+    # Replace the whole command for test purposes.
     GDB_CMD="echo \"Simulating GDB_CMD failure...\" && bash -c 'exit 123'"
   fi
 
   if false; then
+    # Replace the whole command for test purposes.
     GDB_CMD="echo \"Simulating GDB_CMD death by signal...\" && bash -c 'kill -USR1 \$\$'"
   fi
 
@@ -1363,11 +1353,13 @@ debug_target ()
 
 do_program_and_debug ()
 {
-  local OPEN_OCD_CMD="\"$PATH_TO_OPENOCD\" "
+  local OPEN_OCD_CMD=""
+
+  quote_and_append_args OPEN_OCD_CMD "$PATH_TO_OPENOCD"
 
   if false; then
     # The default is debug level 2. Level 3 is too verbose and slows execution down considerably.
-    add_openocd_arg "--debug=3 "
+    quote_and_append_args OPEN_OCD_CMD "--debug=3"
   fi
 
   # OpenOCD's documentation states the following:
@@ -1379,20 +1371,20 @@ do_program_and_debug ()
   case "$JTAG_ADAPTER" in
     JtagDue)
       add_openocd_cmd "set JTAGDUE_SERIAL_PORT \"$JTAGDUE_SERIAL_PORT\""
-      add_openocd_arg "-f \"$OPENOCD_CONFIG_DIR/JtagDueInterfaceConfig.cfg\""
+      quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/JtagDueInterfaceConfig.cfg"
       ;;
     Flyswatter2)
-      add_openocd_arg "-f \"interface/ftdi/flyswatter2.cfg\""
+      quote_and_append_args OPEN_OCD_CMD  "-f" "interface/ftdi/flyswatter2.cfg"
       ;;
     Olimex-ARM-USB-OCD-H)
-      add_openocd_arg "-f \"interface/ftdi/olimex-arm-usb-ocd-h.cfg\""
+      quote_and_append_args OPEN_OCD_CMD  "-f" "interface/ftdi/olimex-arm-usb-ocd-h.cfg"
       ;;
     *) abort "Invalid JTAG_ADAPTER value of \"$JTAG_ADAPTER\"." ;;
   esac
 
-  add_openocd_arg "-f \"target/at91sam3ax_8x.cfg\""
+  quote_and_append_args OPEN_OCD_CMD "-f" "target/at91sam3ax_8x.cfg"
 
-  add_openocd_arg "-f \"$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.cfg\""
+  quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.cfg"
 
   # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
   # back to 500 KHz, at least with the Flyswatter2.
