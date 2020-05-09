@@ -280,7 +280,7 @@ static void HandleError ( const char * const errMsg )
   // Leave the current mode and enter the console mode. This makes sure
   // that the current mode's termination routine is always called, cleaning up
   // anything that may have been left in a wrong state when the error occurred.
-  ChangeBusPirateMode( bpInvalid, NULL );
+  ChangeBusPirateMode( bpInvalid, nullptr );
   ChangeBusPirateMode( bpConsoleMode, &s_usbTxBuffer );
 }
 

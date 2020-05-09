@@ -22,5 +22,5 @@ inline bool IsPrintableAscii ( const char c ) throw()
 
 inline bool IsCharInSet ( const char c, const char * const charset ) throw()
 {
-    return strchr( charset, c ) != NULL;
+  return strchr( charset, c ) != nullptr;
 }

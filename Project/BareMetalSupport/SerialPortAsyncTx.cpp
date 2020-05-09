@@ -30,15 +30,15 @@
 
 
 static const unsigned MAX_EOL_LEN = 2;
-static const char * s_eol = NULL;
+static const char * s_eol = nullptr;
 
 
 void InitSerialPortAsyncTx ( const char * const eol )
 {
   assert( WasSerialPortInitialised() );
 
-  assert( eol != NULL );
-  assert( s_eol == NULL );
+  assert( eol != nullptr );
+  assert( s_eol == nullptr );
 
   assert( strlen(eol) > 0 );
   assert( strlen(eol) <= MAX_EOL_LEN );
@@ -50,7 +50,7 @@ void InitSerialPortAsyncTx ( const char * const eol )
 #ifndef NDEBUG
 static bool HasBeenInitialised ( void ) throw()
 {
-  return s_eol != NULL;
+  return s_eol != nullptr;
 }
 #endif
 

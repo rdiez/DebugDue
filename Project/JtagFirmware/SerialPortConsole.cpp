@@ -81,7 +81,7 @@ private:
 
 public:
     CProgrammingUsbCommandProcessor ( void )
-      : CCommandProcessor( NULL, NULL )
+      : CCommandProcessor( nullptr, nullptr )
   {
   }
 };
@@ -152,7 +152,7 @@ static void ServiceSerialPortRx ( const uint64_t currentTime )
     uint32_t cmdLen;
     const char * const cmd = s_serialPortConsole.AddChar( c, &cmdLen );
 
-    if ( cmd != NULL )
+    if ( cmd != nullptr )
     {
       SerialPrintStr( EOL );
 

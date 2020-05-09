@@ -611,7 +611,7 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
 
     // Fill the Rx buffer with some test data.
-    assert( m_rxBuffer != NULL );
+    assert( m_rxBuffer != nullptr );
 
     m_rxBuffer->Reset();
     for ( uint32_t i = 0; !m_rxBuffer->IsFull(); ++i )
@@ -645,8 +645,8 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
     for ( uint32_t i = 0; i < iterCount; ++i )
     {
       // We hope that this will not clear the buffer contents.
-      assert( m_rxBuffer != NULL );
-      assert( m_txBuffer != NULL );
+      assert( m_rxBuffer != nullptr );
+      assert( m_txBuffer != nullptr );
 
       m_rxBuffer->Reset();
       m_rxBuffer->CommitWrittenElements( jtagByteCount * 2 );
@@ -793,14 +793,14 @@ void CCommandProcessor::ProcessCommand ( const char * const cmdStr,
 
 bool CCommandProcessor::IsNativeUsbPort ( void ) const
 {
-  if ( m_txBuffer == NULL )
+  if ( m_txBuffer == nullptr )
   {
-    assert( m_rxBuffer == NULL );
+    assert( m_rxBuffer == nullptr );
     return false;
   }
   else
   {
-    assert( m_rxBuffer != NULL );
+    assert( m_rxBuffer != nullptr );
     return true;
   }
 }

@@ -45,7 +45,7 @@ private:
 public:
 
   CUsbSerialConsole ( void )
-    : m_txBuffer( NULL )
+    : m_txBuffer( nullptr )
   {
     STATIC_ASSERT( MAX_TX_BUFFER_SIZE_NEEDED < USB_TX_BUFFER_SIZE, "Otherwise, there may not be enough space in the tx buffer to complete an operation like backspace." );
   }
@@ -58,7 +58,7 @@ public:
 
 void CUsbSerialConsole::Printf ( const char * const formatStr, ... ) const
 {
-  assert( m_txBuffer != NULL );
+  assert( m_txBuffer != nullptr );
 
   va_list argList;
   va_start( argList, formatStr );
@@ -83,11 +83,11 @@ const char * CUsbSerialConsole::AddSerialChar ( const uint8_t c,
   }
   catch ( ... )
   {
-    m_txBuffer = NULL;
+    m_txBuffer = nullptr;
     throw;
   }
 
-  m_txBuffer = NULL;
+  m_txBuffer = nullptr;
 
   return ret;
 }
@@ -110,7 +110,7 @@ public:
 
 void CNativeUsbCommandProcessor::Printf ( const char * const formatStr, ... )
 {
-  assert( m_txBuffer != NULL );
+  assert( m_txBuffer != nullptr );
 
   va_list argList;
   va_start( argList, formatStr );
@@ -123,7 +123,7 @@ void CNativeUsbCommandProcessor::Printf ( const char * const formatStr, ... )
 
 void CNativeUsbCommandProcessor::PrintStr ( const char * const str )
 {
-  assert( m_txBuffer != NULL );
+  assert( m_txBuffer != nullptr );
 
   UsbPrintStr( m_txBuffer, str );
 }
@@ -279,7 +279,7 @@ void BusPirateConsole_ProcessData ( CUsbRxBuffer * const rxBuffer,
       uint32_t cmdLen;
       const char * const cmd = s_console.AddSerialChar( byte, txBuffer, &cmdLen );
 
-      if ( cmd != NULL )
+      if ( cmd != nullptr )
       {
         UsbPrintStr( txBuffer, EOL );
 

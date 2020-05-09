@@ -16,8 +16,6 @@
 
 #include <BareMetalSupport/AssertionUtils.h>  // Include file for this module comes first.
 
-#include <stddef.h>  // For NULL.
-
 #include <sam3xa.h>  // For __disable_irq().
 #include <wdt.h>
 
@@ -26,7 +24,7 @@
 // the debug console. After the serial port has been initialised and so on,
 // the user can set the following function in order to deliver such a message to the user.
 
-static UserPanicMsgFunction s_UserPanicMsgFunction = NULL;
+static UserPanicMsgFunction s_UserPanicMsgFunction = nullptr;
 
 void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer ) throw()
 {

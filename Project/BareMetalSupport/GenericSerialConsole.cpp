@@ -82,7 +82,7 @@ void CGenericSerialConsole::Bell ( void )
 }
 
 
-// Returns non-NULL if a command is ready to be executed. In this case,
+// Returns non-nullptr if a command is ready to be executed. In this case,
 // the circular buffer is rotated so that the command starts at the first buffer position.
 //
 // The rotation is a memory-intensive (slow) operation, but it simplifies the parsing code considerably,
@@ -175,7 +175,7 @@ const char * CGenericSerialConsole::AddChar ( const uint8_t c,
   else
   {
     *retCmdLen = 0;
-    return NULL;
+    return nullptr;
   }
 }
 

@@ -65,7 +65,7 @@ void ChangeBusPirateMode ( const BusPirateModeEnum newMode,
 
   if ( newMode == bpInvalid )
   {
-    assert( txBufferForWelcomeMsg == NULL );
+    assert( txBufferForWelcomeMsg == nullptr );
   }
   else
   {
@@ -170,7 +170,7 @@ void BusPirateConnection_Terminate ( void )
 {
   assert( s_wasInitialised );
 
-  ChangeBusPirateMode( bpInvalid, NULL );
+  ChangeBusPirateMode( bpInvalid, nullptr );
 
 #ifndef NDEBUG
    s_wasInitialised = false;

@@ -42,8 +42,8 @@ private:
                       );
 protected:
 
-  // These 2 buffers are only non-NULL when processing commands from the Arduino Due's 'Native' USB connection.
-  // When connected over the serial port to the 'Programming' connection, they are both NULL.
+  // These 2 buffers are only non-nullptr when processing commands from the Arduino Due's 'Native' USB connection.
+  // When connected over the serial port to the 'Programming' connection, they are both nullptr.
   CUsbRxBuffer * const m_rxBuffer;
   CUsbTxBuffer * const m_txBuffer;
 

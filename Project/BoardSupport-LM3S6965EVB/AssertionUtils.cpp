@@ -16,14 +16,12 @@
 
 #include <BareMetalSupport/AssertionUtils.h>  // Include file for this module comes first.
 
-#include <stddef.h>  // For NULL.
-
 
 // When the firmware starts, it will probably be too early to print an assertion message to
 // the debug console. After the serial port has been initialised and so on,
 // the user can set the following function in order to deliver such a message to the user.
 
-static UserPanicMsgFunction s_UserPanicMsgFunction = NULL;
+static UserPanicMsgFunction s_UserPanicMsgFunction = nullptr;
 
 void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer ) throw()
 {
