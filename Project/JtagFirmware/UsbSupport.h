@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef USB_SUPPORT_H_INCLUDED
-#define USB_SUPPORT_H_INCLUDED
+#pragma once
 
 #include <stddef.h>
 
@@ -28,5 +25,3 @@ void UsbWriteData ( const void * data, size_t dataLen );
 void UsbWriteStr ( const char * str );
 
 void DiscardAllUsbData ( void );
-
-#endif  // Include this header file only once.

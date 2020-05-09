@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_GENERIC_SERIAL_CONSOLE_H_INCLUDED
-#define BMS_GENERIC_SERIAL_CONSOLE_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 
@@ -79,6 +76,3 @@ public:
   const char * AddChar ( uint8_t c, uint32_t * cmdLen );
   void RepaintLine ( void ) const;
 };
-
-
-#endif  // Include this header file only once.

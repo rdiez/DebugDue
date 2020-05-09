@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_CIRCULAR_BUFFER_H_INCLUDED
-#define BMS_CIRCULAR_BUFFER_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 #include <assert.h>
@@ -271,5 +268,3 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
     m_elemCount += elemCountToCommit;
   }
 };
-
-#endif  // Include this header file only once.

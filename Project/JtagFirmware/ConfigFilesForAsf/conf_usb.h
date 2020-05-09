@@ -41,8 +41,7 @@
  *
  */
 
-#ifndef _CONF_USB_H_
-#define _CONF_USB_H_
+#pragma once
 
 #include "compiler.h"
 #include "board.h"
@@ -137,5 +136,3 @@
 //! The includes of classes and other headers must be done at the end of this file to avoid compile error
 #include "udi_cdc_conf.h"
 #include "my_usb_callbacks.h"
-
-#endif // _CONF_USB_H_

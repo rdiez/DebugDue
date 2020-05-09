@@ -1,7 +1,4 @@
-// Include this header file only once.
-#ifndef JTAG_PINS_H_INCLUDED
-#define JTAG_PINS_H_INCLUDED
-
+#pragma once
 
 // JTAG pins, 10-pin connector.
 // This is the same layout as the Altera USB Blaster connector with Atmel AVR's additions:
@@ -58,6 +55,3 @@
 
 #define JTAG_GND2_PIO  PIOA
 #define JTAG_GND2_PIN  20
-
-  
-#endif  // Include this header file only once.

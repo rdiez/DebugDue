@@ -1,6 +1,4 @@
-// Include this header file only once.
-#ifndef BMS_SERIAL_PRINT_H_INCLUDED
-#define BMS_SERIAL_PRINT_H_INCLUDED
+#pragma once
 
 // These routines use the Serial Port Async Tx module, so they buffer
 // the outgoing data and return straight away. The downside is, when the buffer
@@ -22,6 +20,3 @@ void SerialPrintHexDump ( const void * ptr, size_t byteCount, const char * endOf
 #define MAX_SERIAL_PRINT_LEN 256
 void SerialPrintf ( const char * formatStr, ... ) __attribute__ ((format(printf, 1, 2)));
 void SerialPrintV ( const char * const formatStr, va_list argList );
-
-
-#endif  // Include this header file only once.

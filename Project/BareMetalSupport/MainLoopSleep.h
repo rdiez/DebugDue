@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_MAIN_LOOP_SLEEP_H_INCLUDED
-#define BMS_MAIN_LOOP_SLEEP_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 
@@ -46,5 +43,3 @@ void GetCpuLoadStats ( const uint8_t ** lastLongPeriod,
                              uint8_t  * lastLongPeriodIndex,
                        const uint8_t ** lastShortPeriod,
                              uint8_t  * lastShortPeriodIndex );
-
-#endif  // Include this header file only once.

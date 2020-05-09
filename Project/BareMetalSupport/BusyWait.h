@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_BUSY_WAIT_H_INCLUDED
-#define BMS_BUSY_WAIT_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 #include <assert.h>
@@ -54,6 +51,3 @@ inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
 
 
 bool IsBusyWaitAsmLoopAligned ( void );
-
-
-#endif  // Include this header file only once.

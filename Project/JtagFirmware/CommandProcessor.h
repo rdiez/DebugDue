@@ -1,6 +1,4 @@
-// Include this header file only once.
-#ifndef COMMAND_PROCESSOR_H_INCLUDED
-#define COMMAND_PROCESSOR_H_INCLUDED
+#pragma once
 
 #include "UsbBuffers.h"
 
@@ -66,6 +64,3 @@ public:
   void ProcessCommand ( const char * cmdStr,
                         uint64_t currentTime );
 };
-
-
-#endif  // Include this header file only once.

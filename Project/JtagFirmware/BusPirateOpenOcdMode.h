@@ -1,6 +1,4 @@
-// Include this header file only once.
-#ifndef BUS_PIRATE_OPENOCD_MODE_H_INCLUDED
-#define BUS_PIRATE_OPENOCD_MODE_H_INCLUDED
+#pragma once
 
 #include "UsbBuffers.h"
 
@@ -34,6 +32,3 @@ void SetJtagPinMode ( JtagPinModeEnum mode );
 
 void SetJtagPullups ( bool enablePullUps );
 bool GetJtagPullups ( void );
-
-
-#endif  // Include this header file only once.

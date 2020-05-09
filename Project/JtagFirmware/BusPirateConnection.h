@@ -1,6 +1,4 @@
-// Include this header file only once.
-#ifndef BUS_PIRATE_CONNECTION_H_INCLUDED
-#define BUS_PIRATE_CONNECTION_H_INCLUDED
+#pragma once
 
 #include "UsbBuffers.h"
 
@@ -18,6 +16,3 @@ enum BusPirateModeEnum
 };
 
 void ChangeBusPirateMode ( BusPirateModeEnum newMode, CUsbTxBuffer * txBufferForWelcomeMsg );
-
-
-#endif  // Include this header file only once.

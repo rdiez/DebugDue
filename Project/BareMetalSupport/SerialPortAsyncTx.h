@@ -1,6 +1,4 @@
-// Include this header file only once.
-#ifndef BMS_SERIAL_PORT_ASYNC_TX_H_INCLUDED
-#define BMS_SERIAL_PORT_ASYNC_TX_H_INCLUDED
+#pragma once
 
 // This module stores outgoing data in a Tx circular buffer,
 // and then sends the data asynchronously (interrupt driven) over the serial port.
@@ -28,6 +26,3 @@ void SendSerialPortAsyncData ( const char * data, size_t dataLen );
 const char * GetSerialPortEol ( void );
 
 bool HasSerialPortDataBeenSentSinceLastCall ( void );
-
-
-#endif  // Include this header file only once.

@@ -1,6 +1,4 @@
-// Include this header file only once.
-#ifndef TEXT_PARSING_UTILS_H_INCLUDED
-#define TEXT_PARSING_UTILS_H_INCLUDED
+#pragma once
 
 #include <string.h>
 
@@ -26,6 +24,3 @@ inline bool IsCharInSet ( const char c, const char * const charset )
 {
     return strchr( charset, c ) != NULL;
 }
-
-
-#endif  // Include this header file only once.

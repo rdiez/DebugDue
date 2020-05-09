@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_MISCELLANEOUS_H_INCLUDED
-#define BMS_MISCELLANEOUS_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 #include <assert.h>
@@ -115,6 +112,3 @@ inline void AssumeMemoryHasChanged ( void )
   // This routine is used to try to compensate for the lack of 'volatile' in some complex data structures.
   asm volatile( "" ::: "memory" );
 }
-
-
-#endif  // Include this header file only once.

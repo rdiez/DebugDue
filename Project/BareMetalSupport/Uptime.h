@@ -13,10 +13,7 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-
-// Include this header file only once.
-#ifndef BMS_UPTIME_H_INCLUDED
-#define BMS_UPTIME_H_INCLUDED
+#pragma once
 
 #include <stdint.h>
 #include <assert.h>
@@ -53,7 +50,7 @@ inline bool HasUptimeElapsed ( const uint64_t currentUptime,
     static const uint16_t UPTIME_MS_IN_SEC = 1000;
 
     assert( ((uint32_t)secondsFromReferenceTime) * UPTIME_MS_IN_SEC <= UINT16_MAX );
-    
+
     return HasUptimeElapsedMs( currentUptime, referenceTimeInThePast, secondsFromReferenceTime * UPTIME_MS_IN_SEC );
 }
 
@@ -62,11 +59,8 @@ inline void IncrementUptime ( const uint32_t deltaInMs )
 {
     assert( AreInterruptsEnabled() );
     cpu_irq_disable();
-    
+
     g_updateCounter_internalUseOnly += deltaInMs;
 
     cpu_irq_enable();
 }
-
-
-#endif  // Include this header file only once.
