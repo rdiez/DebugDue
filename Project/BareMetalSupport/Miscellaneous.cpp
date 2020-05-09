@@ -22,7 +22,7 @@
 
 // I find this routine useful during debugging.
 
-void BreakpointPlaceholder ( void )
+void BreakpointPlaceholder ( void ) throw()
 {
 }
 
@@ -41,7 +41,7 @@ void ForeverHang ( const bool keepWatchdogHappy ) throw()
 }
 
 
-void ResetBoard ( const bool triggerWatchdogDuringWait )
+void ResetBoard ( const bool triggerWatchdogDuringWait ) throw()
 {
   __disable_irq();
 

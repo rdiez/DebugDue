@@ -25,7 +25,7 @@
 #include <BareMetalSupport/SerialPrint.h>
 
 
-void RunUserCode ( void )
+void RunUserCode ( void ) throw()
 {
   #ifdef __EXCEPTIONS  // If the compiler supports C++ exceptions...
 

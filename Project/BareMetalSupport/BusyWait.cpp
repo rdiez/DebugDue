@@ -20,7 +20,7 @@
 
 // Checks that the assembly alignment directive is working properly for routine BusyWaitAsmLoop.
 
-bool IsBusyWaitAsmLoopAligned ( void )
+bool IsBusyWaitAsmLoopAligned ( void ) throw()
 {
   // See the same symbol in assembly for more information.
   const uint8_t INSTRUCTION_LOAD_ALIGNMENT = 16;

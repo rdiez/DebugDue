@@ -25,13 +25,13 @@
 #define CRLF "\r\n"  // Carriage Return, 0x0D, followed by a Line Feed, 0x0A.
 
 template < typename IntegerType >
-IntegerType MinFrom ( const IntegerType a, const IntegerType b )
+IntegerType MinFrom ( const IntegerType a, const IntegerType b ) throw()
 {
   return a < b ? a : b;
 }
 
 template < typename IntegerType >
-IntegerType MaxFrom ( const IntegerType a, const IntegerType b )
+IntegerType MaxFrom ( const IntegerType a, const IntegerType b ) throw()
 {
   return a > b ? a : b;
 }
@@ -50,7 +50,7 @@ void ForeverHang ( bool keepWatchdogHappy ) throw()  __attribute__ ((__noreturn_
 //     ...
 //   cpu_irq_restore( flags );
 
-inline bool AreInterruptsEnabled ( void )
+inline bool AreInterruptsEnabled ( void ) throw()
 {
   const bool areEnabledAccordingToAtmelSoftwareFramework = cpu_irq_is_enabled();
 
@@ -102,12 +102,12 @@ public:
 };
 
 
-void BreakpointPlaceholder ( void );
+void BreakpointPlaceholder ( void ) throw();
 
-void ResetBoard ( bool triggerWatchdogDuringWait )  __attribute__ ((__noreturn__));
+void ResetBoard ( bool triggerWatchdogDuringWait ) throw() __attribute__ ((__noreturn__));
 
 
-inline void AssumeMemoryHasChanged ( void )
+inline void AssumeMemoryHasChanged ( void ) throw()
 {
   // This routine is used to try to compensate for the lack of 'volatile' in some complex data structures.
   asm volatile( "" ::: "memory" );

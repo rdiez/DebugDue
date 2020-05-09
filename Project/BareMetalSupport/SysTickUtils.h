@@ -21,26 +21,26 @@
 #include <sam3xa.h>
 
 
-inline uint32_t GetSysTickValue (void)
+inline uint32_t GetSysTickValue ( void ) throw()
 {
   return SysTick->VAL & SysTick_LOAD_RELOAD_Msk;
 }
 
 
-inline unsigned long GetSysTickReload (void)
+inline unsigned long GetSysTickReload ( void ) throw()
 {
   return SysTick->LOAD & SysTick_LOAD_RELOAD_Msk;
 }
 
 
-inline bool IsSysTickClkSrcMclk ( void )
+inline bool IsSysTickClkSrcMclk ( void ) throw()
 {
   // Some routines in this module assume that the system timer tick source is CLK and not CLK/8.
   return 0 != ( SysTick->CTRL & SysTick_CTRL_CLKSOURCE_Msk );
 }
 
 
-inline uint32_t SysTickCountToMs ( const uint32_t sysTickClockTickCount )
+inline uint32_t SysTickCountToMs ( const uint32_t sysTickClockTickCount ) throw()
 {
   assert( IsSysTickClkSrcMclk() );
 
@@ -52,7 +52,7 @@ inline uint32_t SysTickCountToMs ( const uint32_t sysTickClockTickCount )
 }
 
 
-inline uint32_t SysTickCountToUs ( const uint32_t sysTickClockTickCount )
+inline uint32_t SysTickCountToUs ( const uint32_t sysTickClockTickCount ) throw()
 {
   assert( IsSysTickClkSrcMclk() );
 
@@ -64,7 +64,7 @@ inline uint32_t SysTickCountToUs ( const uint32_t sysTickClockTickCount )
 }
 
 
-inline uint32_t UsToCpuClockTickCount ( const uint32_t timeInUs )
+inline uint32_t UsToCpuClockTickCount ( const uint32_t timeInUs ) throw()
 {
   // Avoid using variable SystemCoreClock here. It is slower, and this routine
   // is also called very early on start-up, where SystemCoreClock is not yet set.
@@ -79,4 +79,4 @@ inline uint32_t UsToCpuClockTickCount ( const uint32_t timeInUs )
 }
 
 
-uint32_t GetElapsedSysTickCount ( uint32_t referenceTimeInThePast );
+uint32_t GetElapsedSysTickCount ( uint32_t referenceTimeInThePast ) throw();

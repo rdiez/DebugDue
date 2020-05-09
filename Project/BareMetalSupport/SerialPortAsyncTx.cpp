@@ -48,14 +48,14 @@ void InitSerialPortAsyncTx ( const char * const eol )
 
 
 #ifndef NDEBUG
-static bool HasBeenInitialised ( void )
+static bool HasBeenInitialised ( void ) throw()
 {
   return s_eol != NULL;
 }
 #endif
 
 
-const char * GetSerialPortEol ( void )
+const char * GetSerialPortEol ( void ) throw()
 {
   assert( HasBeenInitialised() );
   return s_eol;
@@ -71,7 +71,7 @@ volatile bool s_hasDataBeenSentSinceLastCall;
 // Most times, it will work, at other times the keyboard input will get mixed with other output,
 // just like in the standard shell consoles.
 
-bool HasSerialPortDataBeenSentSinceLastCall ( void )
+bool HasSerialPortDataBeenSentSinceLastCall ( void ) throw()
 {
   const bool ret = s_hasDataBeenSentSinceLastCall;
 
@@ -211,7 +211,7 @@ void SendSerialPortAsyncData ( const char * data, const size_t dataLen )
 }
 
 
-void SerialPortAsyncTxInterruptHandler ( void )
+void SerialPortAsyncTxInterruptHandler ( void ) throw()
 {
   // WARNING: This routine is always called in interrupt context.
 

@@ -60,7 +60,7 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
 
   template < typename IntegerType >
   static
-  IntegerType MinFrom ( const IntegerType a, const IntegerType b )
+  IntegerType MinFrom ( const IntegerType a, const IntegerType b ) throw()
   {
     return a < b ? a : b;
   }
@@ -71,21 +71,21 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
     Reset();
   }
 
-  void Reset ( void )
+  void Reset ( void ) throw()
   {
     m_readPos   = 0;
     m_elemCount = 0;
   }
 
-  SizeType GetElemCount ( void ) const { return m_elemCount; }
-  SizeType GetFreeCount ( void ) const { return MAX_ELEM_COUNT - m_elemCount; }
-  bool     IsEmpty      ( void ) const { return GetElemCount() == 0; }
-  bool     IsFull       ( void ) const { return GetFreeCount() == 0; }
+  SizeType GetElemCount ( void ) const throw() { return m_elemCount; }
+  SizeType GetFreeCount ( void ) const throw() { return MAX_ELEM_COUNT - m_elemCount; }
+  bool     IsEmpty      ( void ) const throw() { return GetElemCount() == 0; }
+  bool     IsFull       ( void ) const throw() { return GetFreeCount() == 0; }
 
 
   // Peeking does not consume the element, see ConsumeReadElements() below.
 
-  const ElemType * PeekElement ( void ) const
+  const ElemType * PeekElement ( void ) const throw()
   {
     assert( !IsEmpty() );
     assert( m_readPos < MAX_ELEM_COUNT );
@@ -158,14 +158,14 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
   // buffer implementation needs more than 2 calls.
   // After calling this routine a second time, remember to call ConsumeReadElements() beforehand.
 
-  const ElemType * GetReadPtr ( SizeType * const elemCount ) const
+  const ElemType * GetReadPtr ( SizeType * const elemCount ) const throw()
   {
     *elemCount = MinFrom( m_elemCount, MAX_ELEM_COUNT - m_readPos );
     assert( m_readPos < MAX_ELEM_COUNT );
     return &m_buffer[ m_readPos ];
   }
 
-  void ConsumeReadElements ( const SizeType elemCountToConsume )
+  void ConsumeReadElements ( const SizeType elemCountToConsume ) throw()
   {
     assert( elemCountToConsume != 0 );
     assert( elemCountToConsume <= m_elemCount );
@@ -248,7 +248,7 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
   // buffer implementation needs more than 2 calls.
   // After calling this routine a second time, remember to call CommitWrittenElements() beforehand.
 
-  ElemType * GetWritePtr ( SizeType * const elemCount )
+  ElemType * GetWritePtr ( SizeType * const elemCount ) throw()
   {
     const SizeType writePos = ( m_readPos + m_elemCount ) % MAX_ELEM_COUNT;
     assert( writePos < MAX_ELEM_COUNT );
@@ -261,7 +261,7 @@ class CCircularBuffer  // Also called Cyclic or Ring Buffer in the literature.
     return ptr;
   }
 
-  void CommitWrittenElements ( const SizeType elemCountToCommit )
+  void CommitWrittenElements ( const SizeType elemCountToCommit ) throw()
   {
     assert( elemCountToCommit != 0 );
     assert( elemCountToCommit <= GetFreeCount() );

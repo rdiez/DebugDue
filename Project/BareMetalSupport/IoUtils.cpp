@@ -3,7 +3,7 @@
 
 uint8_t GetArduinoDuePinNumberFromPio ( const Pio * const pioPtr,
                                                const uint8_t pinNumber  // 0-31
-                                             )
+                                      ) throw()
 {
   switch ( GetPioIdFromPtr( pioPtr ) )
   {

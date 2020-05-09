@@ -19,10 +19,10 @@
 
 void InitSerialPortAsyncTx ( const char * eol );
 
-void SerialPortAsyncTxInterruptHandler ( void );
+void SerialPortAsyncTxInterruptHandler ( void ) throw();
 
 void SendSerialPortAsyncData ( const char * data, size_t dataLen );
 
-const char * GetSerialPortEol ( void );
+const char * GetSerialPortEol ( void ) throw();
 
-bool HasSerialPortDataBeenSentSinceLastCall ( void );
+bool HasSerialPortDataBeenSentSinceLastCall ( void ) throw();

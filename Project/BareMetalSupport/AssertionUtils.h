@@ -88,9 +88,9 @@ extern "C"
 {
   typedef void (*UserPanicMsgFunction) ( const char * msg );
 
-  void SetUserPanicMsgFunction ( UserPanicMsgFunction functionPointer );
+  void SetUserPanicMsgFunction ( UserPanicMsgFunction functionPointer ) throw();
 
-  void Panic ( const char * msg ) __attribute__ ((__noreturn__));
+  void Panic ( const char * msg )  throw()__attribute__ ((__noreturn__));
 
-  void ForeverHangAfterPanic ( void ) __attribute__ ((__noreturn__));
+  void ForeverHangAfterPanic ( void )  throw()__attribute__ ((__noreturn__));
 };

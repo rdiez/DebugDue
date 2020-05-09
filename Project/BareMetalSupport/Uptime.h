@@ -25,7 +25,7 @@
 extern volatile uint64_t g_updateCounter_internalUseOnly;
 
 
-inline uint64_t GetUptime ( void )
+inline uint64_t GetUptime ( void ) throw()
 {
   CAutoDisableInterrupts autoDisableInterrupts;
 
@@ -35,7 +35,7 @@ inline uint64_t GetUptime ( void )
 
 inline bool HasUptimeElapsedMs ( const uint64_t currentUptime,
                                  const uint64_t referenceTimeInThePast,
-                                 const uint16_t millisecondsFromReferenceTime )
+                                 const uint16_t millisecondsFromReferenceTime ) throw()
 {
     assert( millisecondsFromReferenceTime >= 1 );
     assert( referenceTimeInThePast <= currentUptime );
@@ -45,7 +45,7 @@ inline bool HasUptimeElapsedMs ( const uint64_t currentUptime,
 
 inline bool HasUptimeElapsed ( const uint64_t currentUptime,
                                const uint64_t referenceTimeInThePast,
-                               const uint8_t  secondsFromReferenceTime )
+                               const uint8_t  secondsFromReferenceTime ) throw()
 {
     static const uint16_t UPTIME_MS_IN_SEC = 1000;
 
@@ -55,7 +55,7 @@ inline bool HasUptimeElapsed ( const uint64_t currentUptime,
 }
 
 
-inline void IncrementUptime ( const uint32_t deltaInMs )
+inline void IncrementUptime ( const uint32_t deltaInMs ) throw()
 {
     assert( AreInterruptsEnabled() );
     cpu_irq_disable();

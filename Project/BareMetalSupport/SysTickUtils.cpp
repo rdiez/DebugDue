@@ -45,7 +45,7 @@ static uint32_t CalculateSysTickDelta ( const uint32_t referenceTimeInThePast, c
 
 // WARNING: This routine cannot measure intervals >= SYSTEM_TICK_PERIOD_MS.
 
-uint32_t GetElapsedSysTickCount ( const uint32_t referenceTimeInThePast )
+uint32_t GetElapsedSysTickCount ( const uint32_t referenceTimeInThePast ) throw()
 {
   return CalculateSysTickDelta( referenceTimeInThePast, GetSysTickValue() );
 }

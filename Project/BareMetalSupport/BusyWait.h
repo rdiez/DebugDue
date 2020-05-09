@@ -24,7 +24,7 @@
   // Please do not use this function directly, use the C wrapper BusyWaitLoop().
   extern "C" void BusyWaitAsmLoop ( uint32_t iterationCount );
 
-inline void BusyWaitLoop ( const uint32_t iterationCount )
+inline void BusyWaitLoop ( const uint32_t iterationCount ) throw()
 {
     assert( iterationCount > 0 );
 
@@ -36,7 +36,7 @@ inline void BusyWaitLoop ( const uint32_t iterationCount )
 }
 
 
-inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
+inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs ) throw()
 {
   assert( timeInUs > 0 );
 
@@ -50,4 +50,4 @@ inline uint32_t GetBusyWaitLoopIterationCountFromUs ( const uint32_t timeInUs )
 }
 
 
-bool IsBusyWaitAsmLoopAligned ( void );
+bool IsBusyWaitAsmLoopAligned ( void ) throw();

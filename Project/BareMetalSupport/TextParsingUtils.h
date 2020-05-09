@@ -3,10 +3,10 @@
 #include <string.h>
 
 
-const char * SkipCharsInSet ( const char * str, const char * char_set );
-const char * SkipCharsNotInSet ( const char * str, const char * char_set );
+const char * SkipCharsInSet ( const char * str, const char * char_set ) throw();
+const char * SkipCharsNotInSet ( const char * str, const char * char_set ) throw();
 
-inline bool IsPrintableAscii ( const char c )
+inline bool IsPrintableAscii ( const char c ) throw()
 {
   return ( c >= ' ' ) && ( c < 127 );
 }
@@ -20,7 +20,7 @@ inline bool IsPrintableAscii ( const char c )
 // NOTE: The NULL character is always considered to be in the set.
 //
 
-inline bool IsCharInSet ( const char c, const char * const charset )
+inline bool IsCharInSet ( const char c, const char * const charset ) throw()
 {
     return strchr( charset, c ) != NULL;
 }

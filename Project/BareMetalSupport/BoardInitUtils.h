@@ -10,7 +10,7 @@ void StartOfUserCode ( void );
 // therefore, if GCC makes assumptions and reorder code, it may not be right
 // before this routine is called.
 
-void RunUserCode ( void ) __attribute__ ((noinline));
+void RunUserCode ( void ) throw() __attribute__ ((noinline));
 
 void InitDataSegments ( void ) throw();
 

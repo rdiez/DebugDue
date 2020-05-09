@@ -25,13 +25,13 @@
 
 static UserPanicMsgFunction s_UserPanicMsgFunction = NULL;
 
-void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer )
+void SetUserPanicMsgFunction ( const UserPanicMsgFunction functionPointer ) throw()
 {
   s_UserPanicMsgFunction = functionPointer;
 }
 
 
-void Panic ( const char * const msg )
+void Panic ( const char * const msg ) throw()
 {
   if ( s_UserPanicMsgFunction )
   {
@@ -48,7 +48,7 @@ void Panic ( const char * const msg )
 }
 
 
-void ForeverHangAfterPanic ( void )
+void ForeverHangAfterPanic ( void ) throw()
 {
   // Forever hang.
   for ( ; ; )

@@ -36,14 +36,14 @@
 #define USE_PARALLEL_ACCESS false
 
 
-inline uint32_t BV ( const uint32_t v )
+inline uint32_t BV ( const uint32_t v ) throw()
 {
   assert( v < 32 );
   return 1 << v;
 }
 
 
-inline bool IsKnownPioPtr ( const Pio * const pioPtr )
+inline bool IsKnownPioPtr ( const Pio * const pioPtr ) throw()
 {
   if ( pioPtr == PIOA ||
        pioPtr == PIOB ||
@@ -59,7 +59,7 @@ inline bool IsKnownPioPtr ( const Pio * const pioPtr )
 }
 
 
-inline uint32_t GetPioIdFromPtr ( const Pio * const pioPtr )
+inline uint32_t GetPioIdFromPtr ( const Pio * const pioPtr ) throw()
 {
   assert( IsKnownPioPtr( pioPtr ) );
 
@@ -71,7 +71,7 @@ inline uint32_t GetPioIdFromPtr ( const Pio * const pioPtr )
 
 // In order to read from a pin, the PIO clock must have been enabled.
 
-inline bool IsPioClockEnabled ( const Pio * const pioPtr )
+inline bool IsPioClockEnabled ( const Pio * const pioPtr ) throw()
 {
   return 0 != pmc_is_periph_clk_enabled( GetPioIdFromPtr( pioPtr ) );
 }
@@ -79,7 +79,7 @@ inline bool IsPioClockEnabled ( const Pio * const pioPtr )
 
 inline volatile uint32_t * GetPioBitBandAddr ( const volatile void * const pioAddr,
                                                const uint8_t bitNumber  // 0-31.
-                                             )
+                                             ) throw()
 {
   assert( bitNumber < 32 );
 
@@ -109,7 +109,7 @@ inline volatile uint32_t * GetPioBitBandAddr ( const volatile void * const pioAd
 
 inline bool IsPinControlledByPio ( const Pio * const pioPtr,
                                    const uint8_t pinNumber // 0-31.
-                                 )
+                                 ) throw()
 {
   assert( IsKnownPioPtr( pioPtr ) );
 
@@ -149,7 +149,7 @@ inline bool IsParallelAccessEnabledForPin ( Pio * const pioPtr,
 
 inline void SetOutputDataDrivenOnPinToHigh ( Pio * const pioPtr,
                                              const uint8_t pinNumber  // 0-31.
-                                           )
+                                           ) throw()
 {
   assert( IsKnownPioPtr( pioPtr ) );
 
@@ -180,7 +180,7 @@ inline void SetOutputDataDrivenOnPinToHigh ( Pio * const pioPtr,
 
 inline void SetOutputDataDrivenOnPinToLow ( Pio * const pioPtr,
                                             const uint8_t pinNumber  // 0-31.
-                                          )
+                                          ) throw()
 {
   assert( IsKnownPioPtr( pioPtr ) );
 
@@ -211,7 +211,7 @@ inline void SetOutputDataDrivenOnPinToLow ( Pio * const pioPtr,
 inline void SetOutputDataDrivenOnPin ( Pio * const pioPtr,
                                        const uint8_t pinNumber,  // 0-31.
                                        const bool isPinSet
-                                     )
+                                     ) throw()
 {
   if ( USE_BIT_BANDING_WHEN_WRITING && USE_PARALLEL_ACCESS )
   {
@@ -233,7 +233,7 @@ inline void SetOutputDataDrivenOnPin ( Pio * const pioPtr,
 
 inline bool GetOutputDataDrivenOnPin ( const Pio * const pioPtr,
                                        const uint8_t pinNumber  // 0-31.
-                                     )
+                                     ) throw()
 {
   if ( USE_BIT_BANDING_WHEN_READING )
   {
@@ -251,7 +251,7 @@ inline bool GetOutputDataDrivenOnPin ( const Pio * const pioPtr,
 
 inline bool IsInputPinHigh ( const Pio * const pioPtr,
                              const uint8_t pinNumber  // 0-31.
-                           )
+                           ) throw()
 {
   assert( IsPioClockEnabled( pioPtr ) );
 
@@ -269,4 +269,4 @@ inline bool IsInputPinHigh ( const Pio * const pioPtr,
 }
 
 
-uint8_t GetArduinoDuePinNumberFromPio ( const Pio * pioPtr, uint8_t pinNumber );
+uint8_t GetArduinoDuePinNumberFromPio ( const Pio * pioPtr, uint8_t pinNumber ) throw();
