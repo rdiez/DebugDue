@@ -1,8 +1,8 @@
-autom4te.cache/
-build-aux/
-configure
-Makefile.in
-aclocal.m4
+/autom4te.cache/
+/build-aux/
+/configure
+/Makefile.in
+/aclocal.m4
 
 # Symbolic link that gets created automatically.
-AsfSrc
+/AsfSrc
