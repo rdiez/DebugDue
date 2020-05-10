@@ -1403,7 +1403,12 @@ do_program_and_debug ()
       # The JtagDue software has no speed control yet.
       ;;
     Olimex-ARM-USB-OCD-H)
-      # TODO: Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
+      # Enabling RTCK/RCLK (with "adapter_khz 0") makes the adapter hang. The red LED remains on
+      # and you have to unplug and reconnect the USB cable in order for the adapter to work again.
+      # Keep in mind that the Olimex-ARM-USB-OCD-H states that it does support "adaptive clocking RTCK".
+      # I suspect that the SAM3X microcontroller on the Arduino Due has no RTCK signal. Other
+      # microcontrollers, like the Atmel SAM9XE family, do have an RTCK signal.
+      # According to TI: "The ARM Cortex M4, R4, or A8 cores do not have RTCK". I guess that Cortex-M3 does not have it either.
       add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
       ;;
     Flyswatter2)
