@@ -174,13 +174,13 @@ fi
 
 
 declare -r BUILD_DIR="$ROTATED_DIR/build"
-declare -r INSTALLATION_DIR="$ROTATED_DIR/bin"
+declare -r INSTALLATION_DIR="$ROTATED_DIR/ToolchainBin"
 
 declare -r SKIP_TOOLCHAIN_BUILD=false
 
 if $SKIP_TOOLCHAIN_BUILD; then
 
-  TOOLCHAIN_BIN_DIR="$OUTPUT_BASE_DIR/CurrentToolchain/bin"
+  TOOLCHAIN_BIN_DIR="$OUTPUT_BASE_DIR/CurrentToolchain"
   # TOOLCHAIN_BIN_DIR="$HOME/some-other-toolchain-when-testing-this-script"
 
 else
