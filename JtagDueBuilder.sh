@@ -1016,7 +1016,7 @@ do_bossac ()
 }
 
 
-check_openocd_job_still_running ()
+check_background_job_still_running ()
 {
   # Unfortunately, Bash does not provide a timeout option for the 'wait' command, or any other
   # option for it that only checks the job status without blocking.
@@ -1089,7 +1089,7 @@ check_openocd_job_still_running ()
     # but it is better than nothing.
     printf "%s" "$JOBS_OUTPUT"
 
-    MSG="OpenOCD failed to initialise."
+    MSG="The background child process failed to initialise or is no longer running."
     if [ -n "$LAST_JOB_STATUS" ]; then
       MSG+=" Its job result was: "
       MSG+="$LAST_JOB_STATUS"
@@ -1223,7 +1223,7 @@ debug_target ()
   # get the job spec, as far as I can tell. Using the "last job" spec %%
   # is risky, because something else may start another job in the meantime.
   local LAST_JOB_STATUS=""
-  check_openocd_job_still_running %%
+  check_background_job_still_running %%
   parse_job_id "$LAST_JOB_STATUS"
   local OPEN_OCD_JOB_SPEC="$CAPTURED_JOB_SPEC"
 
@@ -1271,7 +1271,7 @@ debug_target ()
 
 
     # echo "Checking whether the child is still running."
-    check_openocd_job_still_running  "$OPEN_OCD_JOB_SPEC"
+    check_background_job_still_running  "$OPEN_OCD_JOB_SPEC"
 
   done
 
@@ -1447,7 +1447,119 @@ do_program_and_debug ()
 
 do_run_in_qemu ()
 {
-  abort "Not implemented yet."
+  # Build the GDB command upfront. If something is wrong, it is not worth starting Qemu.
+  local GDB_CMD
+  build_gdb_command
+
+
+  local -r QEMU_TOOL="qemu-system-arm"
+
+  # This check is not strictly necessary, but Qemu is not usually installed by default
+  # and it provides a more user-friendly error message. We could even suggest
+  # the Ubunut/Debian package to install.
+  if ! type "$QEMU_TOOL" >/dev/null 2>&1 ;
+  then
+    abort "Could not find Qemu program \"$QEMU_TOOL\"."
+  fi
+
+  local QEMU_CMD=""
+
+  quote_and_append_args  QEMU_CMD  "$QEMU_TOOL"
+
+  quote_and_append_args  QEMU_CMD  "-cpu"  "cortex-m3"
+
+  if false; then
+    # KVM only helps if the host CPU is similar to the target CPU. This is probably not going to be the case
+    # in our embedded ARM CPU.
+    # We could leave this option enabled, just in case, but then you will probably get the following warning every time:
+    #   qemu-system-arm: -machine accel=kvm: No accelerator found
+    quote_and_append_args  QEMU_CMD  "-enable-kvm"
+  fi
+
+  quote_and_append_args  QEMU_CMD  "-machine"  "lm3s811evb"  # Emulates a Luminary Micro Stellaris LM3S6965EVB.
+
+  quote_and_append_args  QEMU_CMD  "-name"  "Stellaris VM"
+
+  quote_and_append_args  QEMU_CMD  "-net" "none"
+
+  quote_and_append_args  QEMU_CMD  "-nographic"
+
+  quote_and_append_args  QEMU_CMD  "-semihosting"
+
+  # OpenOCD uses port number 3333 by default, so use the same port here. If you wish to change it,
+  # you will need to pass it as an argument to script DebuggerStarterHelper.sh too.
+  local -r GDB_PORT_NUMBER="3333"
+
+  quote_and_append_args  QEMU_CMD  "-gdb"  "tcp::$GDB_PORT_NUMBER"
+
+  quote_and_append_args  QEMU_CMD  -S  # Do not start the CPU, wait for GDB to connect.
+
+  quote_and_append_args  QEMU_CMD  -kernel  "$ELF_FILEPATH"
+
+
+  echo "Starting Qemu with command:"
+  echo "$QEMU_CMD"
+  echo
+  eval "$QEMU_CMD" &
+
+  # I am surprised that we do not need a 'sleep' pause here. I guess that GDB tries to connect
+  # a few times before giving up, in case Qemu is not ready to accept connections yet.
+  #
+  # If we ever need a pause, pausing for a fixed amount of time is actually a bad idea.
+  # The trouble is that I have not found out yet how to determine when Qemu has started
+  # and is ready to accept an incoming GDB connection.
+
+  # Routine check_background_job_still_running needs a temporary directory.
+  local PROJECT_OBJ_DIR_TMP="$PROJECT_OBJ_DIR/tmp"
+  mkdir --parents -- "$PROJECT_OBJ_DIR_TMP"
+
+  # This first check will probably always succeed. If the child process has terminated,
+  # we will find out the next time around. We are doing an initial check
+  # in order to extract the exact job ID. Bash provides no other way to
+  # get the job spec, as far as I can tell. Using the "last job" spec %%
+  # is risky, because something else may start another job in the meantime.
+  local LAST_JOB_STATUS=""
+  check_background_job_still_running %%
+  parse_job_id "$LAST_JOB_STATUS"
+  local QEMU_JOB_SPEC="$CAPTURED_JOB_SPEC"
+
+  echo
+  echo "Running debugger script:"
+  echo "$GDB_CMD"
+
+  set +o errexit
+  eval "$GDB_CMD"
+  local GDB_CMD_EXIT_CODE="$?"
+  set -o errexit
+
+  if (( GDB_CMD_EXIT_CODE != 0 )); then
+    abort "The debugger script failed with an exit code of $GDB_CMD_EXIT_CODE."
+  fi
+
+  echo
+  echo "The debugger script has terminated. Shutting down Qemu..."
+
+  # There are other ways to terminate Qemu. We could use SIGINT instead of SIGTERM.
+  # Or we could connect to the operating system inside (if there is one) and issue a shutdown
+  # from within the VM. But that does not apply here, as we are debugging the VM and it could
+  # be frozen at this time, for example, in a breakpoint.
+  # Alternatively, we could connect to Qemu's monitor socket and send command "system_powerdown",
+  # see Qemu options '-monitor' and '-qmp'.
+  kill -s SIGTERM  "$QEMU_JOB_SPEC"
+
+  echo "Waiting for the Qemu child process to terminate..."
+
+  set +o errexit
+  local QEMU_EXIT_CODE
+  wait "$QEMU_JOB_SPEC"
+  QEMU_EXIT_CODE="$?"
+  set -o errexit
+
+  if (( QEMU_EXIT_CODE != 0 )); then
+    abort "Qemu failed with exit code $QEMU_EXIT_CODE."
+  fi
+
+  echo "The debug session terminated successfully."
 }
 
 
