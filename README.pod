@@ -7,12 +7,13 @@ Run the following Perl commands to convert it to HTML or to plain text for easy 
 
 =pod
 
-=head1 JtagDue Project
+=head1 Overview
 
 The main goal of this project is to provide an up-to-date, comfortable but fully-featured
 B<bare-metal C++ programming environment> for the Arduino Due. However, most of the
 techniques used are generic and can be applied to other Cortex-Mx microcontrollers,
-or even to other bare-metal embedded architectures.
+or even to other bare-metal embedded architectures. This project already supports
+building and debugging a minimal firmware running on a Qemu-emulated Stellaris board.
 
 The makefile that builds the B<GCC-based toolchain> is completely generic (it knows nothing about the Arduino Due),
 so that you can use it to create toolchains for other ARM Cortex microcontrollers, like the STM32 family.
@@ -27,7 +28,7 @@ your own code running on a second Arduino Due.
 
 You will find more information about the Arduino Due on my wiki page at S<< L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >> . >>
 
-=head2 About the Bare Metal C++ Environment
+=head1 Bare Metal C++ Environment
 
 The bare metal programming environment has the following features:
 
@@ -39,7 +40,7 @@ The developer must manually call every library function and has therefore full c
 
 There are no OS background tasks or threads to worry about.
 
-=item * L<< C++14|https://en.wikipedia.org/wiki/C%2B%2B14 >> support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
+=item * L<< C++17|https://en.wikipedia.org/wiki/C%2B%2B17 >> support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
 
 =item * C++ exceptions.
 
@@ -91,6 +92,8 @@ There is support for debug and release firmware builds.
 
 Alternatively, you can program your Arduino Due with the 'bossac' tool.
 
+The build script can also start Qemu and attach GDB in order to debug the emulated Stellaris board from the start.
+
 =item * In order to help trim the firmware size, the build script can optionally generate a readelf dump, and objdump with code disassembly, a list of ELF objects sorted by size, and a list of all text strings found in the final binary.
 
 =item * The build script can optionally use L<< ccache|https://en.wikipedia.org/wiki/Ccache >>, which can possibly reduce compilation times.
@@ -101,7 +104,7 @@ Restarting the firmware under the debugger is almost instantaneous.
 
 =back
 
-=head2 About the Toolchain Builder Makefile
+=head1 Toolchain Builder Makefile
 
 You will find a makefile to build your own GCC-based, cross-compiling toolchain in the F<< Toolchain >> subdirectory.
 See the installation instructions below for more information on how to build one yourself.
@@ -169,7 +172,9 @@ you'll realise that many of the test binaries are built with this flag.
 
 The toolchain builder makefile does not support building a multilib toolchain. You will need a separate toolchain for each CPU type you need (one for Cortex-M0, one for Cortex-M4F, and so on).
 
-=head2 About the JTAG Functionality
+=head1 JtagDue Fimware
+
+This firmware converts the Arduino Due into a JTAG adapter. It is similar to the Bus Pirate when used as a JTAG adapter.
 
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
 
@@ -206,7 +211,7 @@ The lowest-level JTAG bit shifting routine should be rewritten in assembly. Help
 
 You will find more information about my experience with the Arduino Due on my wiki page at S<< L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >> . >>
 
-=head1 Empty Firmware Project
+=head1 Empty Firmware
 
 There is an "EmptyFirmware" directory that generates a dummy firmware which performs
 minimal initialisation, prints some basic information (including the code and data size values explained below)
@@ -246,11 +251,20 @@ That means an increase of 9,152 bytes the first time you touch a printf-style fu
 
 =back
 
+=head1 Qemu Stellaris Firmware
+
+There is an "QemuFirmware" directory that generates a dummy firmware which performs
+minimal initialisation, prints some basic information like the firmware code and data sizes
+to the emulated serial console, and then stops (it waits forever).
+
+With this project you can start developing and debugging embedded firmware in an accurate simulation
+without any hardware whatsoever. There is no programming (flashing) time, the firmware starts immediately.
+
 =head1 Installation Instructions
 
 =head2 Installing a binary file
 
-Pre-built binary files are available in a separate repository at S<< L<< https://github.com/rdiez/JtagDueBinaries >> . >>
+Pre-built binary files for the Arduino Due are available in a separate repository at S<< L<< https://github.com/rdiez/JtagDueBinaries >> . >>
 These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
 in order to flash a pre-built binary file.
 
@@ -258,7 +272,7 @@ in order to flash a pre-built binary file.
 
 =over
 
-=item 1) Build the toolchain (the GCC compiler for the Arduino Due).
+=item 1) Build the toolchain (the GCC compiler for the target embedded system).
 
 Change to the 'Toolchain' subdirectory and type "make help" for the prerequisites and detailed information.
 
@@ -285,6 +299,8 @@ If you are experimenting with toolchains and will be building them often, you ma
 
 =item 2) Download and unpack the Atmel Software Framework into some directory of your choice.
 
+This step is not necessary for the Qemu Stellaris Firmware.
+
 I have tested against ASF versions 3.19.0.95, 3.35.1.54 and 3.40.0. You will probably have to manually edit file
 F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with S<< I<< #ifndef __cplusplus >> , >>
 so that they look like this:
@@ -302,7 +318,7 @@ so that they look like this:
 Without this amendment, compiling your C++ projects will probably fail later on with an error message related to I<< min >> or I<< max >>.
 This kind of fix is in place for S<< F<< sam0/utils/compiler.h >> , >> but not for S<< F<< sam/utils/compiler.h >> , >> at least for ASF S<version 3.34.2.53>.
 
-=item 3) Build the JtagDue firmware for the Arduino Due like most Autotools projects:
+=item 3) Build the firmware for the Arduino Due like most Autotools projects:
 
 =over
 
@@ -328,6 +344,8 @@ The binaries files land in the prefix directory you specified, inside a subdirec
 =back
 
 =item 4) Flash the new firmware.
+
+Note that this step and most of the steps below are not necessary in case of the Qemu-emulated Stellaris firmware.
 
 First of all, plug the USB cable into the Arduino Due's "programming" USB socket (as opposed to the "native" socket).
 
@@ -546,7 +564,7 @@ you will have to make minimal modifications to routine I<< user_config() >>. For
 
 Try the modified script out with the following command:
 
-  ./JtagDueBuilder.sh --clean --build --program-over-jtag --debug
+  ./JtagDueBuilder.sh --project=JtagDue --clean --build --program-over-jtag --debug
 
 That should build the firmware from scratch, send it to the target device and start debugging it.
 
@@ -555,10 +573,10 @@ In the GDB window, press Ctrl+C to halt the firmware. You can then use commands 
 The idea is that, no matter what development environment you are using (Emacs, Vim, Eclipse, ...),
 you should configure the usual compile/run/etc. keys to run the script with different arguments. For example:
 
- F7 (compile):          ./JtagDueBuilder.sh --build
- F5 (run)    :          ./JtagDueBuilder.sh --build --program-over-jtag --debug --debugger-type=ddd --cache-programmed-file
- Ctrl+Alt+F7 (rebuild): ./JtagDueBuilder.sh --clean --build
- Ctrl+R (run to line):  ./JtagDueBuilder.sh --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123" --cache-programmed-file
+ F7 (compile):          ./JtagDueBuilder.sh --project=JtagDue --build
+ F5 (run)    :          ./JtagDueBuilder.sh --project=JtagDue --build --program-over-jtag --debug --debugger-type=ddd --cache-programmed-file
+ Ctrl+Alt+F7 (rebuild): ./JtagDueBuilder.sh --project=JtagDue --clean --build
+ Ctrl+R (run to line):  ./JtagDueBuilder.sh --project=JtagDue --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123" --cache-programmed-file
 
 This way, you will not have to type any console commands in order to run or debug your firmware.
 You will not get the full comfort you are used to when writing standard PC applications,
@@ -604,7 +622,7 @@ The project's official web site is L<< https://github.com/rdiez/JtagDue >>
 
 =head1 License
 
-Copyright (C) R. Diez 2012-2018,  rdiezmail-arduino at yahoo.de
+Copyright (C) R. Diez 2012-2020,  rdiezmail-arduino at yahoo.de
 
 The source code is released under the AGPL 3 license.
 
