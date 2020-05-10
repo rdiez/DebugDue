@@ -893,6 +893,10 @@ do_build ()
 
 add_openocd_cmd ()
 {
+  # We could write this routine like quote_and_append_args, but keep in mind that Bash and Tcl escaping
+  # is different. For example, the '[' character in command "set fifo [open filename a]"
+  # must not be escaped in Tcl.
+
   # When running .tcl files, OpenOCD does not print the function results,
   # but when running commands with --command, it does.
   # The following makes every line return an empty list, which then prints nothing,
@@ -1204,11 +1208,14 @@ debug_target ()
 
 
   # Make sure you write to the FIFO after calling OpenOCD's 'init' command.
-  add_openocd_cmd "echo \"Informing the parent script that OpenOCD has finished initialising.\""
+  add_openocd_cmd_echo "Informing the parent script that OpenOCD has finished initialising."
   local FILE_OPEN_CMD
   printf -v FILE_OPEN_CMD "set fifo [open %q a]" "$FIFO_FILENAME"
   add_openocd_cmd "$FILE_OPEN_CMD"
-  add_openocd_cmd "puts \$fifo \"$FIFO_MSG_FINISHED_INIT\""
+
+  local PUTS_FIFO_CMD
+  printf -v PUTS_FIFO_CMD "puts \$fifo %q"  "$FIFO_MSG_FINISHED_INIT"
+  add_openocd_cmd "$PUTS_FIFO_CMD"
   add_openocd_cmd "close \$fifo"
 
   echo
@@ -1353,6 +1360,8 @@ debug_target ()
 
 do_program_and_debug ()
 {
+  local TMP_STR
+
   local OPEN_OCD_CMD=""
 
   quote_and_append_args OPEN_OCD_CMD "$PATH_TO_OPENOCD"
@@ -1370,7 +1379,8 @@ do_program_and_debug ()
 
   case "$JTAG_ADAPTER" in
     JtagDue)
-      add_openocd_cmd "set JTAGDUE_SERIAL_PORT \"$JTAGDUE_SERIAL_PORT\""
+      printf -v TMP_STR  "set JTAGDUE_SERIAL_PORT %q"  "$JTAGDUE_SERIAL_PORT"
+      add_openocd_cmd "$TMP_STR"
       quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/JtagDueInterfaceConfig.cfg"
       ;;
     Flyswatter2)
@@ -1418,15 +1428,19 @@ do_program_and_debug ()
       # Delete the old cached file in case programming fails, and you end up with a corrupt firmware on the target.
       if $CACHE_FILE_EXISTS_BUT_DIFFERENT; then
         add_openocd_cmd_echo "Deleting old bin cache file \"$CACHED_PROGRAMMED_FILE_FILENAME\"..."
-        add_openocd_cmd "file delete \"$CACHED_PROGRAMMED_FILE_FILENAME\""
+
+        printf -v TMP_STR  "file delete %q"  "$CACHED_PROGRAMMED_FILE_FILENAME"
+        add_openocd_cmd "$TMP_STR"
       fi
 
       add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
-      add_openocd_cmd "flash write_image erase $BIN_FILEPATH $FLASH_ADDR"
+      printf -v TMP_STR  "flash write_image erase %q %q" "$BIN_FILEPATH" "$FLASH_ADDR"
+      add_openocd_cmd "$TMP_STR"
 
       if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
         add_openocd_cmd_echo "Keeping a copy of programmed file \"$BIN_FILEPATH\" at \"$CACHED_PROGRAMMED_FILE_FILENAME\" ..."
-        add_openocd_cmd "file copy -force \"$BIN_FILEPATH\" \"$CACHED_PROGRAMMED_FILE_FILENAME\""
+        printf -v TMP_STR  "file copy -force %q %q" "$BIN_FILEPATH" "$CACHED_PROGRAMMED_FILE_FILENAME"
+        add_openocd_cmd "$TMP_STR"
       fi
     fi
 
