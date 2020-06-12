@@ -291,6 +291,12 @@ EXTRA_CPP_FLAGS+=" -DUSB_VID=0x2341 -DUSB_PID=0x1234"
 
 
 # Assorted extra warnings.
+
+EXTRA_C_AND_CXX_FLAGS+=" -Wundef"  # It is a very common error to forget defining a symbol, and then "#if SYMBOL" will not fail or warn you,
+                                   # because such undefined identifiers are quietly replaced with zero.
+                                   # This warning tries to help prevent such mistakes.
+                                   # -Wundef is not enabled automatically by -Wall, at least with GCC 9.3.
+
 EXTRA_C_AND_CXX_FLAGS+=" -fdiagnostics-show-option"
 EXTRA_C_AND_CXX_FLAGS+=" -Wall -Wextra"
 EXTRA_C_AND_CXX_FLAGS+=" -Wshadow -Wpointer-arith -Wcast-qual"
