@@ -106,7 +106,7 @@ $(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-VERSION_SET := VersionSet3
+VERSION_SET := VersionSet4
 
 ifeq ($(VERSION_SET),VersionSet1)
 
@@ -151,6 +151,16 @@ else ifeq ($(VERSION_SET),VersionSet3)
   GCC_VERSION := 9.3.0
   NEWLIB_VERSION := 3.3.0
   GDB_VERSION := 9.1
+
+else ifeq ($(VERSION_SET),VersionSet4)
+
+  BINUTILS_VERSION := 2.35.1
+  GMP_VERSION := 6.2.0
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.0
+  GCC_VERSION := 9.3.0
+  NEWLIB_VERSION := 3.3.0
+  GDB_VERSION := 9.2
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
