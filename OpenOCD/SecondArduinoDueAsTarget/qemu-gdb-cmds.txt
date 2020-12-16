@@ -1,0 +1,28 @@
+
+# Do not call this routine directly, use 'myreset' and 'myhaltafterreset' below.
+define my_reset_internal
+
+  monitor system_reset
+
+  # Force GDB to update its register cache. Otherwise, the right values are shown only after the first 'step' command.
+  flushregs
+
+end
+
+
+# This routine is named so that the GDB user only has to type "myr" and hit the tab key for autocompletion.
+define myreset
+  my_reset_internal
+  # There is no newline at the end of this 'echo' so that the cursor remains after the '...'.
+  # If the user halts the firmware with Ctrl+C, GDB will output a new line before
+  # printing "Program received signal SIGINT, Interrupt.".
+  echo The firmware is now running...
+  continue
+end
+
+
+# This routine is named so that the GDB user only has to type "myh" and hit the tab key for autocompletion.
+define myhaltafterreset
+  my_reset_internal
+  echo The CPU is now ready to start.\n
+end

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2014-2017 R. Diez - Licensed under the GNU AGPLv3 - see companion script JtagDueBuilder.sh for more information.
+# Copyright (c) 2014-2020 R. Diez - Licensed under the GNU AGPLv3 - see companion script JtagDueBuilder.sh for more information.
 
 set -o errexit
 set -o nounset
@@ -199,13 +199,14 @@ declare -a BREAKPOINTS=()
 
 parse_command_line_arguments "$@"
 
-if [ ${#ARGS[@]} -ne 3 ]; then
-  abort "Invalid command-line arguments."
+if (( ${#ARGS[@]} != 4 )); then
+  abort "Invalid number of command-line arguments."
 fi
 
 TOOLCHAIN_PATH="${ARGS[0]}"
 ELF_FILE_PATH="${ARGS[1]}"
-DEBUGGER_TYPE="${ARGS[2]}"
+TARGET_TYPE="${ARGS[2]}"
+DEBUGGER_TYPE="${ARGS[3]}"
 
 case "$DEBUGGER_TYPE" in
   ddd) : ;;
@@ -214,7 +215,7 @@ case "$DEBUGGER_TYPE" in
 esac
 
 
-# ------ Start GDB in a separate KDE Konsole ------
+# ------ Start GDB in a separate console ------
 
 TARGET_ARCH="arm-none-eabi"
 
@@ -267,7 +268,14 @@ else
 
 fi
 
-add_gdb_arg "--command=\"arduino-due-gdb-cmds.txt\""
+
+case "$TARGET_TYPE" in
+  ArduinoDue) add_gdb_arg "--command=\"arduino-due-gdb-cmds.txt\"" ;;
+  QEMU)       add_gdb_arg "--command=\"qemu-gdb-cmds.txt\"" ;;
+  *) abort "Unknown target type \"$TARGET_TYPE\"."
+esac
+
+
 add_gdb_cmd "target remote :3333"
 
 if (( ${#BREAKPOINTS[*]} > 0 )); then

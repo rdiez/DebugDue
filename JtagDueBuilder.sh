@@ -1128,6 +1128,8 @@ parse_job_id ()
 
 build_gdb_command ()
 {
+  local TARGET_TYPE="$1"
+
   printf  -v GDB_CMD  "cd %q  &&  ./DebuggerStarterHelper.sh"  "$OPENOCD_CONFIG_DIR"
 
   if $DEBUG_FROM_THE_START_SPECIFIED; then
@@ -1141,7 +1143,7 @@ build_gdb_command ()
     done
   fi
 
-  quote_and_append_args GDB_CMD  "$TOOLCHAIN_DIR"  "$ELF_FILEPATH"  "$DEBUGGER_TYPE"
+  quote_and_append_args GDB_CMD  "$TOOLCHAIN_DIR"  "$ELF_FILEPATH"  "$TARGET_TYPE"  "$DEBUGGER_TYPE"
 }
 
 
@@ -1175,7 +1177,7 @@ debug_target ()
 
   # Build the GDB command upfront. If something is wrong, it is not worth starting OpenOCD.
   local GDB_CMD
-  build_gdb_command
+  build_gdb_command "ArduinoDue"
 
 
   # It would be best to create an unnamed pipe between this script and the OpenOCD child process,
@@ -1468,7 +1470,7 @@ do_run_in_qemu ()
 {
   # Build the GDB command upfront. If something is wrong, it is not worth starting Qemu.
   local GDB_CMD
-  build_gdb_command
+  build_gdb_command "QEMU"
 
 
   local -r QEMU_TOOL="qemu-system-arm"
