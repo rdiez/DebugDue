@@ -220,9 +220,11 @@ TARGET_ARCH="arm-none-eabi"
 
 GDB_PATH="$TOOLCHAIN_PATH/bin/$TARGET_ARCH-gdb"
 
+GDB_CMD=""
+
 if [[ $DEBUGGER_TYPE = "ddd" ]]; then
 
-  GDB_CMD="ddd --debugger \"$GDB_PATH\""
+  GDB_CMD+="ddd --debugger \"$GDB_PATH\""
 
   # If we don't turn confirmation off for dangerous operations, then we cannot just close
   # DDD's window, we have to click on an OK button first. It's a shame that there is no option
@@ -231,10 +233,21 @@ if [[ $DEBUGGER_TYPE = "ddd" ]]; then
 
 else
 
-  GDB_CMD="\"$GDB_PATH\""
+  GDB_CMD+="\"$GDB_PATH\""
 
   # Whether you like the TUI mode is your personal preference.
-  add_gdb_arg "--tui"
+  #
+  # In TUI mode, you cannot scroll the command window to see previous output. This is a serious inconvenience,
+  # so you may need to disable TUI every now and then.
+  #
+  # Some GDB versions may have been built without TUI support.
+  #
+  # Disabling TUI from inside GDB with command "tui disable" makes my GDB 9.2 suddenly quit.
+  declare -r ENABLE_TUI=true
+
+  if $ENABLE_TUI; then
+    add_gdb_arg "--tui"
+  fi
 
   # If the new console window happens to open with a small size, you'll get a "---Type <return> to continue, or q <return> to quit---"
   # prompt on start-up when GDB prints its version number and configuration options. Switch "--quiet" tries to minimize the problem.
@@ -245,7 +258,10 @@ else
 
   add_gdb_cmd "set pagination off"
 
-  add_gdb_cmd "focus cmd"
+  # Command "focus cmd" automatically turns TUI on.
+  if $ENABLE_TUI; then
+    add_gdb_cmd "focus cmd"
+  fi
 
   add_gdb_cmd "set print pretty on"
 
