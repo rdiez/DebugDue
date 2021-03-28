@@ -106,11 +106,9 @@ $(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-VERSION_SET := VersionSet4
+VERSION_SET := VersionSet5
 
 ifeq ($(VERSION_SET),VersionSet1)
-
-  # This is the version set I have tested most.
 
   BINUTILS_VERSION := 2.30
 
@@ -161,6 +159,16 @@ else ifeq ($(VERSION_SET),VersionSet4)
   GCC_VERSION := 9.3.0
   NEWLIB_VERSION := 3.3.0
   GDB_VERSION := 9.2
+
+else ifeq ($(VERSION_SET),VersionSet5)
+
+  BINUTILS_VERSION := 2.36.1
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.1
+  GCC_VERSION := 10.2.0
+  NEWLIB_VERSION := 4.1.0
+  GDB_VERSION := 10.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
@@ -545,9 +553,10 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   IS_GCC_7_X   := $(filter 7.%,$(GCC_VERSION))
   IS_GCC_8_X   := $(filter 8.%,$(GCC_VERSION))
   IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
+  IS_GCC_10_X  := $(filter 10.%,$(GCC_VERSION))
 
-  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X) )" ""
-    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x, 8.x, 9.x
+  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X) )" ""
+    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x, 8.x, 9.x, 10.x
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
     $(error Unknown GCC version)

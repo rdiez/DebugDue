@@ -301,7 +301,7 @@ If you are experimenting with toolchains and will be building them often, you ma
 
 This step is not necessary for the Qemu Stellaris Firmware.
 
-I have tested against ASF versions 3.19.0.95, 3.35.1.54 and 3.40.0. You will probably have to manually edit file
+I have tested against ASF versions 3.19.0.95, 3.35.1.54, 3.40.0 and 3.49.1.105. You will probably have to manually edit file
 F<< sam/utils/compiler.h >> and surround the definitions of macros I<< min >> and I<< max >> with S<< I<< #ifndef __cplusplus >> , >>
 so that they look like this:
 
@@ -470,6 +470,7 @@ the JTAG target board.
 First of all, you may need to build OpenOCD with support for the Bus Pirate.
 
 If you are building OpenOCD version 0.10.0, you will need to patch it manually.
+This is no longer necessary in version 0.11.0.
 Edit the pre-generated 'configure' script (as you will probably not be regenerating it with Autoconf),
 and remove the I<< --with-ext >> and I<< --without-ext >> arguments from the line that
 contains the following text:
