@@ -477,7 +477,7 @@ AC_OUTPUT
 
 SHOW_TOOL_VERSIONS=false
 
-if $SHOW_TOOLS_VERSIONS; then
+if $SHOW_TOOL_VERSIONS; then
 
   echo "Tool versions:"
 
