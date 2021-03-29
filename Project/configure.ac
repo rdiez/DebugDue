@@ -1,5 +1,5 @@
 
-# Copyright (C) 2012-2018 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2012-2021 R. Diez - see the JtagDue project for licensing information.
 
 # By default, if you change the firmware version number below, the next 'make' invocation
 # will rebuild the 'configure' script. This script will have the updated version number
@@ -7,7 +7,7 @@
 # but despite this, the sources will not be recompiled.
 # I tried the "maintainer mode" (AM_MAINTAINER_MODE), but that did not help.
 AC_INIT([JtagDue],[1.1.6])
-AC_PREREQ([2.69])  # Tested mainly with version 2.69.
+AC_PREREQ([2.69])  # Anything older may not work properly.
 
 # Place auxiliary files in a subdirectory in order to reduce clutter in the top-level project directory.
 AC_CONFIG_AUX_DIR([build-aux])
@@ -30,6 +30,7 @@ fi
 
 # Use "make V=1" (and remove the '-s' flag) in order to see the GCC command lines during compilation.
 m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
+
 
 # According to the autoconf documentation, this is about the right place to define compiler flags:
 #
@@ -56,6 +57,79 @@ AM_PROG_AS
 AC_PROG_INSTALL
 
 AM_EXTRA_RECURSIVE_TARGETS([disassemble])
+
+
+ABS_SRCDIR="$(readlink --verbose --canonicalize -- "$srcdir")"
+
+
+# Say you have a shell variable called 'MY_OPTION' with value 'true'.
+# This routine will add a '-DMY_OPTION=1' command-line argument to shell variable EXTRA_CPP_FLAGS,
+# intended for the C/C++ preprocessor.
+
+PublishBooleanVariableAsCPreprocessorSymbol ()
+{
+  local VARIABLE_NAME="$1"
+
+  if false; then
+    echo "Setting boolean C preprocessor symbol: <${VARIABLE_NAME}>, value: <${!VARIABLE_NAME}>"
+  fi
+
+  if [[ -z "${!VARIABLE_NAME+x}" ]]; then
+    AC_MSG_ERROR([There is no shell variable named "$1".])
+  fi
+
+  if ! [[[ ${!VARIABLE_NAME} = "true" || ${!VARIABLE_NAME} = "false" ]]]; then
+    AC_MSG_ERROR([Shell variable "$VARIABLE_NAME" should be boolean but has invalid value "${!VARIABLE_NAME}".])
+  fi
+
+  if [[ -z "${EXTRA_CPP_FLAGS+x}" ]]; then
+    AC_MSG_ERROR([Shell variable EXTRA_CPP_FLAGS is not defined yet when attempting to add boolean C preprocessor symbol "VARIABLE_NAME".])
+  fi
+
+  if ${!VARIABLE_NAME}; then
+    EXTRA_CPP_FLAGS+=" -D${VARIABLE_NAME}=1"
+  else
+    EXTRA_CPP_FLAGS+=" -D${VARIABLE_NAME}=0"
+  fi
+}
+
+
+# Say you have a shell variable called 'MY_OPTION' with value 'true'. This M4 macro
+# will make 'MY_OPTION' available in configure.ac and in the C/C++ source code.
+#
+# This is an M4 macro, and not a shell function, because it is hard to call M4 macros
+# like AM_SUBST with shell variables as arguments.
+
+AC_DEFUN([PUBLISH_BOOLEAN_VARIABLE],
+         [
+           if false; then
+             echo "Publishing boolean variable: <$1>, value: <$$1>."
+           fi
+
+           # We could optimise the checks below away, because SetBooleanCPreprocessorFlag does similar checks,
+           # but I would rather keep the checks here, if only for example purposes.
+           if [[ -z "${$1+x}" ]]; then
+             AC_MSG_ERROR([There is no shell variable named "$1".])
+           fi
+
+           if ! [[[ $$1 = "true" || $$1 = "false" ]]]; then
+             AC_MSG_ERROR([Shell variable "$1" should be boolean but has invalid value "$$1".])
+           fi
+
+           # A boolean variable is normally not used in all of the ways below, but always 'publishing'
+           # in all ways makes the configure.ac script simpler an easier to maintain.
+
+           # AM_CONDITIONAL allows you to use the variable in "if VARIABLE" statements inside the Makefile.am file.
+           AM_CONDITIONAL([$1],[$$1])
+
+           # AC_SUBST allows you to use the variable in expressions like $(VARIABLE) and @VARIABLE@ inside the Makefile.am file.
+           # This is apparently called "configure substitution" in Automake.
+           AC_SUBST([$1])
+
+           # Adding -DVARIABLE=0/1 to the compiler flags makes the variable available in the C/C++ source code as a preprocessor symbol.
+           PublishBooleanVariableAsCPreprocessorSymbol "$1"
+         ]
+        )
 
 
 # ----------- Check GCC version number -----------
@@ -144,9 +218,6 @@ BUILD_FLAGS+=" -Wall"
 ASSERT_TYPE=ASSERT_TYPE_FULL
 
 
-ABS_SRCDIR="$(readlink --verbose --canonicalize -- "$srcdir")"
-
-
 # ----------- Project Name -----------
 
 AC_ARG_WITH(project,
@@ -172,10 +243,6 @@ case "$PROJECT_NAME_LOWERCASE" in
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue" ;;
   *) AC_MSG_ERROR([Invalid project name "$with_project".]) ;;
 esac
-
-AM_CONDITIONAL([IS_EMPTY_FIRMWARE], [test $IS_EMPTY_FIRMWARE = true])
-AM_CONDITIONAL([IS_QEMU_FIRMWARE], [test $IS_QEMU_FIRMWARE = true])
-AM_CONDITIONAL([IS_JTAG_DUE], [test $IS_JTAG_DUE = true])
 
 # BOARD_SUPPORT_DIR must not be an absolute path, or Automake will litter
 # that directory with object files.
@@ -369,6 +436,13 @@ if $IS_DEBUG_BUILD; then
   # at least when using inline assembly.
 fi
 
+PUBLISH_BOOLEAN_VARIABLE(IS_EMPTY_FIRMWARE)
+PUBLISH_BOOLEAN_VARIABLE(IS_QEMU_FIRMWARE)
+PUBLISH_BOOLEAN_VARIABLE(IS_JTAG_DUE)
+
+USE_GOLD_LINKER=false
+PUBLISH_BOOLEAN_VARIABLE(USE_GOLD_LINKER)
+
 
 # --- Set the final variables.
 
@@ -383,8 +457,6 @@ AC_SUBST(AM_CXXFLAGS)
 AC_SUBST(AM_CCASFLAGS)
 
 # ----------------------------------------
-
-AM_CONDITIONAL([USE_GOLD_LINKER], [false])
 
 BARE_METAL_SUPPORT_DIR="$ABS_SRCDIR/BareMetalSupport"
 AC_SUBST(BARE_METAL_SUPPORT_DIR)
