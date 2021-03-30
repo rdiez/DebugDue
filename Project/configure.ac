@@ -106,7 +106,7 @@ AC_DEFUN([PUBLISH_BOOLEAN_VARIABLE],
              echo "Publishing boolean variable: <$1>, value: <$$1>."
            fi
 
-           # We could optimise the checks below away, because SetBooleanCPreprocessorFlag does similar checks,
+           # We could optimise the checks below away, because PublishBooleanVariableAsCPreprocessorSymbol does similar checks,
            # but I would rather keep the checks here, if only for example purposes.
            if [[ -z "${$1+x}" ]]; then
              AC_MSG_ERROR([There is no shell variable named "$1".])
