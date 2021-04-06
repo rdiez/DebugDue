@@ -319,6 +319,7 @@ Step 2, build operations:
              files beforehand if necessary.
   --install  Runs "make install". Normally not needed.
   --atmel-software-framework="<path>"  Directory where the ASF is installed.
+                                       Only needed if the project requires it.
   --show-build-commands  Show the full compilation commands during the build.
   --disassemble  Generate extra information files from the just-built ELF file:
                  complete disassembly, list of objects sorted by size,
