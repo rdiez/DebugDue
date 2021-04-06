@@ -29,6 +29,12 @@ abort ()
 }
 
 
+is_var_set ()
+{
+  if [ "${!1-first}" == "${!1-second}" ]; then return 0; else return 1; fi
+}
+
+
 run_cmd ()
 {
   # $1: Description banner.
@@ -275,7 +281,13 @@ if false; then
 
   ASF_PATH="$(readlink --canonicalize --verbose -- "$DIR_MATCH/../..")"
 
+elif is_var_set "ASF_PATH"; then
+
+  :  # We have got ASF_PATH from the environment, so there is nothing to do here.
+
 else
+
+  abort "Set the ASF_PATH variable below, and the comment out this 'abort' line. Alternatively, pass ASF_PATH as an environment variable."
 
   ASF_PATH="$HOME/path/to/xdk-asf-x.xx.x"
 
