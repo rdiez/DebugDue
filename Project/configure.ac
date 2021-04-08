@@ -305,6 +305,7 @@ EXTRA_CPP_FLAGS=""       # Preprocessor flags.
 EXTRA_C_FLAGS=""         # C flags.
 EXTRA_CXX_FLAGS=""       # C++ flags.
 EXTRA_C_AND_CXX_FLAGS="" # Flags for both C and C++.
+EXTRA_LD_FLAGS=""        # Flags for the linker.
 
 # WARNING: All flags that affect the ABI must match those specified when building the toolchain.
 
@@ -450,11 +451,13 @@ AM_CPPFLAGS="$EXTRA_CPP_FLAGS"
 AM_CFLAGS="$BUILD_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
 AM_CXXFLAGS="$BUILD_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
 AM_CCASFLAGS="$BUILD_FLAGS $ARCH_FLAGS"
+AM_LDFLAGS="$EXTRA_LD_FLAGS"
 
 AC_SUBST(AM_CPPFLAGS)
 AC_SUBST(AM_CFLAGS)
 AC_SUBST(AM_CXXFLAGS)
 AC_SUBST(AM_CCASFLAGS)
+AC_SUBST(AM_LDFLAGS)
 
 # ----------------------------------------
 
