@@ -73,6 +73,35 @@ run_cmd ()
 }
 
 
+set_make_parallel_jobs_flag ()
+{
+  local SHOULD_ADD_PARALLEL_FLAG=true
+
+  if is_var_set "MAKEFLAGS"
+  then
+
+    if false; then
+      echo "MAKEFLAGS: $MAKEFLAGS"
+    fi
+
+    # The following string search is not 100 % watertight, as MAKEFLAGS can have further arguments at the end like " -- VAR1=VALUE1 VAR2=VALUE2 ...".
+    if [[ $MAKEFLAGS =~ --jobserver-fds= || $MAKEFLAGS =~ --jobserver-auth= ]]
+    then
+      # echo "Called from a makefile with parallel jobs enabled."
+      SHOULD_ADD_PARALLEL_FLAG=false
+    fi
+  fi
+
+  if $SHOULD_ADD_PARALLEL_FLAG; then
+    # This is probably not the best heuristic for make -j , but it's better than nothing.
+    PARALLEL_COUNT="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+    PARALLEL_ARGS="-j $PARALLEL_COUNT  --output-sync=recurse"
+  else
+    PARALLEL_ARGS=""
+  fi
+}
+
+
 # ----- Entry point -----
 
 
@@ -133,10 +162,7 @@ pushd "$COPY_OF_TOOLCHAIN_DIRNAME" >/dev/null
 # Option '--warn-undefined-variables' is no longer necessary below, because the makefile sets this itself.
 declare -r USUAL_ARGS="--no-builtin-variables"
 
-PARALLEL_COUNT="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
-
-# Option '--output-sync=recurse' is no longer necessary below, because the makefile sets this itself.
-declare -r PARALLEL_ARGS="-j $PARALLEL_COUNT"
+set_make_parallel_jobs_flag
 
 
 # Running make without arguments should just display the help text.

@@ -41,7 +41,19 @@ MAKEFLAGS += --warn-undefined-variables
 # I have noticed that this option seems to be ignored by the GNU Make version 4.2.1 that comes with Ubuntu 20.04.2,
 # even if explicitly passed on the command line (not with MAKEFLAGS inside the makefile).
 # I tested on the same system with a self-compiled GNU Make 4.3, and "--output-sync" worked fine.
-MAKEFLAGS += --output-sync=recurse
+#
+# I am no longer unconditionally enabling this option inside the makefile, because then
+# "make download-tarballs-from-internet" will not show the download progress messages in a timely manner.
+# The user will probably want to pass option "--output-sync=recurse" if building in parallel.
+#
+# We could add this flag conditionally by looking at MAKECMDGOALS, but it gets complicated and
+# would not be completely reliable. After all, the user can specify several targets at the same time.
+#
+# I tried to add this flag only if the user requested a parallel build, but I could not find
+# a way to achieve that. Option "-j" is not reflected in MAKEFLAGS at this point, it gets added later
+# when executing a rule.
+#
+#  MAKEFLAGS += --output-sync=recurse
 
 
 # This makefile has only been tested with Bash.

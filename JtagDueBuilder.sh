@@ -786,9 +786,31 @@ add_make_parallel_jobs_flag ()
   fi
 
   if $SHOULD_ADD_PARALLEL_FLAG; then
+
     local MAKE_J_VAL
     MAKE_J_VAL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
     quote_and_append_args MAKE_CMD "-j" "$MAKE_J_VAL"
+
+    # Option "--output-sync" requires GNU Make version 4.0 (released in 2013) or newer. If you have an older GNU Make, comment the following line out.
+    #
+    # Note that you should be using GNU Make 4.3 or later, because older GNU Make versions have issues with parallel builds:
+    #   A change to how pipe waiting works promises to speed up parallel kernel builds - always a kernel developer's favorite
+    #   workload - but can also trigger a bug with old versions of GNU Make.
+    #   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0ddad21d3e99
+    #
+    # I have noticed that this option seems to be ignored by the GNU Make version 4.2.1 that comes with Ubuntu 20.04.2.
+    # I tested on the same system with a self-compiled GNU Make 4.3, and "--output-sync" worked fine.
+    #
+    # Unfortunately, option "--output-sync" leads to long periods of time with no output, followed by large bursts of output.
+    # It is annoying, but it is actually the only sane way of generating a build log when building in parallel.
+    # And you want to build in parallel on today's multicore computers.
+    #
+    # Do not add this option if you will not be building in parallel, because the user may want to see any progress messages
+    # straight away. An example is running a makefile to download some files: you will probably not want to enable (or
+    # you may want to disable) downloading in parallel, in order to prevent overloading the network, but then you will want
+    # to see without delay the download progress messages that tools like 'curl' can output.
+    quote_and_append_args MAKE_CMD "--output-sync=recurse"
+
   fi
 }
 
@@ -863,14 +885,6 @@ do_build ()
   quote_and_append_args MAKE_CMD "--no-builtin-rules"
 
   add_make_parallel_jobs_flag
-
-  # This requires GNU Make version 4.0 or newer. If you have an older GNU Make, comment the following line out.
-  #
-  # Note that you should be using GNU Make 4.3 or later, because older GNU Make versions have issues with parallel builds:
-  #   A change to how pipe waiting works promises to speed up parallel kernel builds - always a kernel developer's favorite
-  #   workload - but can also trigger a bug with old versions of GNU Make.
-  #   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=0ddad21d3e99
-  quote_and_append_args MAKE_CMD "--output-sync=recurse"
 
   if $INSTALL_SPECIFIED; then
     quote_and_append_args MAKE_CMD "install"
