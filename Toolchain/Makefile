@@ -33,9 +33,14 @@ MAKEFLAGS += --no-builtin-rules
 # makes the makefile easier to debug.
 MAKEFLAGS += --warn-undefined-variables
 
-# Unfortunately, this option leads to long periods of time with no output, followed by large bursts of output.
-# It is annoying, but it is actually the only sane way of generating a build log.
-# This option is only available in GNU Make version 4.0 (released in 2013) or later.
+# Unfortunately, option "--output-sync" leads to long periods of time with no output, followed by large bursts of output.
+# It is annoying, but it is actually the only sane way of generating a build log when building in parallel.
+# And you want to build in parallel on today's multicore computers.
+#
+# Option "--output-sync" is only available in GNU Make version 4.0 (released in 2013) or later.
+# I have noticed that this option seems to be ignored by the GNU Make version 4.2.1 that comes with Ubuntu 20.04.2,
+# even if explicitly passed on the command line (not with MAKEFLAGS inside the makefile).
+# I tested on the same system with a self-compiled GNU Make 4.3, and "--output-sync" worked fine.
 MAKEFLAGS += --output-sync=recurse
 
 
