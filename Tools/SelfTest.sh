@@ -75,6 +75,12 @@ run_cmd ()
 
 # ----- Entry point -----
 
+
+declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS=false
+declare -r SKIP_TOOLCHAIN_BUILD=false
+declare -r SKIP_TOOLCHAIN_CHECK=false
+
+
 TOOLS_DIR="$(readlink --canonicalize --verbose -- ".")"
 GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "..")"
 declare -r TOOLCHAIN_DIR="$GIT_REPOSITORY_BASE/Toolchain"
@@ -156,8 +162,6 @@ run_cmd "Testing 'make clean' with nothing to clean..."  "make clean"  "$ROTATED
 printf -v CMD "make %s  clean"  "$USUAL_ARGS"
 run_cmd "Testing 'make clean' with nothing to clean and the usual arguments..."  "$CMD" "$ROTATED_DIR/toolchain-make-usual-clean.txt"  stdout
 
-declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS=false
-
 if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS; then
 
   printf -v CMD \
@@ -181,8 +185,6 @@ fi
 
 declare -r BUILD_DIR="$ROTATED_DIR/build"
 declare -r INSTALLATION_DIR="$ROTATED_DIR/ToolchainBin"
-
-declare -r SKIP_TOOLCHAIN_BUILD=false
 
 if $SKIP_TOOLCHAIN_BUILD; then
 
@@ -218,8 +220,6 @@ else
 
 fi
 
-
-declare -r SKIP_TOOLCHAIN_CHECK=false
 
 if ! $SKIP_TOOLCHAIN_CHECK; then
 
