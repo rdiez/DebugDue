@@ -169,11 +169,9 @@ AC_ARG_ENABLE([debug],
 if [ test x$debug_build = xtrue ]
 then
     AC_MSG_RESULT(yes)
-    # I had to add "-g" again at this point in order to get line number information generated
-    # in the general debug information.
     # We could use GCC 4.8's new optimisation level "-Og", but "-O0" still provides the most comfortable debugging experience.
     # Switch -fmerge-constants helps mainly reduce the code size of all possible assertion failed messages.
-    BUILD_FLAGS="-O0 -fmerge-constants -DDEBUG -g3"
+    BUILD_FLAGS="-O0 -fmerge-constants -DDEBUG"
     IS_DEBUG_BUILD=true
 else
     AC_MSG_RESULT(no)
@@ -182,7 +180,7 @@ else
     # The firmware did get somewhat bigger with -O3 though.
     # It would probably be best to compile with -Os by default and mark some modules or functions for
     # -O3 optimisation with GCC options "#pragma GCC optimize ("string"...)" and "attribute((optimize("STRING")))".
-    BUILD_FLAGS="-O3 -DNDEBUG -g3"
+    BUILD_FLAGS="-O3 -DNDEBUG"
 
     if true; then
       # The GCC toolchain is built with --enable-lto. I hope that makes it build the C runtime library,
@@ -209,6 +207,21 @@ else
 
     IS_DEBUG_BUILD=false
 fi
+
+
+# Generate debugging information.
+#
+# Level 3 makes debugging information include extra data like preprocessor macro definitions (#define symbols).
+# Therefore, I would normally use -g3 . Unfortunately, GDB 10.1 exhibits a very high CPU load and
+# extreme memory consumption on programs built with -g3 , especially when building with LTO,
+# at least when cross-compiling for ARM Cortex-M3 with GCC 10.3 . See this bug report for more details:
+#   https://sourceware.org/bugzilla/show_bug.cgi?id=27754
+#
+# I have also noticed in the past that including preprocessor macro definitions with -g3
+# does not really work with LTO builds, at least with GCC version 8.3.0 . So this area seems problematic.
+
+BUILD_FLAGS+=" -g2"
+
 
 BUILD_FLAGS+=" -Wall"
 
