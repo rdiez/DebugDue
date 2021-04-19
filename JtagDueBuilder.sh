@@ -312,7 +312,8 @@ Step 1, clean operation and configuration options:
   --enable-ccache   Uses 'ccache', which can possibly reduce compilation times.
                     You can only enable ccache when configuring the project
                     for the first time (or after cleaning it).
-                    See this script's source code for details about ccache.
+                    There are also some caveats, see this script's source code
+                    for details about ccache.
 
 Step 2, build operations:
   --build    Runs "make" for the default target. Generates the autoconf
@@ -503,9 +504,9 @@ do_configure_if_necessary ()
 
     if $ENABLE_CCACHE_SPECIFIED; then
 
-      # Do not turn ccache on unconditionally. The price of a cache miss in a normal
-      # compilation can be as high as 20 %. There are many more disk writes during
-      # compilation and pressure increases on the system's disk cache.
+      # You probably do not want to turn ccache on unconditionally. The price of a cache miss
+      # in a normal compilation can be as high as 20 %. There are many more disk writes during
+      # compilation, so pressure increases on the system's disk cache.
       #
       # Therefore, ccache only helps if you recompile often with the same results.
       # For example, if you rebuild many times from scratch during testing of
@@ -517,8 +518,12 @@ do_configure_if_necessary ()
       # source files, but you are compiling a release build at the moment.
       #
       # Using ccache also means more admin work. You should check every now and then
-      # if your cache hits are high enough. Otherwise, you may have to increase
-      # your global cache size, or you'll be losing performance.
+      # whether your cache hits are high enough. Otherwise, you may have to increase
+      # your global cache size, or you will actually be losing performance.
+      #
+      # Beware that ccache is not completely reliable: adding a new header file
+      # may change the compilation results, and ccache may not realise.
+      # This corner case is documented in ccache's user manual.
 
       CCACHE_NAME="ccache"
       if type "$CCACHE_NAME" >/dev/null 2>&1 ; then
