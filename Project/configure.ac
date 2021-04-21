@@ -54,6 +54,7 @@ done
 AC_PROG_CC
 AC_PROG_CXX
 AM_PROG_AS
+AC_PROG_RANLIB
 AC_PROG_INSTALL
 
 AM_EXTRA_RECURSIVE_TARGETS([disassemble])
@@ -246,14 +247,18 @@ PROJECT_NAME_LOWERCASE="${with_project,,}"
 IS_EMPTY_FIRMWARE=false
 IS_QEMU_FIRMWARE=false
 IS_JTAG_DUE=false
+NEEDS_ATMEL_SOFTWARE_FRAMEWORK=false
 
 case "$PROJECT_NAME_LOWERCASE" in
   emptyfirmware) IS_EMPTY_FIRMWARE=true
-                 BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue" ;;
+                 BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
+                 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true ;;
   qemufirmware)  IS_QEMU_FIRMWARE=true
                  BOARD_SUPPORT_DIR="BoardSupport-LM3S6965EVB" ;;
   jtagdue)       IS_JTAG_DUE=true
-                 BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue" ;;
+                 BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
+                 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true ;;
+
   *) AC_MSG_ERROR([Invalid project name "$with_project".]) ;;
 esac
 
@@ -268,7 +273,7 @@ AC_ARG_WITH(atmel-software-framework,
 [AS_HELP_STRING([--with-atmel-software-framework=PATH],
 		[specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.14.0.86".])])
 
-if ! $IS_QEMU_FIRMWARE; then
+if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
 
   if test "x$with_atmel_software_framework" == x; then
     AC_MSG_ERROR([Please specify the --with-atmel-software-framework=PATH configuration switch])
@@ -336,21 +341,20 @@ EXTRA_CPP_FLAGS+=" -D_GNU_SOURCE"  # This select the right version of strerror_r
 # Needed for both CMSIS and the lib under "arduino-1.5.2/hardware/arduino/sam/cores".
 EXTRA_CPP_FLAGS+=" -D__SAM3X8E__"
 
-# Needed by the Atmel Software Framework.
-EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
+if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
+  EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
+  EXTRA_CPP_FLAGS+=" -DCPU_CLOCK=84000000"
+
+  # I had problems building some files in the Atmel Software Framework version 3.7.3.69
+  # when I defined this flag:
+  #   EXTRA_CPP_FLAGS+=" -DUDD_NO_SLEEP_MGR"
+fi
 
 EXTRA_CPP_FLAGS+=" -DINCLUDE_USER_IMPLEMENTATION_OF_ASSERT"
 EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
 
 # Needed by NewlibSyscalls.cpp.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
-
-# Needed by the Atmel Software Framework library.
-EXTRA_CPP_FLAGS+=" -DCPU_CLOCK=84000000"
-
-# I had problems building some files in the Atmel Software Framework version 3.7.3.69
-# when I defined this flag:
-#   EXTRA_CPP_FLAGS+=" -DUDD_NO_SLEEP_MGR"
 
 # USB Vendor and Device ID definitions for the 'native' USB port.
 #
@@ -405,6 +409,10 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"
 
 if $IS_GCC_7_OR_LATER; then
   # This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
+  # The warning message is: "warning: this use of "defined" may not be portable".
+  # Alternatively, if you want to keep the warning for your own code,
+  # you could specify the paths to the library's header files with '-isystem dir' which turns off compilation warnings,
+  # instead of with '-I dir' .
   EXTRA_C_AND_CXX_FLAGS+=" -Wno-expansion-to-defined"
 fi
 
@@ -453,6 +461,8 @@ fi
 PUBLISH_BOOLEAN_VARIABLE(IS_EMPTY_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_QEMU_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_JTAG_DUE)
+PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
+
 
 USE_GOLD_LINKER=false
 PUBLISH_BOOLEAN_VARIABLE(USE_GOLD_LINKER)

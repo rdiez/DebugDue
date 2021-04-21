@@ -13,11 +13,16 @@ ELF_BASENAME := firmware
 
 ELF_FILENAME := firmware.elf  # Here substitution $(ELF_BASENAME) does not work (!?).
 
+MAP_FILENAME := $(ELF_BASENAME).map
+
+firmware_elf_LDADD :=
+
+
 bin_PROGRAMS := $(ELF_FILENAME)
 
 dist_data_DATA :=  # See "dist_data_DATA += ..." statements below.
 
-MAP_FILENAME := $(ELF_BASENAME).map
+noinst_LIBRARIES :=
 
 
 # ------------------------------------
@@ -28,44 +33,12 @@ MAP_FILENAME := $(ELF_BASENAME).map
 
 firmware_elf_CPPFLAGS := $(AM_CPPFLAGS)
 
-if !IS_QEMU_FIRMWARE
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pio
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/rstc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/wdt
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/adc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/uart
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/boards
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/boards
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/utils
-endif
-
 firmware_elf_CPPFLAGS += -I$(srcdir)/UserImplementationOfAssert
 
 firmware_elf_CPPFLAGS += -I$(BARE_METAL_SUPPORT_DIR)/..  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
                                                          # does find the files in $(BARE_METAL_SUPPORT_DIR).
                                                          # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).
 firmware_elf_SOURCES :=
-
-
-# ----- CMSIS library.
-
-if !IS_QEMU_FIRMWARE
-  firmware_elf_SOURCES += \
-    AsfSrc/sam/utils/cmsis/sam3x/source/templates/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
-endif
 
 
 # ----- Bare Metal Support library, which I have written myself.
@@ -106,11 +79,78 @@ firmware_elf_SOURCES += BareMetalSupport/StackCheck.cpp
 firmware_elf_SOURCES += BareMetalSupport/IntegerPrintUtils.cpp
 
 
-# ----- The ASF library comes from Atmel and has a very liberal license.
+libAtmelSoftwareFramework_a_CFLAGS := $(AM_CFLAGS)
 
-if !IS_QEMU_FIRMWARE
+if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 
-  firmware_elf_SOURCES += \
+  # Build the ASF into a separate library, so that you can adjust the compilation flags
+  # just for the ASF files, for example, in order to selectively turn some compilation warnings off.
+  noinst_LIBRARIES += libAtmelSoftwareFramework.a
+
+  # Prevent the annoying warning:  ar: `u' modifier ignored since `D' is the default (see `U')
+  # By default, Automake is using $(AR) $(ARFLAGS), and ARFLAGS defaults to "cru".
+  libAtmelSoftwareFramework_a_AR := $(AR) cr
+
+  firmware_elf_LDADD += libAtmelSoftwareFramework.a
+
+  # We cannot realistically fix all warnings in the Atmel Software Library, so selectively turn some of them off.
+  # If you encounter too many in the future, you could also turn all warnings off for this library.
+  libAtmelSoftwareFramework_a_CFLAGS += -Wno-cast-qual
+
+  # This group of include paths is duplicated in firmware_elf_CPPFLAGS.
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/boards
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/boards
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/utils
+
+  # This group of include paths is duplicated in libAtmelSoftwareFramework_a_CFLAGS.
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/boards
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/boards
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/utils
+
+  # This group of include paths is only needed in firmware_elf_CPPFLAGS.
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pio
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/rstc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/wdt
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/adc
+  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/uart
+
+
+  libAtmelSoftwareFramework_a_SOURCES :=
+
+  # ----- CMSIS library.
+
+  libAtmelSoftwareFramework_a_SOURCES += \
+    $(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
+
+  # ----- The ASF library comes from Atmel and has a very liberal license.
+
+  libAtmelSoftwareFramework_a_SOURCES += \
      AsfSrc/sam/drivers/pmc/pmc.c \
      AsfSrc/sam/drivers/pio/pio.c \
      AsfSrc/sam/drivers/wdt/wdt.c \
@@ -118,6 +158,16 @@ if !IS_QEMU_FIRMWARE
      AsfSrc/sam/drivers/uart/uart.c \
      AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
      AsfSrc/common/services/clock/sam3x/sysclk.c
+
+if IS_JTAG_DUE
+  libAtmelSoftwareFramework_a_SOURCES += \
+     AsfSrc/sam/drivers/pmc/sleep.c \
+     AsfSrc/sam/drivers/adc/adc.c \
+     AsfSrc/sam/drivers/uotghs/uotghs_device.c \
+     AsfSrc/common/services/usb/class/cdc/device/udi_cdc.c \
+     AsfSrc/common/services/usb/class/cdc/device/udi_cdc_desc.c \
+     AsfSrc/common/services/usb/udc/udc.c
+endif
 
 endif
 
@@ -131,6 +181,7 @@ if IS_EMPTY_FIRMWARE
     EmptyFirmware/Main.cpp \
     EmptyFirmware/InterruptHandlers.cpp
 
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/EmptyFirmware/ConfigFilesForAsf
   firmware_elf_CPPFLAGS += -I$(srcdir)/EmptyFirmware/ConfigFilesForAsf
 
 endif
@@ -143,14 +194,6 @@ if IS_QEMU_FIRMWARE
 endif
 
 if IS_JTAG_DUE
-
-  firmware_elf_SOURCES += \
-     AsfSrc/sam/drivers/pmc/sleep.c \
-     AsfSrc/sam/drivers/adc/adc.c \
-     AsfSrc/sam/drivers/uotghs/uotghs_device.c \
-     AsfSrc/common/services/usb/class/cdc/device/udi_cdc.c \
-     AsfSrc/common/services/usb/class/cdc/device/udi_cdc_desc.c \
-     AsfSrc/common/services/usb/udc/udc.c
 
   firmware_elf_SOURCES += \
     JtagFirmware/Main.cpp \
@@ -167,6 +210,8 @@ if IS_JTAG_DUE
     JtagFirmware/InterruptHandlers.cpp
 
   firmware_elf_CPPFLAGS += -I$(srcdir)/JtagFirmware
+
+  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/JtagFirmware/ConfigFilesForAsf
   firmware_elf_CPPFLAGS += -I$(srcdir)/JtagFirmware/ConfigFilesForAsf
 
 endif
@@ -228,7 +273,7 @@ LINKER_SCRIPT_FILENAME := $(abs_srcdir)/$(BOARD_SUPPORT_DIR)/flash.ld
 # Note that the linking order specified in xxx_LDADD is important: if library libfoo.a has an undefined symbol,
 # and that symbol is in libbar.a, you need to put libfoo.a before libbar.a on the command line.
 
-firmware_elf_LDADD := $(CRT0_O_FILENAME)
+firmware_elf_LDADD += $(CRT0_O_FILENAME)
 
 firmware_elf_LDFLAGS := $(AM_LDFLAGS)
 

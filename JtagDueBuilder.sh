@@ -496,11 +496,8 @@ do_configure_if_necessary ()
 
     # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
     # they will complain about a missing plug-in to process object files compiled for LTO.
-    # These are however no longer needed, because we are not using libtool anymore.
-    if false; then
-      quote_and_append_args CONFIG_CMD "AR=$TARGET_ARCH-gcc-ar"
-      quote_and_append_args CONFIG_CMD "RANLIB=$TARGET_ARCH-gcc-ranlib"
-    fi
+    quote_and_append_args CONFIG_CMD "AR=$TARGET_ARCH-gcc-ar"
+    quote_and_append_args CONFIG_CMD "RANLIB=$TARGET_ARCH-gcc-ranlib"
 
     if $ENABLE_CCACHE_SPECIFIED; then
 
