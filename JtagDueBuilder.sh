@@ -496,6 +496,9 @@ do_configure_if_necessary ()
 
     # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
     # they will complain about a missing plug-in to process object files compiled for LTO.
+    # I reported this issue to the Autoconf project:
+    #   sr #110475: ranlib: plugin needed to handle lto object
+    #   https://savannah.gnu.org/support/index.php?110475
     quote_and_append_args CONFIG_CMD "AR=$TARGET_ARCH-gcc-ar"
     quote_and_append_args CONFIG_CMD "RANLIB=$TARGET_ARCH-gcc-ranlib"
 

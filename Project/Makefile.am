@@ -89,6 +89,9 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 
   # Prevent the annoying warning:  ar: `u' modifier ignored since `D' is the default (see `U')
   # By default, Automake is using $(AR) $(ARFLAGS), and ARFLAGS defaults to "cru".
+  # I reported this issue to the Autoconf project:
+  #   sr #110476: ar: `u' modifier ignored since `D' is the default (see `U')
+  #   https://savannah.gnu.org/support/index.php?110476
   libAtmelSoftwareFramework_a_AR := $(AR) cr
 
   firmware_elf_LDADD += libAtmelSoftwareFramework.a
