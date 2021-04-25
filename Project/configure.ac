@@ -154,6 +154,14 @@ IS_GCC_8_OR_LATER=false
 AS_VERSION_COMPARE( [$my_compiler_version], [8], [], [], [IS_GCC_8_OR_LATER=true] )
 
 
+BUILD_FLAGS=""           # Flags for C, C++ and the assembler.
+EXTRA_CPP_FLAGS=""       # C and C++ preprocessor flags.
+EXTRA_C_FLAGS=""         # C flags.
+EXTRA_CXX_FLAGS=""       # C++ flags.
+EXTRA_C_AND_CXX_FLAGS="" # Flags for both C and C++.
+EXTRA_LD_FLAGS=""        # Flags for the linker.
+
+
 # ----------- Check whether debug or release build -----------
 
 AC_MSG_CHECKING(whether to generate a debug build)
@@ -172,7 +180,7 @@ then
     AC_MSG_RESULT(yes)
     # We could use GCC 4.8's new optimisation level "-Og", but "-O0" still provides the most comfortable debugging experience.
     # Switch -fmerge-constants helps mainly reduce the code size of all possible assertion failed messages.
-    BUILD_FLAGS="-O0 -fmerge-constants -DDEBUG"
+    BUILD_FLAGS+=" -O0 -fmerge-constants -DDEBUG"
     IS_DEBUG_BUILD=true
 else
     AC_MSG_RESULT(no)
@@ -181,7 +189,7 @@ else
     # The firmware did get somewhat bigger with -O3 though.
     # It would probably be best to compile with -Os by default and mark some modules or functions for
     # -O3 optimisation with GCC options "#pragma GCC optimize ("string"...)" and "attribute((optimize("STRING")))".
-    BUILD_FLAGS="-O3 -DNDEBUG"
+    BUILD_FLAGS+=" -O3 -DNDEBUG"
 
     if true; then
       # The GCC toolchain is built with --enable-lto. I hope that makes it build the C runtime library,
@@ -222,14 +230,6 @@ fi
 # does not really work with LTO builds, at least with GCC version 8.3.0 . So this area seems problematic.
 
 BUILD_FLAGS+=" -g2"
-
-
-BUILD_FLAGS+=" -Wall"
-
-
-# See UserImplementationOfAssert.h for all possible assertion types.
-# For debug builds, the size of the final binary depends on the assertion type.
-ASSERT_TYPE=ASSERT_TYPE_FULL
 
 
 # ----------- Project Name -----------
@@ -314,41 +314,22 @@ TARGET_ARCH="$with_target_arch"
 AC_SUBST(TARGET_ARCH)
 
 
-# ----------------------------------------
-# Add some extra compilation flags.
-
-ARCH_FLAGS=" -mcpu=cortex-m3 -mthumb"  # Switch "-march=armv7-m" could also be an option.
-
-EXTRA_CPP_FLAGS=""       # Preprocessor flags.
-EXTRA_C_FLAGS=""         # C flags.
-EXTRA_CXX_FLAGS=""       # C++ flags.
-EXTRA_C_AND_CXX_FLAGS="" # Flags for both C and C++.
-EXTRA_LD_FLAGS=""        # Flags for the linker.
-
 # WARNING: All flags that affect the ABI must match those specified when building the toolchain.
+
+BUILD_FLAGS+=" -mcpu=cortex-m3 -mthumb"  # Switch "-march=armv7-m" could also be an option.
 
 EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 
-# I am not sure whether specifying our own --param max-inline-insns-single is a good idea,
-# but that's what the Arduino Framework does:
-EXTRA_C_AND_CXX_FLAGS+=" --param max-inline-insns-single=500"
-
-
-EXTRA_CPP_FLAGS+=" -DBOARD=ARDUINO_DUE_X"
-
-EXTRA_CPP_FLAGS+=" -D_GNU_SOURCE"  # This select the right version of strerror_r().
-
-# Needed for both CMSIS and the lib under "arduino-1.5.2/hardware/arduino/sam/cores".
-EXTRA_CPP_FLAGS+=" -D__SAM3X8E__"
-
-if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
-  EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
-  EXTRA_CPP_FLAGS+=" -DCPU_CLOCK=84000000"
-
-  # I had problems building some files in the Atmel Software Framework version 3.7.3.69
-  # when I defined this flag:
-  #   EXTRA_CPP_FLAGS+=" -DUDD_NO_SLEEP_MGR"
+# The Arduino Framework specifies --param max-inline-insns-single=500,
+# but I am not sure whether that is a good idea.
+if false; then
+  EXTRA_C_AND_CXX_FLAGS+=" --param max-inline-insns-single=500"
 fi
+
+
+# See UserImplementationOfAssert.h for all possible assertion types.
+# For debug builds, the size of the final binary depends on the assertion type.
+ASSERT_TYPE=ASSERT_TYPE_FULL
 
 EXTRA_CPP_FLAGS+=" -DINCLUDE_USER_IMPLEMENTATION_OF_ASSERT"
 EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
@@ -356,33 +337,72 @@ EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
 # Needed by NewlibSyscalls.cpp.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
-# USB Vendor and Device ID definitions for the 'native' USB port.
-#
-# The standard Arduino firmware uses ID 0x003e in a composite device
-# configuration, which means that the Windows .INF driver uses the following string:
-#   USB\VID_2341&PID_003E&MI_00
-# Note the "MI_00" at the end that denotes the interface number on the composite device.
-#
-# Linux needs no drivers, all CDC interfaces are automatically recognised.
-# I have heard that composite devices are not supported on Mac OS, but I don't really know.
-#
-# The JtagDue Firmware does not use a composite device, but defines a single CDC device,
-# so that the standard Arduino Due INF driver does not work even if you use the same PID.
-#
-# Therefore, I have chosen a different PID of 0x1234. You can choose your own,
-# but then you will need to modify the .INF driver file and reinstall it on Windows.
 
-EXTRA_CPP_FLAGS+=" -DUSB_VID=0x2341 -DUSB_PID=0x1234"
+EXTRA_C_FLAGS+=" -std=gnu11"
+
+if $IS_GCC_8_OR_LATER; then
+  EXTRA_CXX_FLAGS+=" -std=gnu++17"
+else
+  # With -std=c++11 you do not get vsnprintf.
+  EXTRA_CXX_FLAGS+=" -std=gnu++14"
+fi
 
 
-# Assorted extra warnings.
+EXTRA_CPP_FLAGS+=" -D_GNU_SOURCE"  # This select the right version of strerror_r().
+
+
+if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
+
+  EXTRA_CPP_FLAGS+=" -DBOARD=ARDUINO_DUE_X"
+
+  # Needed for both CMSIS and the lib under "arduino-1.5.2/hardware/arduino/sam/cores".
+  EXTRA_CPP_FLAGS+=" -D__SAM3X8E__"
+
+  EXTRA_CPP_FLAGS+=" -DSAM3XA_SERIES"
+  EXTRA_CPP_FLAGS+=" -DCPU_CLOCK=84000000"
+
+  # I had problems building some files in the Atmel Software Framework version 3.7.3.69
+  # when I defined this flag:
+  #   EXTRA_CPP_FLAGS+=" -DUDD_NO_SLEEP_MGR"
+
+
+  # USB Vendor and Device ID definitions for the 'native' USB port.
+  #
+  # The standard Arduino firmware uses ID 0x003e in a composite device
+  # configuration, which means that the Windows .INF driver uses the following string:
+  #   USB\VID_2341&PID_003E&MI_00
+  # Note the "MI_00" at the end that denotes the interface number on the composite device.
+  #
+  # Linux needs no drivers, all CDC interfaces are automatically recognised.
+  # I have heard that composite devices are not supported on Mac OS, but I don't really know.
+  #
+  # The JtagDue Firmware does not use a composite device, but defines a single CDC device,
+  # so that the standard Arduino Due INF driver does not work even if you use the same PID.
+  #
+  # Therefore, I have chosen a different PID of 0x1234. You can choose your own,
+  # but then you will need to modify the .INF driver file and reinstall it on Windows.
+
+  EXTRA_CPP_FLAGS+=" -DUSB_VID=0x2341 -DUSB_PID=0x1234"
+
+  if $IS_GCC_8_OR_LATER; then
+    # Disable warning "ISO C++17 does not allow 'register' storage class specifier",
+    # which appears often in CMSIS source files.
+    EXTRA_CXX_FLAGS+=" -Wno-register"
+  fi
+fi
+
+
+# --- Compiler warning configuration, begin ---
+
+EXTRA_C_AND_CXX_FLAGS+=" -fdiagnostics-show-option"
+
+EXTRA_C_AND_CXX_FLAGS+=" -Wall"
 
 EXTRA_C_AND_CXX_FLAGS+=" -Wundef"  # It is a very common error to forget defining a symbol, and then "#if SYMBOL" will not fail or warn you,
                                    # because such undefined identifiers are quietly replaced with zero.
                                    # This warning tries to help prevent such mistakes.
                                    # -Wundef is not enabled automatically by -Wall, at least with GCC 9.3.
 
-EXTRA_C_AND_CXX_FLAGS+=" -fdiagnostics-show-option"
 EXTRA_C_AND_CXX_FLAGS+=" -Wall -Wextra"
 EXTRA_C_AND_CXX_FLAGS+=" -Wshadow -Wpointer-arith -Wcast-qual"
 EXTRA_C_AND_CXX_FLAGS+=" -Wunreachable-code"
@@ -427,18 +447,6 @@ EXTRA_C_FLAGS+=" -Wstrict-prototypes"
 EXTRA_C_FLAGS+=" -Wmissing-prototypes"
 EXTRA_C_FLAGS+=" -Wpointer-to-int-cast"
 
-EXTRA_C_FLAGS+=" -std=gnu11"
-
-if $IS_GCC_8_OR_LATER; then
-  EXTRA_CXX_FLAGS+=" -std=gnu++17"
-  # Disable warning "ISO C++17 does not allow 'register' storage class specifier",
-  # which appears often in CMSIS source files.
-  EXTRA_CXX_FLAGS+=" -Wno-register"
-else
-  # With -std=c++11 you do not get vsnprintf.
-  EXTRA_CXX_FLAGS+=" -std=gnu++14"
-fi
-
 # Turn off warnings that occur too often in the libraries.
 EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 
@@ -458,22 +466,26 @@ if $IS_DEBUG_BUILD; then
   # at least when using inline assembly.
 fi
 
+# --- Compiler warning configuration, end ---
+
+
 PUBLISH_BOOLEAN_VARIABLE(IS_EMPTY_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_QEMU_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_JTAG_DUE)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
 
 
-USE_GOLD_LINKER=false
+USE_GOLD_LINKER=false  # The newer Gold Linker does not seem compatible yet with the linker script files for the traditional linker,
+                       # at least for a bare-metal firmware like this one.
 PUBLISH_BOOLEAN_VARIABLE(USE_GOLD_LINKER)
 
 
 # --- Set the final variables.
 
 AM_CPPFLAGS="$EXTRA_CPP_FLAGS"
-AM_CFLAGS="$BUILD_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
-AM_CXXFLAGS="$BUILD_FLAGS $ARCH_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
-AM_CCASFLAGS="$BUILD_FLAGS $ARCH_FLAGS"
+AM_CFLAGS="$BUILD_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_C_FLAGS"
+AM_CXXFLAGS="$BUILD_FLAGS $EXTRA_C_AND_CXX_FLAGS $EXTRA_CXX_FLAGS"
+AM_CCASFLAGS="$BUILD_FLAGS"
 AM_LDFLAGS="$EXTRA_LD_FLAGS"
 
 AC_SUBST(AM_CPPFLAGS)
