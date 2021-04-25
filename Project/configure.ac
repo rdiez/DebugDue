@@ -268,10 +268,12 @@ IS_QEMU_FIRMWARE=false
 IS_JTAG_DUE=false
 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=false
 ASF_INCLUDE_COMMON=""
+NEEDS_BARE_METAL=false
 
 case "$PROJECT_NAME_LOWERCASE" in
   emptyfirmware) IS_EMPTY_FIRMWARE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
+                 NEEDS_BARE_METAL=true
                  NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
                  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/EmptyFirmware/ConfigFilesForAsf"
                  ;;
@@ -280,8 +282,10 @@ case "$PROJECT_NAME_LOWERCASE" in
                  ;;
   jtagdue)       IS_JTAG_DUE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
+                 NEEDS_BARE_METAL=true
                  NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
                  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/JtagFirmware/ConfigFilesForAsf"
+                 AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/JtagFirmware"
                  ;;
 
   *) AC_MSG_ERROR([Invalid project name "$with_project".]) ;;
@@ -290,6 +294,21 @@ esac
 # BOARD_SUPPORT_DIR must not be an absolute path, or Automake will litter
 # that directory with object files.
 AC_SUBST(BOARD_SUPPORT_DIR)
+
+
+BARE_METAL_SUPPORT_DIR="$ABS_SRCDIR/BareMetalSupport"
+
+if $NEEDS_BARE_METAL; then
+  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
+  # does find the files in $(BARE_METAL_SUPPORT_DIR).
+  # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).
+  # Apparently, we do not really need this, because Autoconf automatically adds
+  # the top-level directory to the include paths.
+  AppendIncludeDir EXTRA_CPP_FLAGS "$BARE_METAL_SUPPORT_DIR/.."
+
+fi
+
+AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
 
 # ----------- Path to the Atmel Software Framework -----------
@@ -355,6 +374,8 @@ fi
 # See UserImplementationOfAssert.h for all possible assertion types.
 # For debug builds, the size of the final binary depends on the assertion type.
 ASSERT_TYPE=ASSERT_TYPE_FULL
+
+AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/UserImplementationOfAssert"
 
 EXTRA_CPP_FLAGS+=" -DINCLUDE_USER_IMPLEMENTATION_OF_ASSERT"
 EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
@@ -525,6 +546,7 @@ fi
 PUBLISH_BOOLEAN_VARIABLE(IS_EMPTY_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_QEMU_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_JTAG_DUE)
+PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
 
 
@@ -548,9 +570,6 @@ AC_SUBST(AM_CCASFLAGS)
 AC_SUBST(AM_LDFLAGS)
 
 # ----------------------------------------
-
-BARE_METAL_SUPPORT_DIR="$ABS_SRCDIR/BareMetalSupport"
-AC_SUBST(BARE_METAL_SUPPORT_DIR)
 
 # If you update this line, please update SUBDIRS in Makefile.am too.
 #

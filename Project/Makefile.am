@@ -33,11 +33,6 @@ noinst_LIBRARIES :=
 
 firmware_elf_CPPFLAGS := $(AM_CPPFLAGS)
 
-firmware_elf_CPPFLAGS += -I$(srcdir)/UserImplementationOfAssert
-
-firmware_elf_CPPFLAGS += -I$(BARE_METAL_SUPPORT_DIR)/..  # This is so that including a file like <BareMetalSupport/Miscellaneous.h>
-                                                         # does find the files in $(BARE_METAL_SUPPORT_DIR).
-                                                         # Not really ideal, but there are no header (*.h) files in $srcdir (hopefully).
 firmware_elf_SOURCES :=
 
 
@@ -49,7 +44,9 @@ if IS_QEMU_FIRMWARE
 
   firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/AngelInterface.cpp
 
-else
+endif
+
+if NEEDS_BARE_METAL
 
   firmware_elf_SOURCES += \
     BareMetalSupport/Miscellaneous.cpp \
@@ -79,9 +76,6 @@ firmware_elf_SOURCES += BareMetalSupport/StackCheck.cpp
 firmware_elf_SOURCES += BareMetalSupport/IntegerPrintUtils.cpp
 
 
-libAtmelSoftwareFramework_a_CFLAGS := $(AM_CFLAGS)
-libAtmelSoftwareFramework_a_CPPFLAGS := $(AM_CPPFLAGS)
-
 if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 
   # Build the ASF into a separate library, so that you can adjust the compilation flags
@@ -97,9 +91,13 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 
   firmware_elf_LDADD += libAtmelSoftwareFramework.a
 
+  libAtmelSoftwareFramework_a_CFLAGS := $(AM_CFLAGS)
+
   # We cannot realistically fix all warnings in the Atmel Software Library, so selectively turn some of them off.
   # If you encounter too many in the future, you could also turn all warnings off for this library.
   libAtmelSoftwareFramework_a_CFLAGS += -Wno-cast-qual
+
+  libAtmelSoftwareFramework_a_CPPFLAGS := $(AM_CPPFLAGS)
 
   libAtmelSoftwareFramework_a_CPPFLAGS += $(ASF_INCLUDE_COMMON)
 
@@ -168,8 +166,6 @@ if IS_JTAG_DUE
     JtagFirmware/CommandProcessor.cpp \
     JtagFirmware/SerialPortConsole.cpp \
     JtagFirmware/InterruptHandlers.cpp
-
-  firmware_elf_CPPFLAGS += -I$(srcdir)/JtagFirmware
 
 endif
 
