@@ -63,6 +63,25 @@ AM_EXTRA_RECURSIVE_TARGETS([disassemble])
 ABS_SRCDIR="$(readlink --verbose --canonicalize -- "$srcdir")"
 
 
+AppendIncludeDir ()
+{
+  local VARIABLE_NAME="$1"
+  local INCLUDE_PATH="$2"
+
+  # It is not really necessary to check whether the directory exists,
+  # but it helps catch problems in the build system.
+
+  if ! [[ -d "$INCLUDE_PATH" ]]; then
+    AC_MSG_ERROR([Include directory "$2" does not exist.])
+  fi
+
+  printf -v "$VARIABLE_NAME" \
+         "%s -I%q" \
+         "${!VARIABLE_NAME}" \
+         "$INCLUDE_PATH"
+}
+
+
 # Say you have a shell variable called 'MY_OPTION' with value 'true'.
 # This routine will add a '-DMY_OPTION=1' command-line argument to shell variable EXTRA_CPP_FLAGS,
 # intended for the C/C++ preprocessor.
@@ -248,16 +267,22 @@ IS_EMPTY_FIRMWARE=false
 IS_QEMU_FIRMWARE=false
 IS_JTAG_DUE=false
 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=false
+ASF_INCLUDE_COMMON=""
 
 case "$PROJECT_NAME_LOWERCASE" in
   emptyfirmware) IS_EMPTY_FIRMWARE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
-                 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true ;;
+                 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
+                 AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/EmptyFirmware/ConfigFilesForAsf"
+                 ;;
   qemufirmware)  IS_QEMU_FIRMWARE=true
-                 BOARD_SUPPORT_DIR="BoardSupport-LM3S6965EVB" ;;
+                 BOARD_SUPPORT_DIR="BoardSupport-LM3S6965EVB"
+                 ;;
   jtagdue)       IS_JTAG_DUE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
-                 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true ;;
+                 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
+                 AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/JtagFirmware/ConfigFilesForAsf"
+                 ;;
 
   *) AC_MSG_ERROR([Invalid project name "$with_project".]) ;;
 esac
@@ -389,7 +414,35 @@ if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
     # which appears often in CMSIS source files.
     EXTRA_CXX_FLAGS+=" -Wno-register"
   fi
+
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/drivers/pmc"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/boards"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/boards"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/clock"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/sleepmgr"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/class/cdc"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/class/cdc/device"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/udc"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/cmsis/sam3x/include"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/cmsis/sam3x/source/templates"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/thirdparty/CMSIS/Include"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/preprocessor"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/header_files"
+  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/utils"
+
+  EXTRA_CPP_FLAGS+="$ASF_INCLUDE_COMMON"
+
+  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/pio"
+  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/rstc"
+  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/wdt"
+  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/adc"
+  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/uart"
+
 fi
+
+AC_SUBST(ASF_INCLUDE_COMMON)
 
 
 # --- Compiler warning configuration, begin ---

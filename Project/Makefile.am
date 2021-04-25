@@ -80,6 +80,7 @@ firmware_elf_SOURCES += BareMetalSupport/IntegerPrintUtils.cpp
 
 
 libAtmelSoftwareFramework_a_CFLAGS := $(AM_CFLAGS)
+libAtmelSoftwareFramework_a_CPPFLAGS := $(AM_CPPFLAGS)
 
 if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 
@@ -100,48 +101,7 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   # If you encounter too many in the future, you could also turn all warnings off for this library.
   libAtmelSoftwareFramework_a_CFLAGS += -Wno-cast-qual
 
-  # This group of include paths is duplicated in firmware_elf_CPPFLAGS.
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/boards
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/boards
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/AsfSrc/common/utils
-
-  # This group of include paths is duplicated in libAtmelSoftwareFramework_a_CFLAGS.
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pmc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/boards
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/boards
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/clock
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/sleepmgr
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/class/cdc/device
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb/udc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/services/usb
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/include
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/thirdparty/CMSIS/Include
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/preprocessor
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/utils/header_files
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/common/utils
-
-  # This group of include paths is only needed in firmware_elf_CPPFLAGS.
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/pio
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/rstc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/wdt
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/adc
-  firmware_elf_CPPFLAGS += -I$(srcdir)/AsfSrc/sam/drivers/uart
+  libAtmelSoftwareFramework_a_CPPFLAGS += $(ASF_INCLUDE_COMMON)
 
 
   libAtmelSoftwareFramework_a_SOURCES :=
@@ -184,9 +144,6 @@ if IS_EMPTY_FIRMWARE
     EmptyFirmware/Main.cpp \
     EmptyFirmware/InterruptHandlers.cpp
 
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/EmptyFirmware/ConfigFilesForAsf
-  firmware_elf_CPPFLAGS += -I$(srcdir)/EmptyFirmware/ConfigFilesForAsf
-
 endif
 
 if IS_QEMU_FIRMWARE
@@ -213,9 +170,6 @@ if IS_JTAG_DUE
     JtagFirmware/InterruptHandlers.cpp
 
   firmware_elf_CPPFLAGS += -I$(srcdir)/JtagFirmware
-
-  libAtmelSoftwareFramework_a_CFLAGS += -I$(srcdir)/JtagFirmware/ConfigFilesForAsf
-  firmware_elf_CPPFLAGS += -I$(srcdir)/JtagFirmware/ConfigFilesForAsf
 
 endif
 
