@@ -324,10 +324,11 @@ Step 2, build operations:
   --show-build-commands  Show the full compilation commands during the build.
   --disassemble  Generate extra information files from the just-built ELF file:
                  complete disassembly, list of objects sorted by size,
-                 sorted list of strings (with 'strings' command):
+                 sorted list of strings (with 'strings' command), readelf dump.
 
   The default is not to build anything. If you then debug your firmware,
   make sure that the existing binary matches the code on the target.
+  That is, do not forget to program it first on the target.
 
 Step 3, program operations:
   --program-over-jtag  Transfers the firmware over JTAG to the target device.
