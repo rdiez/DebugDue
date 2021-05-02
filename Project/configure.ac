@@ -37,14 +37,25 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 #   If your package does not like this default, then it is acceptable to insert the line
 #  ': ${CXXFLAGS=""}' after AC_INIT and before AC_PROG_CXX to select an empty default instead.
 #
-# We are clearing these variables here because they are actually user variables and we want to reserve
-# them for the end user, so that he can add his own flags when invoking the generated makefiles.
-# Instead, we will be overriding AM_CFLAGS and friends below.
+# We are clearing CXXFLAGS etc. below here because they are actually meant to be user variables, so
+# we want to reserve them for the end user. This way, he/she can add his/her own flags
+# when using the generated makefiles.
+#
+# That is, we do not want to pick those values up from the environment when the project is configured.
+# The user may specify them later on like this:
+#   make  CXXFLAGS=my_values  my_target
+#
+# This script clears those variables and checks at the end that they have not been set.
+# With this strategy, it is clear that any value in CXXFLAGS etc. come from the end user.
+#
+# This is a decision I have made which may prove wrong in the future. If you know better, drop me a line.
+#
+# Instead of playing with CXXFLAGS etc., we will be overriding AM_CFLAGS and friends below.
 #
 # The user will normally not modify important flags, but some of them, like "-fdiagnostics-color=always",
 # depend on factors outside of our control and should not be set by this configuration script.
 
-declare -a USER_VARIABLES=(CXXFLAGS CFLAGS CCASFLAGS LDFLAGS)
+declare -a USER_VARIABLES=(CPPFLAGS CFLAGS CXXFLAGS CCASFLAGS LDFLAGS)
 
 for varName in "${USER_VARIABLES[[@]]}"  # Note that autoconf needs to escape brackets ('[[' instead of '[').
 do                                       # Alternatively, you can use trigraphs @<:@ and @>:@ .
