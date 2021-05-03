@@ -123,6 +123,7 @@ $(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
+# GCC 11 is too new, and version 11.1 does even build properly, so I am not using VersionSet7 yet.
 VERSION_SET := VersionSet6
 
 ifeq ($(VERSION_SET),VersionSet1)
@@ -194,6 +195,22 @@ else ifeq ($(VERSION_SET),VersionSet6)
   MPFR_VERSION := 4.1.0
   MPC_VERSION := 1.2.1
   GCC_VERSION := 10.3.0
+  NEWLIB_VERSION := 4.1.0
+  GDB_VERSION := 10.1
+
+else ifeq ($(VERSION_SET),VersionSet7)
+
+  # GCC 11.1 fails to build with this error message:
+  #   g++ -static-libstdc++ -static-libgcc   -o g++-mapper-server server.o resolver.o ../libcody/libcody.a ../gcc/version.o ../libiberty/libiberty.a
+  #   /usr/bin/ld: /tmp/g++-mapper-server.K0n1nG.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
+  # It is probably this bug:
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
+
+  BINUTILS_VERSION := 2.36.1
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.1
+  GCC_VERSION := 11.1.0
   NEWLIB_VERSION := 4.1.0
   GDB_VERSION := 10.1
 
@@ -581,8 +598,9 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   IS_GCC_8_X   := $(filter 8.%,$(GCC_VERSION))
   IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
   IS_GCC_10_X  := $(filter 10.%,$(GCC_VERSION))
+  IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
 
-  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X) )" ""
+  ifneq "$(or $(IS_GCC_4_9_X), $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X) )" ""
     # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x, 8.x, 9.x, 10.x
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
