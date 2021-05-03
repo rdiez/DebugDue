@@ -395,13 +395,17 @@ EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
 
-EXTRA_C_FLAGS+=" -std=gnu11"
-
+# Sometimes, you want to set the C and C++ language standard.
+# For example, with -std=c++11 you do not get vsnprintf.
+# The defaults are:
+#  GCC  7:  gnu11, gnu++14
+#  GCC  8:  gnu18, gnu++14
+#  GCC  9:  gnu18, gnu++14
+#  GCC 10:  gnu18, gnu++14
+#  GCC 11:  gnu18, gnu++17
 if $IS_GCC_8_OR_LATER; then
+  EXTRA_C_FLAGS+=" -std=gnu18"
   EXTRA_CXX_FLAGS+=" -std=gnu++17"
-else
-  # With -std=c++11 you do not get vsnprintf.
-  EXTRA_CXX_FLAGS+=" -std=gnu++14"
 fi
 
 
