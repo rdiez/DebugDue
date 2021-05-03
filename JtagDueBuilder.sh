@@ -325,6 +325,9 @@ Step 2, build operations:
   --disassemble  Generate extra information files from the just-built ELF file:
                  complete disassembly, list of objects sorted by size,
                  sorted list of strings (with 'strings' command), readelf dump.
+  --make-arg=ARG  Pass an extra argument to 'make'. This is primarily intended
+                  for make variables. For example: --make-arg CPPFLAGS=-Dmysymbol=1
+                  You can specify --make-arg several times.
 
   The default is not to build anything. If you then debug your firmware,
   make sure that the existing binary matches the code on the target.
@@ -660,6 +663,13 @@ process_command_line_argument ()
         PROJECT="$OPTARG"
         ;;
 
+    make-arg)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --make-arg option has an empty value."
+        fi
+        EXTRA_MAKE_ARGS+=("$OPTARG")
+        ;;
+
     *)  # We should actually never land here, because parse_command_line_arguments() already checks if an option is known.
         abort "Unknown command-line option \"--${OPTION_NAME}\".";;
   esac
@@ -891,6 +901,13 @@ do_build ()
   quote_and_append_args MAKE_CMD "--no-builtin-rules"
 
   add_make_parallel_jobs_flag
+
+  local EXTRA_ARG
+  for EXTRA_ARG in "${EXTRA_MAKE_ARGS[@]}"; do
+    quote_and_append_args MAKE_CMD "$EXTRA_ARG"
+  done
+
+  # After all 'make' options, append the targets.
 
   if $INSTALL_SPECIFIED; then
     quote_and_append_args MAKE_CMD "install"
@@ -1649,6 +1666,8 @@ USER_LONG_OPTIONS_SPEC+=( [add-breakpoint]=1 )
 USER_LONG_OPTIONS_SPEC+=( [path-to-bossac]=1 )
 USER_LONG_OPTIONS_SPEC+=( [configure-cache-filename]=1 )
 USER_LONG_OPTIONS_SPEC+=( [project]=1 )
+USER_LONG_OPTIONS_SPEC+=( [make-arg]=1 )
+
 
 CLEAN_SPECIFIED=false
 ENABLE_CONFIGURE_CACHE_SPECIFIED=false
@@ -1665,6 +1684,7 @@ DEBUG_FROM_THE_START_SPECIFIED=false
 SHOW_BUILD_COMMANDS=false
 PROJECT="$DEFAULT_PROJECT"
 declare -ag BREAKPOINTS=()
+declare -ag EXTRA_MAKE_ARGS=()
 
 parse_command_line_arguments "$@"
 
