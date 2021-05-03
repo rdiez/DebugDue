@@ -485,6 +485,10 @@ AC_SUBST(ASF_INCLUDE_COMMON)
 
 EXTRA_C_AND_CXX_FLAGS+=" -fdiagnostics-show-option"
 
+# The static analyzer is very slow but can help find bugs.
+# It is specially useful when building with LTO.
+#  EXTRA_C_AND_CXX_FLAGS+=" -fanalyzer"
+
 EXTRA_C_AND_CXX_FLAGS+=" -Wall"
 
 EXTRA_C_AND_CXX_FLAGS+=" -Wundef"  # It is a very common error to forget defining a symbol, and then "#if SYMBOL" will not fail or warn you,
