@@ -705,7 +705,6 @@ NEWLIB_CFG_FLAGS += --disable-newlib-io-long-double
 NEWLIB_CFG_FLAGS += --disable-newlib-iconv
 NEWLIB_CFG_FLAGS += --disable-newlib-iconv-external-ccs
 NEWLIB_CFG_FLAGS += --disable-newlib-mb
-NEWLIB_CFG_FLAGS += --disable-newlib-atexit-alloc
 NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
 
