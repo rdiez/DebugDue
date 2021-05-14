@@ -10,6 +10,8 @@ AC_INIT([JtagDue],[1.1.6])
 AC_PREREQ([2.69])  # Anything older may not work properly.
 
 # Place auxiliary files in a subdirectory in order to reduce clutter in the top-level project directory.
+# This also prevents the configuration script from looking for helper scripts outside this project,
+# in ../ and ../../ , possibly finding older versions or incompatible tools with the same name.
 AC_CONFIG_AUX_DIR([build-aux])
 
 AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
