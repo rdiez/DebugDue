@@ -709,6 +709,9 @@ NEWLIB_CFG_FLAGS += --disable-newlib-atexit-alloc
 NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
 
+# I could not find a good reason why atexit() should be in struct _reent, so make it global.
+NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
+
 # The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
 # But it starts off with an array in RAM called __malloc_av_ that weighs 1032 bytes,
 # at least for a Cortex-M3 CPU target, so it is not a good choice for very
