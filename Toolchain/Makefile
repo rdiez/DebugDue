@@ -671,10 +671,37 @@ endif
 
 
 NEWLIB_CFG_FLAGS += --disable-newlib-multithread
-NEWLIB_CFG_FLAGS += --enable-newlib-io-pos-args
-NEWLIB_CFG_FLAGS += --enable-newlib-io-c99-formats
-NEWLIB_CFG_FLAGS += --enable-newlib-io-long-long
+
+
+# The "nano formatted io" functions are alternative implementations of printf etc.
+# that need less program space. Wide-char routines like wprintf are not affected,
+# but chances are that you are not using those, as it's mostly ASCII or UTF-8 nowadays.
+# The trouble is, the 'nano' alternatives are missing support for many useful C99 additions like these:
+# - %z for printing the size_t type.
+# - %ll for printing "long long" integers, normally 64-bits long.
+#   PRIu64 will probably fail.
+# - %hhu for 8-bit integers, which may make PRIu8 fail, if it is not using the older "hu" definition.
+# - Positional printf arguments.
+
+ENABLE_NEWLIB_NANO_FORMATTED_IO := 0
+
+ifeq ($(ENABLE_NEWLIB_NANO_FORMATTED_IO),1)
+  NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io
+else
+  # This path needs around 7 kB more for a Cortex-M3 CPU target.
+  # Note that the following flags are ignored if --enable-newlib-nano-formatted-io is used.
+  NEWLIB_CFG_FLAGS += --enable-newlib-io-pos-args
+  NEWLIB_CFG_FLAGS += --enable-newlib-io-c99-formats
+  NEWLIB_CFG_FLAGS += --enable-newlib-io-long-long
+endif
+
+
+# Enabling float support in printf etc. is costly with the current Newlib implementation.
+# It uses arbitrary-precision math code which allocates a lot of RAM,
+# and has no robust failure modes when it runs out of memory.
 NEWLIB_CFG_FLAGS += --disable-newlib-io-float
+NEWLIB_CFG_FLAGS += --disable-newlib-io-long-double
+
 NEWLIB_CFG_FLAGS += --disable-newlib-iconv
 NEWLIB_CFG_FLAGS += --disable-newlib-iconv-external-ccs
 NEWLIB_CFG_FLAGS += --disable-newlib-mb
@@ -682,7 +709,6 @@ NEWLIB_CFG_FLAGS += --disable-newlib-atexit-alloc
 NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
 NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc  # With Newlib's standard malloc library, you get an array in RAM called __malloc_av_ that weighs 1032 bytes, at least on a Cortex-M3 CPU.
-NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io  # Warning: you lose support for printing 64-bit integers.
 
 # About --disable-libgloss and --disable-newlib-supplied-syscalls:
 #
