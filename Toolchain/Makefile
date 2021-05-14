@@ -708,7 +708,14 @@ NEWLIB_CFG_FLAGS += --disable-newlib-mb
 NEWLIB_CFG_FLAGS += --disable-newlib-atexit-alloc
 NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
-NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc  # With Newlib's standard malloc library, you get an array in RAM called __malloc_av_ that weighs 1032 bytes, at least on a Cortex-M3 CPU.
+
+# The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
+# But it starts off with an array in RAM called __malloc_av_ that weighs 1032 bytes,
+# at least for a Cortex-M3 CPU target, so it is not a good choice for very
+# constrained targets that don't do a lot of allocation.
+# The trouble is, the 'nano' version is Newlib, as of April 2021, is known to be
+# suboptimal in many normal scenarios.
+NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc
 
 # About --disable-libgloss and --disable-newlib-supplied-syscalls:
 #
