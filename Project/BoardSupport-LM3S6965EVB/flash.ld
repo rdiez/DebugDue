@@ -20,6 +20,8 @@
  * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
+ * With some changes by rdiez.
  */
 
 /*
@@ -205,20 +207,24 @@ SECTIONS
     . = ALIGN(4);
     /* init data */
     PROVIDE_HIDDEN (__init_array_start = .);
+    /* If you use "__attribute__ ((constructor (200)))", GCC generates a name like ".init_array.00200".
+       Objects with a priority are constructed before objects without priority. */
     KEEP(*(SORT(.init_array.*)))
     KEEP(*(.init_array))
     PROVIDE_HIDDEN (__init_array_end = .);
 
 
     . = ALIGN(4);
-    /* finit data */
+    /* fini data */
     PROVIDE_HIDDEN (__fini_array_start = .);
+    /* .fini_array must be sorted the same as .init_array. The C code will process it from bottom to top,
+       so that the destruction order is the reverse of the construction order. */
     KEEP(*(SORT(.fini_array.*)))
     KEEP(*(.fini_array))
     PROVIDE_HIDDEN (__fini_array_end = .);
 
 
-    KEEP(*(.jcr*))
+    KEEP(*(.jcr*))  /* These sections were for Java and probably do not exist nowadays. */
     . = ALIGN(4);
     /* All data end */
     __data_end__ = .;

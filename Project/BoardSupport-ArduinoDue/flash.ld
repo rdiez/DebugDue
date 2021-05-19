@@ -27,13 +27,8 @@
  * ----------------------------------------------------------------------------
 
 
- This linker script file was taken from the Arduino software version 1.5.2
- The only differences to the one shipped with the Atmel Software Framework are:
- 1) Prevent linker message "warning: changing start of section .bss by 4 bytes".
- 2) The stack is allocated at the top of SRAM, so that it grows towards
-    the heap (the malloc area).
- 3) The ramfunc sections are no longer needed and were removed.
-
+ This linker script file was taken from the Arduino software version 1.5.2,
+ with some changes by rdiez.
 */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
@@ -73,6 +68,8 @@ SECTIONS
 
         . = ALIGN(4);
         __init_array_start = .;
+        /* If you use "__attribute__ ((constructor (200)))", GCC generates a name like ".init_array.00200".
+           Objects with a priority are constructed before objects without priority. */
         KEEP (*(SORT(.init_array.*)))
         KEEP (*(.init_array))
         __init_array_end = .;
@@ -88,8 +85,10 @@ SECTIONS
 
         . = ALIGN(4);
         __fini_array_start = .;
-        KEEP (*(.fini_array))
+        /* .fini_array must be sorted the same as .init_array. The C code will process it from bottom to top,
+           so that the destruction order is the reverse of the construction order. */
         KEEP (*(SORT(.fini_array.*)))
+        KEEP (*(.fini_array))
         __fini_array_end = .;
 
         KEEP (*crtbegin.o(.dtors))
@@ -101,7 +100,10 @@ SECTIONS
         _efixed = .;            /* End of text section */
     } > rom
 
-    /* .ARM.exidx is sorted, so has to go in its own output section.  */
+    /* This is the exception index table. It is mainly needed for C++ exception support. Option "-funwind-tables"
+       also generates these tables, which are useful if your C code wants to print a stack backtrace.
+       The whole .ARM.exidx group is sorted by the linker, and I think duplicates are also collapsed together,
+       so has to go in its own output section. */
     PROVIDE_HIDDEN (__exidx_start = .);
     .ARM.exidx :
     {
