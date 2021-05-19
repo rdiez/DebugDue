@@ -16,3 +16,5 @@ void InitDataSegments ( void ) throw();
 
 void PrintFirmwareSegmentSizesSync  ( void ) throw();
 void PrintFirmwareSegmentSizesAsync ( void ) throw();
+void RuntimeStartupChecks ( void ) throw();
+void RuntimeTerminationChecks ( void ) throw();

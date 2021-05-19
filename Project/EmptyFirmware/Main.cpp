@@ -48,6 +48,11 @@ static void Configure ( void )
 
   // Configure the watchdog.
   WDT->WDT_MR = WDT_MR_WDDIS;
+
+  if ( IsDebugBuild() )
+  {
+    RuntimeStartupChecks();
+  }
 }
 
 
@@ -64,7 +69,19 @@ void StartOfUserCode ( void )
 
     if ( ENABLE_DEBUG_CONSOLE )
     {
-      SerialSyncWriteStr( "Entering the main loop, which just waits forever consuming CPU cycles (busy wait)." EOL );
+      SerialSyncWriteStr( "Place your application code here." EOL );
+    }
+
+    // ------ Terminate ------
+
+    if ( IsDebugBuild() )
+    {
+      RuntimeTerminationChecks();
+    }
+
+    if ( ENABLE_DEBUG_CONSOLE )
+    {
+      SerialSyncWriteStr( "Wait forever consuming CPU cycles (busy wait)." EOL );
     }
 
     for (;;)

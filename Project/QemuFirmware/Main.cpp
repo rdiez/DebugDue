@@ -41,6 +41,11 @@ void StartOfUserCode ( void )
 {
   SetUserPanicMsgFunction( &PrintPanicMsg );
 
+  if ( IsDebugBuild() )
+  {
+    RuntimeStartupChecks();
+  }
+
 
   // We do not use the CMSIS yet, so we have not got the definitions for the SCB register yet.
   #ifdef __ARM_FEATURE_UNALIGNED
@@ -63,12 +68,24 @@ void StartOfUserCode ( void )
 
   // ------ Main loop ------
 
-  SerialSyncWriteStr( "Entering the main loop, which just waits forever." EOL );
 
-  ForeverHangAfterPanic();
+  SerialSyncWriteStr( "Place your application code here." EOL );
 
-  // We could exit the simulation here with this call:
-  Angel_ExitApp();
+  if ( IsDebugBuild() )
+  {
+    RuntimeTerminationChecks();
+  }
+
+  if ( true )
+  {
+    SerialSyncWriteStr( "Wait forever consuming CPU cycles (busy wait)." EOL );
+    ForeverHangAfterPanic();
+  }
+  else
+  {
+    // We could exit the simulation here with this call:
+    Angel_ExitApp();
+  }
 }
 
 

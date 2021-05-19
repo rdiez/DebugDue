@@ -73,6 +73,11 @@ static void Configure ( void )
 
   SetUserPanicMsgFunction( &PrintPanicMsg );
 
+  if ( IsDebugBuild() )
+  {
+    RuntimeStartupChecks();
+  }
+
 
   // ------- Configure the LED -------
 
@@ -264,6 +269,12 @@ void StartOfUserCode ( void )
       }
 
       MainLoopSleep();
+    }
+
+    // The main loop does not really terminate at the moment, so this code is never reached.
+    if ( IsDebugBuild() )
+    {
+      RuntimeTerminationChecks();
     }
 }
 

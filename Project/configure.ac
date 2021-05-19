@@ -377,6 +377,19 @@ BUILD_FLAGS+=" -mcpu=cortex-m3 -mthumb"  # Switch "-march=armv7-m" could also be
 
 EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 
+# With -fuse-cxa-atexit, which tends to be the default (see config option --enable-__cxa_atexit),
+# GCC will register the destructors of static objects dynamically with __cxa_atexit, which is a kind of atexit().
+# Depending on the size of your application and on your libc configuration, those registrations will either
+# consume extra RAM, or only the first 32 registrations will succeeded, and the rest will be discarded.
+# Assuming that you do not hit an eventual discard limit, this makes the destructions of static C++ objects
+# conform to the C++ standard. The main aspect here is the order of destruction, but the whole construction order
+# of static C++ objects is problematic anyway, so it is best to avoid code that depends on the correct order.
+# With -fno-use-cxa-atexit, all such destructors are preregistered in the fini array and will not consume RAM,
+# only program memory (ROM or Flash memory). However, the destruction order is not guaranteed
+# to be correct according to the C++ standard.
+EXTRA_CXX_FLAGS+=" -fno-use-cxa-atexit"
+
+
 # The Arduino Framework specifies --param max-inline-insns-single=500,
 # but I am not sure whether that is a good idea.
 if false; then
