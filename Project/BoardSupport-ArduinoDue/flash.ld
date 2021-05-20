@@ -35,7 +35,6 @@ OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
 OUTPUT_ARCH(arm)
 SEARCH_DIR(.)
 
-/* Memory Spaces Definitions */
 MEMORY
 {
 	rom (rx)    : ORIGIN = 0x00080000, LENGTH = 0x00080000 /* Flash, 512K */
@@ -121,6 +120,7 @@ SECTIONS
 
         *(.data)
         *(.data.*);
+
         . = ALIGN(4);
         __data_end__ = .;
     } > ram
