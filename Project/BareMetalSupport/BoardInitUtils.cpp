@@ -119,6 +119,9 @@ void PrintFirmwareSegmentSizesAsync ( void ) throw()
 void RuntimeStartupChecks ( void ) throw()
 {
   // See the comments next to compilation option -fuse-cxa-atexit for more information.
+  // You may of course have a different opinion or different needs with regards to initialisation and atexit,
+  // in which case you need to remove this check.
+  //
   // _GLOBAL_REENT is _global_impure_ptr.
   // _GLOBAL_ATEXIT can be either _global_atexit or _GLOBAL_REENT->_atexit, therefore _global_impure_ptr->_atexit .
   // If not nullptr, then I guess that _GLOBAL_ATEXIT->_ind will not be 0 either.
@@ -134,6 +137,7 @@ void RuntimeTerminationChecks ( void ) throw()
   // C++ objects inside static routines can be initialised later, and might land in the atexit() list.
   // Make sure that we did not have any of those by checking the atexit list again at the end.
   // Note that it is best to avoid such static construction and destruction inside C++ routines.
+  // You may of course have a different opinion or different needs, in which case you need to remove this check.
   if ( _GLOBAL_ATEXIT != nullptr )
   {
     Panic( "Unexpected entries in atexit table." );

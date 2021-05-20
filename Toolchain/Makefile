@@ -709,7 +709,18 @@ NEWLIB_CFG_FLAGS += --disable-shared
 NEWLIB_CFG_FLAGS += --disable-multilib
 
 # I could not find a good reason why atexit() should be in struct _reent, so make it global.
+#
+# Notes about atexit memory consumption:
+#   In Newlib, _ATEXIT_SIZE is 32 because of ANSI conformance, so each atexit block has 32 function pointers.
+#   The associated arguments consume sizeof( struct _on_exit_args ) = 264 bytes.
+#   And there is at least one, see _atexit0 and _global_atexit0.
 NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
+
+# You may wonder whether you need --disable-newlib-atexit-dynamic-alloc.
+# But we are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
+# and the firmware is checking on start-up that there are no atexit entries,
+# so it does not really matter: much of the atexit() support shold be optimised away.
+
 
 # The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
 # But it starts off with an array in RAM called __malloc_av_ that weighs 1032 bytes,
