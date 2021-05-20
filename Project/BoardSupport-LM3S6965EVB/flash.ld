@@ -143,8 +143,6 @@ SECTIONS
     KEEP(*(.fini_array))
     PROVIDE_HIDDEN (__fini_array_end = .);
 
-
-    KEEP(*(.jcr*))  /* These sections were for Java and probably do not exist nowadays. */
     . = ALIGN(4);
     /* All data end */
     __data_end__ = .;
