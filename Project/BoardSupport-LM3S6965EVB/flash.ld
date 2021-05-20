@@ -21,43 +21,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * With some changes by rdiez.
+ * With some changes by rdiez in 2021.
  */
 
-/*
- *-------- <<< Use Configuration Wizard in Context Menu >>> -------------------
- */
-
-/*---------------------- Flash Configuration ----------------------------------
-  <h> Flash Configuration
-    <o0> Flash Base Address <0x0-0xFFFFFFFF:8>
-    <o1> Flash Size (in Bytes) <0x0-0xFFFFFFFF:8>
-  </h>
-  -----------------------------------------------------------------------------*/
+/*---------------------- Flash Memory ----------------------*/
 __ROM_BASE = 0x00000000;
 __ROM_SIZE = 0x00010000;
 
-/*--------------------- Embedded RAM Configuration ----------------------------
-  <h> RAM Configuration
-    <o0> RAM Base Address    <0x0-0xFFFFFFFF:8>
-    <o1> RAM Size (in Bytes) <0x0-0xFFFFFFFF:8>
-  </h>
- -----------------------------------------------------------------------------*/
+/*--------------------- Embedded RAM ---------------------*/
 __RAM_BASE = 0x20000000;
-__RAM_SIZE = 0x00002000;
+__RAM_SIZE = 0x00002000;  /* 0x2000 = 8 KiB */
 
-/*--------------------- Stack / Heap Configuration ----------------------------
-  <h> Stack / Heap Configuration
-    <o0> Stack Size (in Bytes) <0x0-0xFFFFFFFF:8>
-    <o1> Heap Size (in Bytes) <0x0-0xFFFFFFFF:8>
-  </h>
-  -----------------------------------------------------------------------------*/
-__STACK_SIZE = 0x00000400;
-__HEAP_SIZE  = 0x00000C00;
+/*--------------------- Stack / Heap Configuration ---------------------*/
+__STACK_SIZE = 0x00000400;  /* 0x400 = 1 KiB */
+__HEAP_SIZE  = 0x00000C00;  /* 0xC00 = 3 KiB */
 
-/*
- *-------------------- <<< end of configuration section >>> -------------------
- */
 
 MEMORY
 {
@@ -65,36 +43,6 @@ MEMORY
   RAM   (rwx) : ORIGIN = __RAM_BASE, LENGTH = __RAM_SIZE
 }
 
-/* Linker script to place sections and symbol values. Should be used together
- * with other linker script that defines memory regions FLASH and RAM.
- * It references following symbols, which must be defined in code:
- *   Reset_Handler : Entry of reset handler
- *
- * It defines following symbols, which code can use without definition:
- *   __exidx_start
- *   __exidx_end
- *   __copy_table_start__
- *   __copy_table_end__
- *   __zero_table_start__
- *   __zero_table_end__
- *   __etext
- *   __data_start__
- *   __preinit_array_start
- *   __preinit_array_end
- *   __init_array_start
- *   __init_array_end
- *   __fini_array_start
- *   __fini_array_end
- *   __data_end__
- *   __bss_start__
- *   __bss_end__
- *   __end__
- *   end
- *   __HeapLimit
- *   __StackLimit
- *   __StackTop
- *   __stack
- */
 ENTRY(Reset_Handler)
 
 SECTIONS
@@ -173,10 +121,10 @@ SECTIONS
     . = ALIGN(4);
     __zero_table_start__ = .;
     /* Add each additional bss section here */
-/*
+    /*
     LONG (__bss2_start__)
     LONG (__bss2_end__ - __bss2_start__)
-*/
+    */
     __zero_table_end__ = .;
   } > FLASH
 
@@ -286,7 +234,7 @@ SECTIONS
   .heap (COPY) :
   {
     . = ALIGN(8);
-    __end__ = .;
+    __end__ = .;   /* Symbol __end__ marks the start of the malloc heap. */
     PROVIDE(end = .);
     . = . + __HEAP_SIZE;
     . = ALIGN(8);

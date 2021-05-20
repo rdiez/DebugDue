@@ -138,7 +138,7 @@ SECTIONS
     } > ram
 
     . = ALIGN(4);
-    __end__ = . ;  /* Symbol _end marks the start of Newlib's malloc heap. */
+    __end__ = . ;  /* Symbol __end__ marks the start of the malloc heap. */
 
     /* .stack_dummy section doesn't contains any symbols. It is only
        used for linker to calculate size of stack sections, and assign
