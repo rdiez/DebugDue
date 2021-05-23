@@ -24,14 +24,6 @@
  * With some changes by rdiez in 2021.
  */
 
-/*---------------------- Flash Memory ----------------------*/
-__ROM_BASE = 0x00000000;
-__ROM_SIZE = 0x00010000;
-
-/*--------------------- Embedded RAM ---------------------*/
-__RAM_BASE = 0x20000000;
-__RAM_SIZE = 0x00002000;  /* 0x2000 = 8 KiB */
-
 /*--------------------- Stack / Heap Configuration ---------------------*/
 __STACK_SIZE = 0x00000400;  /* 0x400 = 1 KiB */
 __HEAP_SIZE  = 0x00000C00;  /* 0xC00 = 3 KiB */
@@ -39,8 +31,8 @@ __HEAP_SIZE  = 0x00000C00;  /* 0xC00 = 3 KiB */
 
 MEMORY
 {
-  FLASH (rx)  : ORIGIN = __ROM_BASE, LENGTH = __ROM_SIZE
-  RAM   (rwx) : ORIGIN = __RAM_BASE, LENGTH = __RAM_SIZE
+  FLASH (rx)  : ORIGIN = 0x00000000, LENGTH = 256K
+  RAM   (rwx) : ORIGIN = 0x20000000, LENGTH =  64K
 }
 
 ENTRY(Reset_Handler)
