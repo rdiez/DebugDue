@@ -23,54 +23,12 @@
 #include "AssertionUtils.h"
 
 
-// The stack is at the top of SRAM1, and the heap grows upwards. These routines check that the growing heap
-// never reaches the stack area. Otherwise, a Panic() is triggered.
-static size_t s_stackSize = 1024;  // The default stack size, can be any size.
-static uintptr_t s_heapEndAddr = uintptr_t( &__end__ );  // At the beginning the heap is 0 bytes long.
-
-
-static uintptr_t CalculateStackStartAddr ( const size_t stackSize )
-{
-    return uintptr_t( &__StackTop ) - stackSize;
-}
-
-
-uintptr_t GetStackStartAddr ( void ) throw()
-{
-    return CalculateStackStartAddr( s_stackSize );
-}
-
-
-void SetStackSize ( const size_t stackSize ) throw()
-{
-    if ( s_heapEndAddr > CalculateStackStartAddr( stackSize ) )
-        Panic("Heap/Stack collision.");
-
-    s_stackSize = stackSize;
-}
-
-
-uintptr_t GetHeapEndAddr ( void ) throw()
-{
-    return s_heapEndAddr;
-}
-
-
-void SetHeapEndAddr ( const uintptr_t heapEndAddr ) throw()
-{
-    if ( s_heapEndAddr > CalculateStackStartAddr( s_stackSize ) )
-      Panic("Heap/Stack collision.");
-
-    s_heapEndAddr = heapEndAddr;
-}
-
-
 static const uint8_t STACK_CANARY_VAL = 0xBA;
 
 void FillStackCanary ( void ) throw()
 {
     const uintptr_t SAFETY_MARGIN = 32;
-    const uintptr_t stackStartAddr = GetStackStartAddr();
+    const uintptr_t stackStartAddr = uintptr_t( & __StackLimit );
 
     // Possible alternatives:
     //   register unsigned long current_sp asm ("sp");
@@ -81,7 +39,7 @@ void FillStackCanary ( void ) throw()
 
     const size_t canarySize = currentStackPtr - stackStartAddr - SAFETY_MARGIN;
 
-    memset( (void *) GetStackStartAddr(), STACK_CANARY_VAL, canarySize );
+    memset( (void *) stackStartAddr, STACK_CANARY_VAL, canarySize );
 }
 
 
@@ -93,7 +51,7 @@ void FillStackCanary ( void ) throw()
 
 bool CheckStackCanary ( const size_t canarySize ) throw()
 {
-    const char * p = (const char *) GetStackStartAddr();
+    const char * p = (const char *) ( & __StackLimit );
 
     for ( size_t i = 0; i < canarySize; ++i )
     {
@@ -110,8 +68,8 @@ bool CheckStackCanary ( const size_t canarySize ) throw()
 
 size_t GetStackSizeUsageEstimate ( void ) throw()
 {
-    const uint8_t * const startAddr = (const uint8_t *) GetStackStartAddr();
-    const uint8_t * const endAddr   = (const uint8_t *) &__StackTop;
+    const uint8_t * const startAddr = (const uint8_t *) & __StackLimit;
+    const uint8_t * const endAddr   = (const uint8_t *) & __StackTop;
 
     for ( const uint8_t * scan = startAddr;
           scan < endAddr;

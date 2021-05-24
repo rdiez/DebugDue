@@ -732,26 +732,21 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_MEMORY_USAGE, false, false, &extraParamsFound ) )
   {
-    const unsigned heapSize = unsigned( GetHeapEndAddr() - uintptr_t( &__end__ ) );
-
-    Printf( "Partitions: malloc heap: %u bytes, free: %u bytes, stack: %u bytes." EOL,
-               heapSize,
-               GetStackStartAddr() - GetHeapEndAddr(),
-               STACK_SIZE );
+    const unsigned stackAreaSize = unsigned( uintptr_t( &__StackTop  ) - uintptr_t( &__StackLimit ) );
+    const unsigned heapAreaSize  = unsigned( uintptr_t( &__HeapLimit ) - uintptr_t( &__end__      ) );
 
     Printf( "Used stack (estimated): %u from %u bytes." EOL,
-               unsigned( GetStackSizeUsageEstimate() ),
-               STACK_SIZE );
+             unsigned( GetStackSizeUsageEstimate() ),
+             stackAreaSize );
 
     const struct mallinfo mi = mallinfo();
-    const unsigned heapSizeAccordingToNewlib = unsigned( mi.arena );
+    const unsigned usedFromArea = unsigned( mi.arena );
+    assert ( usedFromArea <= heapAreaSize );
 
-    Printf( "Heap: %u allocated from %u bytes." EOL,
-               unsigned( mi.uordblks ),
-               unsigned( mi.arena ) );
-
-    assert( heapSize == heapSizeAccordingToNewlib );
-    UNUSED_IN_RELEASE( heapSizeAccordingToNewlib );
+    Printf( "Heap: %u allocated bytes, %u area size, %u area limit." EOL,
+            unsigned( mi.uordblks ),
+            usedFromArea,
+            heapAreaSize );
 
     return;
   }

@@ -18,12 +18,6 @@
 #include <stddef.h>  // For size_t.
 #include <stdint.h>
 
-uintptr_t GetStackStartAddr ( void ) throw();
-void SetStackSize ( size_t stackSize ) throw();
-
-uintptr_t GetHeapEndAddr ( void ) throw();
-void SetHeapEndAddr ( uintptr_t heapEndAddr ) throw();
-
 void FillStackCanary ( void ) throw();
 bool CheckStackCanary ( size_t canarySize ) throw() __attribute__ ((optimize("O2")));
 size_t GetStackSizeUsageEstimate ( void ) throw();

@@ -61,6 +61,10 @@ static uint32_t GetWdtPeriod ( const uint32_t dwMs )
 }
 
 
+#define STACK_SIZE ( 4 * 1024 )
+static_assert( 0 == STACK_SIZE % sizeof( uint32_t ), "" );
+static uint32_t s_stackSpace[ STACK_SIZE / sizeof( uint32_t ) ] __attribute__ ((section (".placeInStackArea"),used));
+
 static void Configure ( void )
 {
   InitDebugConsoleUart( true );
@@ -105,8 +109,6 @@ static void Configure ( void )
 
 
   // ------- Setup the stack size and canary check -------
-
-  SetStackSize( STACK_SIZE );
 
   #ifndef NDEBUG
     assert( AreInterruptsEnabled() );

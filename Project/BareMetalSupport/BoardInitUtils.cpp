@@ -87,6 +87,7 @@ void PrintFirmwareSegmentSizesSync ( void ) throw()
   const unsigned codeSize     = unsigned( uintptr_t( &__etext      ) - uintptr_t( &_sfixed        ) );
   const unsigned initDataSize = unsigned( uintptr_t( &__data_end__ ) - uintptr_t( &__data_start__ ) );
   const unsigned bssDataSize  = unsigned( uintptr_t( &__bss_end__  ) - uintptr_t( &__bss_start__  ) );
+  const unsigned heapSize     = unsigned( uintptr_t( &__HeapLimit  ) - uintptr_t( &__end__        ) );
 
   SerialSyncWriteStr( "Code size: 0x" );
   SerialSyncWriteUint32Hex( codeSize );
@@ -94,6 +95,8 @@ void PrintFirmwareSegmentSizesSync ( void ) throw()
   SerialSyncWriteUint32Hex( initDataSize );
   SerialSyncWriteStr( ", BSS size: 0x" );
   SerialSyncWriteUint32Hex( bssDataSize );
+  SerialSyncWriteStr( ", malloc heap size: 0x" );
+  SerialSyncWriteUint32Hex( heapSize );
   SerialSyncWriteStr( "." EOL );
 }
 
@@ -105,11 +108,13 @@ void PrintFirmwareSegmentSizesAsync ( void ) throw()
   const unsigned codeSize     = unsigned( uintptr_t( &__etext      ) - uintptr_t( &_sfixed        ) );
   const unsigned initDataSize = unsigned( uintptr_t( &__data_end__ ) - uintptr_t( &__data_start__ ) );
   const unsigned bssDataSize  = unsigned( uintptr_t( &__bss_end__  ) - uintptr_t( &__bss_start__  ) );
+  const unsigned heapSize     = unsigned( uintptr_t( &__HeapLimit  ) - uintptr_t( &__end__        ) );
 
-  SerialPrintf( "Code size: %u, initialised data size: %u, BSS size: %u." EOL,
+  SerialPrintf( "Code size: %u, initialised data size: %u, BSS size: %u, malloc heap size: %u." EOL,
                 codeSize,
                 initDataSize,
-                bssDataSize );
+                bssDataSize,
+                heapSize );
 }
 
 

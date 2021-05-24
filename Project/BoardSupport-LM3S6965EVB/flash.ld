@@ -24,10 +24,6 @@
  * With some changes by rdiez in 2021.
  */
 
-/*--------------------- Stack / Heap Configuration ---------------------*/
-__STACK_SIZE = 0x00000400;  /* 0x400 = 1 KiB */
-__HEAP_SIZE  = 0x00000C00;  /* 0xC00 = 3 KiB */
-
 
 MEMORY
 {
@@ -98,14 +94,42 @@ SECTIONS
   } > FLASH
   __exidx_end = .;
 
+
+  . = ALIGN(4);
+  __etext = .;
+  /* At the end of the ROM/Flash area, after __etext, lies the data that will be relocated to RAM
+     on start-up, see .relocate below. */
+
+
+  /* Place the stack at the beginning of some hardware RAM barrier. This way, a stack overflow will immediately
+     crash the application, instead of corrupting data and making troubleshooting harder. */
+
+  StackAlignment = 8;  /* Must be at least 4. There is an optional flag in the Cortex-M3 core to reduce alignment from 8 to 4,
+                          so I think that 8 is a good choice here. */
+  . = ORIGIN( RAM );
+
+  .stackArea ALIGN( StackAlignment ) (NOLOAD):
+  {
+      __StackLimit = .;
+      KEEP(*(.placeInStackArea))
+      __StackTop = .;
+  } > RAM
+
+
+  /* After some time working on linker script files, you develop acute paranoia.
+     Therefore, check that the stack values look plausible. */
+  StackAssert1 = ASSERT( SIZEOF(.stackArea) >=  1 * 1024, "Stack area too small.");
+  StackAssert2 = ASSERT( SIZEOF(.stackArea) <= 50 * 1024, "Stack area too big.");
+  StackAssert3 = ASSERT( __StackTop > __StackLimit, "Wrong stack area address.");
+
+
   /**
    * Location counter can end up 2byte aligned with narrow Thumb code but
    * __etext is assumed by startup code to be the LMA of a section in RAM
    * which must be 4byte aligned 
    */
-  __etext = ALIGN (4);
 
-  .data : AT (__etext)
+  .relocate : AT (__etext)
   {
     . = ALIGN(4);
     __data_start__ = .;
@@ -128,29 +152,8 @@ SECTIONS
     __bss_end__ = .;
   } > RAM
 
-  .heap (COPY) :
-  {
-    . = ALIGN(8);
-    __end__ = .;   /* Symbol __end__ marks the start of the malloc heap. */
-    PROVIDE(end = .);
-    . = . + __HEAP_SIZE;
-    . = ALIGN(8);
-    __HeapLimit = .;
-  } > RAM
 
-  .stack (ORIGIN(RAM) + LENGTH(RAM) - __STACK_SIZE) (COPY) :
-  {
-    . = ALIGN(8);
-    __StackLimit = .;
-    . = . + __STACK_SIZE;
-    . = ALIGN(8);
-    __StackTop = .;
-  } > RAM
-  PROVIDE(__stack = __StackTop);
-
-  /* Check if data + heap + stack exceeds RAM limit */
-  ASSERT(__StackLimit >= __HeapLimit, "region RAM overflowed with stack")
-
-  PROVIDE(_sstack = __StackLimit);
-  PROVIDE(_estack = __StackTop);
+  . = ALIGN(8);
+  __end__ = .;   /* Symbol __end__ marks the start of the malloc heap. */
+  __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
 }

@@ -20,6 +20,8 @@
 #include <stdio.h>
 #include <malloc.h>  // For M_TRIM_THRESHOLD.
 
+#include <BareMetalSupport/LinkScriptSymbols.h>
+
 #include "AssertionUtils.h"
 #include "StackCheck.h"
 
@@ -40,6 +42,8 @@ extern "C" int _lseek( int file, int ptr, int dir ) ;
 extern "C" int _read(int file, char *ptr, int len) ;
 */
 
+static uintptr_t s_heapEndAddr = uintptr_t( &__end__ );  // At the beginning the heap is 0 bytes long.
+
 
 caddr_t _sbrk ( const int incr )
 {
@@ -53,14 +57,14 @@ caddr_t _sbrk ( const int incr )
                           // Note that, during start-up, newlib may call with incr == 0,
                           // see sbrk_aligned() in newlib/libc/stdlib/nano-mallocr.c .
 
-    const uintptr_t prevHeapEnd = GetHeapEndAddr();
+    const uintptr_t prevHeapEnd = s_heapEndAddr;
 
-    if ( prevHeapEnd + incr > GetStackStartAddr() )
+    if ( prevHeapEnd + incr > uintptr_t( &__HeapLimit ) )
     {
         Panic( "Out of heap memory." );
     }
 
-    SetHeapEndAddr( prevHeapEnd + incr );
+    s_heapEndAddr += incr;
 
     return caddr_t( prevHeapEnd );
 }

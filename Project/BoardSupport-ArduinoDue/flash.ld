@@ -112,6 +112,30 @@ SECTIONS
 
     . = ALIGN(4);
     __etext = .;
+    /* At the end of the ROM/Flash area, after __etext, lies the data that will be relocated to RAM
+       on start-up, see .relocate below. */
+
+
+    /* Place the stack at the beginning of some hardware RAM barrier. This way, a stack overflow will immediately
+       crash the application, instead of corrupting data and making troubleshooting harder. */
+
+    StackAlignment = 8;  /* Must be at least 4. There is an optional flag in the Cortex-M3 core to reduce alignment from 8 to 4,
+                            so I think that 8 is a good choice here. */
+    . = ORIGIN( ram );
+
+    .stackArea ALIGN( StackAlignment ) (NOLOAD):
+    {
+        __StackLimit = .;
+        KEEP(*(.placeInStackArea))
+        __StackTop = .;
+    } > ram
+
+    /* After some time working on linker script files, you develop acute paranoia.
+       Therefore, check that the stack values look plausible. */
+    StackAssert1 = ASSERT( SIZEOF(.stackArea) >=  1 * 1024, "Stack area too small.");
+    StackAssert2 = ASSERT( SIZEOF(.stackArea) <= 50 * 1024, "Stack area too big.");
+    StackAssert3 = ASSERT( __StackTop > __StackLimit, "Wrong stack area address.");
+
 
     .relocate : AT (__etext)
     {
@@ -137,21 +161,7 @@ SECTIONS
         __bss_end__ = .;
     } > ram
 
-    . = ALIGN(4);
+    . = ALIGN(8);
     __end__ = . ;  /* Symbol __end__ marks the start of the malloc heap. */
-
-    /* .stack_dummy section doesn't contains any symbols. It is only
-       used for linker to calculate size of stack sections, and assign
-       values to stack symbols later */
-    .stack_dummy :
-    {
-        *(.stack*)
-    } > ram
-
-    /* Set stack top to end of ram, and stack limit move down by
-     * size of stack_dummy section */
-    __StackTop = ORIGIN(ram) + LENGTH(ram);
-    __StackLimit = __StackTop - SIZEOF(.stack_dummy);
-    PROVIDE(_sstack = __StackLimit);
-    PROVIDE(_estack = __StackTop);
+    __HeapLimit = ORIGIN(ram) + LENGTH(ram);
 }
