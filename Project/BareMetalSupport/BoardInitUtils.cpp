@@ -19,6 +19,8 @@
 #include <assert.h>
 #include <stdint.h>
 #include <malloc.h>
+#include <string.h>
+#include <errno.h>
 #include <sys/reent.h> // For _GLOBAL_ATEXIT.
 
 #include <BareMetalSupport/AssertionUtils.h>
@@ -143,6 +145,13 @@ void RuntimeStartupChecks ( void ) throw()
   if ( _GLOBAL_ATEXIT != nullptr )
   {
     Panic( "Unexpected entries in atexit table." );
+  }
+
+  // Check whether the patch to remove all strerror() strings is working properly.
+  // "n/a" means "not available".
+  if ( 0 != strcmp( "<n/a>", strerror( ENOENT ) ) )
+  {
+    Panic( "strerror() does not deliver the expected patched string." );
   }
 }
 

@@ -626,6 +626,9 @@ NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREF
 NEWLIB_NEWLIB_INSTALL_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
 
 NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibUserImplementationOfAssert.patch
+
+# If you are using an Newlib version from before 2018-01-17, you will have to use an older version
+# of this patch stored next to the latest one.
 NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibRemoveStrerrorMessages.patch
 
 # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
@@ -1104,10 +1107,10 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	popd >/dev/null && \
 	pushd "$(NEWLIB_SRC_DIR)" >/dev/null && \
 	echo "Applying patch \"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)\" ..." && \
-	patch -p0 --forward <"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)" && \
+	patch -p0 --fuzz=0 --forward <"$(NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME)" && \
 	if [ $(REMOVE_STRERROR_MESSAGES) -ne 0 ]; then \
 	  echo "Applying patch \"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)\" ..." && \
-	  patch -p0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
+	  patch -p0 --fuzz=0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
 	fi && \
 	popd >/dev/null && \
 	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \

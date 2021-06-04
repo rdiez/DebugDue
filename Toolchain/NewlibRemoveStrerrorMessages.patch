@@ -1,16 +1,20 @@
---- newlib/libc/string/strerror.c.old	2015-07-25 10:51:12.090137911 +0200
-+++ newlib/libc/string/strerror.c	2015-07-25 10:52:59.298138172 +0200
-@@ -389,6 +389,13 @@ _DEFUN (_strerror_r, (ptr, errnum, inter
+--- newlib/libc/string/strerror.c.orig
++++ newlib/libc/string/strerror.c
+@@ -390,12 +390,17 @@ _strerror_r (struct _reent *ptr,
+ 	int internal,
+ 	int *errptr)
+ {
    char *error;
-   extern char *_user_strerror _PARAMS ((int, int, int *));
+   extern char *_user_strerror (int, int, int *);
  
-+
 +  // --------- Patched by rdiez ---------
 +  // Remove all strerror messages, because they take up a lot of space.
 +  if ( 1 )
 +    return "<n/a>";
 +
-+
    switch (errnum)
      {
      case 0:
+       error = "Success";
+       break;
+ /* go32 defines EPERM as EACCES */
