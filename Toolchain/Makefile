@@ -123,8 +123,8 @@ $(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-# GCC 11 is too new, and version 11.1 does even build properly, so I am not using VersionSet7 yet.
-VERSION_SET := VersionSet6
+# GCC 11 is too new, and version 11.1 does even build properly, so I am not using VersionSet8 yet.
+VERSION_SET := VersionSet7
 
 ifeq ($(VERSION_SET),VersionSet1)
 
@@ -200,6 +200,16 @@ else ifeq ($(VERSION_SET),VersionSet6)
 
 else ifeq ($(VERSION_SET),VersionSet7)
 
+  BINUTILS_VERSION := 2.36.1
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.1
+  GCC_VERSION := 10.3.0
+  NEWLIB_VERSION := 4.1.0
+  GDB_VERSION := 10.2
+
+else ifeq ($(VERSION_SET),VersionSet8)
+
   # GCC 11.1 fails to build with this error message:
   #   g++ -static-libstdc++ -static-libgcc   -o g++-mapper-server server.o resolver.o ../libcody/libcody.a ../gcc/version.o ../libiberty/libiberty.a
   #   /usr/bin/ld: /tmp/g++-mapper-server.K0n1nG.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
@@ -212,7 +222,7 @@ else ifeq ($(VERSION_SET),VersionSet7)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.1.0
   NEWLIB_VERSION := 4.1.0
-  GDB_VERSION := 10.1
+  GDB_VERSION := 10.2
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
