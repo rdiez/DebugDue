@@ -600,7 +600,7 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
 
   ifneq "$(or $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X) )" ""
-    # The patch for version 5.3.0 works in the following versions too: 4.9.x, 5.x, 6.x, 7.x, 8.x, 9.x, 10.x
+    # The patch for version 5.1.0 works in the next versions too.
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
     $(error Unknown GCC version)
@@ -1042,7 +1042,7 @@ $(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(GCC_SRC_DIR)" >/dev/null && \
 	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
 	  echo "Applying patch \"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)\" ..." && \
-	  patch -p0 --forward <"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
+	  patch -p0 --fuzz=0 --forward <"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
 	fi && \
 	popd >/dev/null && \
 	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \

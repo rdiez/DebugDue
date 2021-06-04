@@ -18,6 +18,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <malloc.h>
 #include <sys/reent.h> // For _GLOBAL_ATEXIT.
 
 #include <BareMetalSupport/AssertionUtils.h>
@@ -123,6 +124,15 @@ void PrintFirmwareSegmentSizesAsync ( void ) throw()
 
 void RuntimeStartupChecks ( void ) throw()
 {
+  const struct mallinfo mi = mallinfo();
+
+  if ( mi.uordblks != 0 )
+  {
+    // If the patch to disable the C++ exception emergency memory pool in GCC's libsupc++
+    // is working properly, there should be no memory allocated at this point.
+    Panic( "I do not want anybody to allocate memory with malloc() before starting the application code."  );
+  }
+
   // See the comments next to compilation option -fuse-cxa-atexit for more information.
   // You may of course have a different opinion or different needs with regards to initialisation and atexit,
   // in which case you need to remove this check.
