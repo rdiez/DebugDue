@@ -16,7 +16,7 @@ static int CallAngel ( const int operation, const int arg1, const int arg2 ) thr
   asm volatile(
 
      // Use instruction BKTP for ARMv6-M and ARMv7-M, Thumb state only.
-     // Otherwise, instruction SVC is normally used instead.
+     // Otherwise, instruction SVC (previously called SWI) is normally used instead.
      "BKPT 0xAB"  // Code 0xAB triggers semihosting processing.
 
      // Output operand list
