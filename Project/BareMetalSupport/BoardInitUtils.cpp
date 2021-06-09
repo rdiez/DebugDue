@@ -166,4 +166,12 @@ void RuntimeTerminationChecks ( void ) throw()
   {
     Panic( "Unexpected entries in atexit table." );
   }
+
+
+  // We could free more memory by calling routines like these on termination:
+  // - __gnu_cxx::__freeres()
+  //   Currently (as of GCC version 10) that only frees the C++ exception emergency memory pool in libsupc++,
+  //   but we have patched the toolchain so that it does not get allocated in the first place.
+  // - __libc_freeres()
+  //   Unfortunately, this routine is only available in the GNU C Library, and not in Newlib or Picolibc.
 }
