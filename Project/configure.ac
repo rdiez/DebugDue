@@ -370,6 +370,14 @@ fi
 TARGET_ARCH="$with_target_arch"
 AC_SUBST(TARGET_ARCH)
 
+if false; then
+  # We could make GCC use pipes instead of temporary files, probably speeding up builds by some small amount.
+  # Using pipes should run compilation stages in parallel, which may help in some cases.
+  # It also tends to use more RAM, because more processes run in parallel.
+  # Some people report issues with this flag though, probably because it is not very widely used and tested.
+  # This option is not compatible with -save-temps, see warning "-pipe ignored because -save-temps specified".
+  EXTRA_C_AND_CXX_FLAGS+=" -pipe"
+fi
 
 # WARNING: All flags that affect the ABI must match those specified when building the toolchain.
 
