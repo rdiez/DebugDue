@@ -103,12 +103,12 @@ SECTIONS
        also generates these tables, which are useful if your C code wants to print a stack backtrace.
        The whole .ARM.exidx group is sorted by the linker, and I think duplicates are also collapsed together,
        so has to go in its own output section. */
-    PROVIDE_HIDDEN (__exidx_start = .);
+    __exidx_start = .;
     .ARM.exidx :
     {
       *(.ARM.exidx* .gnu.linkonce.armexidx.*)
     } > rom
-    PROVIDE_HIDDEN (__exidx_end = .);
+    __exidx_end = .;
 
     . = ALIGN(4);
     __etext = .;
