@@ -1,6 +1,7 @@
 /autom4te.cache/
 /build-aux/
 /configure
+/configure~
 /Makefile.in
 /aclocal.m4
 
