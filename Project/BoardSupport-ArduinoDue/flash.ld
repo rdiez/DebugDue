@@ -51,7 +51,7 @@ SECTIONS
         . = ALIGN(4);
         _sfixed = .;
         KEEP(*(.vectors .vectors.*))
-        *(.text .text.* .gnu.linkonce.t.*)
+        *(.text .text.* .gnu.linkonce.t.*)  /* All ".gnu.linkonce" sections are used for C++ "vague linkage" */
         *(.glue_7t) *(.glue_7)
         *(.rodata .rodata* .gnu.linkonce.r.*)
         *(.ARM.extab* .gnu.linkonce.armextab.*)
@@ -68,11 +68,16 @@ SECTIONS
         . = ALIGN(4);
         __init_array_start = .;
         /* If you use "__attribute__ ((constructor (200)))", GCC generates a name like ".init_array.00200".
-           Objects with a priority are constructed before objects without priority. */
+           Alternatively, you can use SORT_BY_INIT_PRIORITY, but with the naming scheme that GCC uses,
+           the results would be the same. */
         KEEP (*(SORT(.init_array.*)))
+        /* Objects with a priority are constructed before objects without priority. */
         KEEP (*(.init_array))
         __init_array_end = .;
 
+        /* We are not using .ctors/.dtors, but the alternative .init_array/.fini_array.
+           Unfortunately, I haven't found out yet how to check in the application's
+           source code wheter INIT_SECTION_ASM_OP is defined, to be sure. */
         . = ALIGN(0x4);
         KEEP (*crtbegin.o(.ctors))
         KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
@@ -103,7 +108,7 @@ SECTIONS
        also generates these tables, which are useful if your C code wants to print a stack backtrace.
        The whole .ARM.exidx group is sorted by the linker, and I think duplicates are also collapsed together,
        so has to go in its own output section. */
-    __exidx_start = .;
+    __exidx_start = .;  /* libgcc references __exidx_start and __exidx_end, but that seems to be specific to the ARM architecture. */
     .ARM.exidx :
     {
       *(.ARM.exidx* .gnu.linkonce.armexidx.*)
