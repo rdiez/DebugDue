@@ -24,6 +24,8 @@
  * With some changes by rdiez in 2021.
  */
 
+OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
+OUTPUT_ARCH(arm)
 
 MEMORY
 {
