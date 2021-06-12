@@ -56,6 +56,10 @@ m4_ifdef([AM_SILENT_RULES],[AM_SILENT_RULES([yes])])
 #
 # The user will normally not modify important flags, but some of them, like "-fdiagnostics-color=always",
 # depend on factors outside of our control and should not be set by this configuration script.
+#
+# In any case, keep in mind that this script could build in the future both binaries for the target
+# and for the host (like some build tool). Therefore, you probably want to differentiate between CFLAGS
+# for the host and for the target. For example, Newlib uses separate variable CFLAGS_FOR_TARGET.
 
 declare -a USER_VARIABLES=(CPPFLAGS CFLAGS CXXFLAGS CCASFLAGS LDFLAGS)
 
