@@ -1199,6 +1199,16 @@ debug_target ()
   #
   # There are all kinds of shortcomings that make this task difficult:
   # a) OpenOCD provides no way to signal when it has initialised the GDB server.
+  #    It turns out that GDB retries the TCP connection by default, see GDB commands
+  #    "show tcp auto-retry" and "show tcp connect-timeout", so we do not really
+  #    have to wait until OpenOCD is ready.
+  #    However, synchronising both processes is still desirable for the following reasons:
+  #    1) If both processes are synchronised, the first GDB connection attempt will succeed.
+  #       Otherwise, any GDB connection retries will waste time: up to 200 ms during
+  #       the first second, and up to 1 second afterwards, see POLL_INTERVAL in GDB's source code.
+  #    2) If OpenOCD fails to start for whatever reason, it is best to report it and stop,
+  #       rather than starting a second concurrent process which will timeout after a while,
+  #       or has to be killed when the parent realises that OpenOCD has terminated early.
   # b) OpenOCD cannot shut itself down cleanly when GDB detaches.
   #    There is an event on detach, but shutdown down inside it will break
   #    the closing handshake with GDB and make it error.
@@ -1275,8 +1285,8 @@ debug_target ()
   local OPEN_OCD_JOB_SPEC="$CAPTURED_JOB_SPEC"
 
 
-  # Wail until the OpenOCD child process has indicated that it has finished initialisation. During the wait,
-  # check too whether the OpenOCD child process has terminated unexpectedly.
+  # Wail until the OpenOCD child process has indicated that it has finished initialisation.
+  # During the wait, check too whether the OpenOCD child process has terminated unexpectedly.
   #
   # If the timeout is too short, it will waste CPU cycles. If it is too long,
   # it will unnecessarily delay detection of a terminated OpenOCD.
@@ -1561,12 +1571,17 @@ do_run_in_qemu ()
   echo
   eval "$QEMU_CMD" &
 
-  # I am surprised that we do not need a 'sleep' pause here. I guess that GDB tries to connect
-  # a few times before giving up, in case Qemu is not ready to accept connections yet.
-  #
-  # If we ever need a pause, pausing for a fixed amount of time is actually a bad idea.
-  # The trouble is that I have not found out yet how to determine when Qemu has started
-  # and is ready to accept an incoming GDB connection.
+
+  # There is no way to determine when QEMU has started and is ready to accept
+  # an incoming GDB connection. I asked on the QEMU mailing list to no avail:
+  #   Automating Qemu and GDB together
+  #   09 May 2020
+  #   https://mail.gnu.org/archive/html/qemu-discuss/2020-05/msg00013.html
+  # It turns out that GDB retries the TCP connection by default, see GDB commands
+  # "show tcp auto-retry" and "show tcp connect-timeout". Therefore, there is not
+  # really an issue to worry about. The only drawback is that, if GDB fails
+  # to connect the first time around, it will waste some time between retries,
+  # but that has not been a big problem yet.
 
   # Routine check_background_job_still_running needs a temporary directory.
   local PROJECT_OBJ_DIR_TMP="$PROJECT_OBJ_DIR/tmp"
