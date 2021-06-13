@@ -18,6 +18,7 @@
 
 #include <assert.h>
 #include <stdexcept>
+#include <inttypes.h>
 
 #include <BareMetalSupport/SerialPrint.h>
 #include <BareMetalSupport/AssertionUtils.h>
@@ -370,7 +371,7 @@ static bool ShiftSingleBit ( const bool tdiBit, const bool tmsBit )
   {
     if ( isTdoSet != IsInputPinHigh( JTAG_TDO_PIO, JTAG_TDO_PIN ) )
     {
-      SerialPrintf( "TDO stability check failed at iteration %i." EOL, int(i) );
+      SerialPrintf( "TDO stability check failed at iteration %" PRId32 "." EOL, i );
       assert( false );
       break;
     }
@@ -705,7 +706,7 @@ void ShiftJtagData ( CUsbRxBuffer * const rxBuffer,
                      const uint16_t dataBitCount )
 {
   if ( TRACE_JTAG_SHIFTING )
-    SerialPrintf( "--- Begin of JTAG shifting for %u bits ---" EOL, dataBitCount );
+    SerialPrintf( "--- Begin of JTAG shifting for %" PRIu16 " bits ---" EOL, dataBitCount );
 
   const uint16_t fullDataByteCount = dataBitCount / 8;
   const uint8_t  restBitCount      = uint8_t( dataBitCount % 8 );
@@ -899,7 +900,7 @@ static bool ProcessReceivedData ( CUsbRxBuffer * const rxBuffer,
   default:
     if ( txBuffer->GetFreeCount() >= 1 )
     {
-      SerialPrintf( "Unknown OpenOCD command with code %u (0x%02X).", cmdCode, cmdCode );
+      SerialPrintf( "Unknown OpenOCD command with code %" PRIu8 " (0x%02" PRIX8 ").", cmdCode, cmdCode );
       assert( false );  // This should actually never happen if the client is written correctly.
 
       // Answer with a single zero. The protocol does not allow for any better error indication.

@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <inttypes.h>
 
 #include <udc.h>
 #include <udd.h>
@@ -143,7 +144,8 @@ void MyUsbCallback_cdc_rx_notify ( const uint8_t port )
   // Print the received packet size (not quite reliable), for performance research purposes only:
   if ( false )
   {
-    SerialPrintf( "%u" EOL, unsigned( udi_cdc_get_nb_received_data() ) );
+    const uint32_t v = udi_cdc_get_nb_received_data();
+    SerialPrintf( "%" PRIu32 EOL, v );
   }
 
   assert( port == USB_CALLBACK_PORT_NUMBER );

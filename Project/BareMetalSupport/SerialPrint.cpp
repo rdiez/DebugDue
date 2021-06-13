@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdio.h>
+#include <inttypes.h>
 
 #include "SerialPortAsyncTx.h"
 
@@ -64,7 +65,7 @@ void SerialPrintHexDump ( const void * const ptr,
       SerialPrintStr( endOfLineChars );
     }
     const uint8_t b = bytePtr[ i ];
-    SerialPrintf( "0x%02X ", b );
+    SerialPrintf( "0x%02" PRIX8 " ", b );
     ++lineElemCount;
   }
 

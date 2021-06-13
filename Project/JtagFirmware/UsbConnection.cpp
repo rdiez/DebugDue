@@ -21,6 +21,7 @@
 #include <interrupt.h>
 
 #include <string.h>
+#include <inttypes.h>
 #include <stdexcept>
 
 #include <BareMetalSupport/Uptime.h>
@@ -206,7 +207,7 @@ static bool ReceiveData ( void )
 
     if ( false )
     {
-      SerialPrintf( "%u" EOL, unsigned( readCount ) );
+      SerialPrintf( "%zu", readCount );
     }
 
 

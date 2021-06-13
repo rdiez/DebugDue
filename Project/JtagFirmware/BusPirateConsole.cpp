@@ -23,6 +23,7 @@
 
 #include <stdexcept>
 #include <string.h>
+#include <inttypes.h>
 
 #include "Globals.h"
 #include "BusPirateBinaryMode.h"
@@ -156,7 +157,7 @@ static void SpeedTest ( CUsbRxBuffer * const rxBuffer,
       if ( txBuffer->GetFreeCount() < 40 )
         break;
 
-      UsbPrintf( txBuffer, "%u - %u" EOL, unsigned(currentTime), unsigned(g_usbSpeedTestEndTime) );
+      UsbPrintf( txBuffer, "%" PRIu64 " - %" PRIu64 EOL, currentTime, g_usbSpeedTestEndTime );
     }
 
     break;

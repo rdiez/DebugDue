@@ -17,6 +17,7 @@
 #include "GenericSerialConsole.h"  // The include file for this module should come first.
 
 #include <algorithm>
+#include <inttypes.h>
 
 #include "AssertionUtils.h"
 #include "SerialPrint.h"
@@ -95,15 +96,15 @@ void CGenericSerialConsole::Bell ( void )
 // may then wonder why some commands take much longer than others to process.
 
 const char * CGenericSerialConsole::AddChar ( const uint8_t c,
-                                       uint32_t * const retCmdLen )
+                                              uint32_t * const retCmdLen )
 {
   // Trace the incoming characters.
   if ( false )
   {
     if ( IsPrintableAscii(c) )
-      SerialPrintf( "0x%02X (%3u, %c)" DBG_EOL, c, c, c  );
+      SerialPrintf( "0x%02" PRIX8 " (%3" PRIu8 ", %c)" DBG_EOL, c, c, c  );
     else
-      SerialPrintf( "0x%02X (%3u)" DBG_EOL, c, c );
+      SerialPrintf( "0x%02" PRIX8 " (%3" PRIu8 ")" DBG_EOL, c, c );
   }
 
   bool isCmdReady = false;
@@ -137,12 +138,12 @@ const char * CGenericSerialConsole::AddChar ( const uint8_t c,
 
   if ( false )
   {
-    SerialPrintf( "Char: 0x%02X, cmd begin: %u, end: %u, len: %u, pos: %u" DBG_EOL,
+    SerialPrintf( "Char: 0x%02" PRIX8 ", cmd begin: %" PRIu32 ", end: %" PRIu32 ", len: %" PRIu32 ", pos: %" PRIu32 DBG_EOL,
                   c,
-                  unsigned( m_cmdBeginPos ),
-                  unsigned( m_cmdEndPos ),
-                  unsigned( GetCircularDistance( m_cmdBeginPos, m_cmdEndPos, BUF_LEN ) ),
-                  unsigned( m_cursorPos ) );
+                  m_cmdBeginPos,
+                  m_cmdEndPos,
+                  GetCircularDistance( m_cmdBeginPos, m_cmdEndPos, BUF_LEN ),
+                  m_cursorPos );
   }
 
   if ( isCmdReady )
@@ -260,7 +261,7 @@ void CGenericSerialConsole::Backspace ( void )
   // Move the terminal cursor left to match our current cursor position.
   const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
   if ( distanceToEnd > 0 )
-    Printf( "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
+    Printf( "\x1B[%" PRIu32 "D", distanceToEnd );  // Move left n positions.
 
   m_cmdEndPos = GetCircularPosMinusOne( m_cmdEndPos, BUF_LEN );
 }
@@ -395,5 +396,5 @@ void CGenericSerialConsole::RepaintLine ( void ) const
   const uint32_t distanceToEnd = GetCircularDistance( m_cursorPos, m_cmdEndPos, BUF_LEN );
 
   if ( distanceToEnd > 0 )
-    Printf( "\x1B[%uD", unsigned( distanceToEnd ) );  // Move left n positions.
+    Printf( "\x1B[%" PRIu32 "D", distanceToEnd );  // Move left n positions.
 }

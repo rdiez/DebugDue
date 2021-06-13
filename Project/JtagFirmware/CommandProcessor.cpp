@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <stdarg.h>
 #include <malloc.h>
+#include <inttypes.h>
 
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/Uptime.h>
@@ -245,12 +246,12 @@ void CCommandProcessor::BusyWait ( const char * const paramBegin )
 
   const uint32_t oneMsIterationCount = GetBusyWaitLoopIterationCountFromUs( 1000 );
 
-  for ( uint32_t i = 0; i < delayMs; ++i )
+  for ( unsigned i = 0; i < delayMs; ++i )
   {
     BusyWaitLoop( oneMsIterationCount );
   }
 
-  Printf( "Waited %u ms." EOL, unsigned( delayMs ) );
+  Printf( "Waited %u ms." EOL, delayMs );
 }
 
 
@@ -389,7 +390,7 @@ void CCommandProcessor::DisplayCpuLoad ( void )
 
     assert( val <= 100 );
 
-    Printf( "%3u %%" EOL, unsigned( val ) );
+    Printf( "%3" PRIu32 " %%" EOL, val );
   }
 
 
@@ -416,11 +417,11 @@ void CCommandProcessor::DisplayCpuLoad ( void )
 
     assert( val <= 100 );
 
-    Printf( "%2u %%" EOL, unsigned( val ) );
+    Printf( "%2" PRIu32 " %%" EOL, val );
   }
 
-  Printf( "Average CPU load in the last 60 seconds: %2u %%" EOL, unsigned( minuteAverage ) );
-  Printf( "Average CPU load in the last    second : %2u %%" EOL, unsigned( secondAverage ) );
+  Printf( "Average CPU load in the last 60 seconds: %2" PRIu32 " %%" EOL, minuteAverage );
+  Printf( "Average CPU load in the last    second : %2" PRIu32 " %%" EOL, secondAverage );
 }
 
 
@@ -672,7 +673,7 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
     // I am getting 221 KiB/s with GCC 4.7.3 and optimisation level "-O3".
     Printf( EOL "Finished JTAG shift speed test, throughput %u Kbits/s (%u KiB/s)." EOL,
-               kBitsPerSec, kBitsPerSec / 8 );
+            kBitsPerSec, kBitsPerSec / 8 );
 
     return;
   }
@@ -735,16 +736,16 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
     const unsigned stackAreaSize = unsigned( uintptr_t( &__StackTop  ) - uintptr_t( &__StackLimit ) );
     const unsigned heapAreaSize  = unsigned( uintptr_t( &__HeapLimit ) - uintptr_t( &__end__      ) );
 
-    Printf( "Used stack (estimated): %u from %u bytes." EOL,
-             unsigned( GetStackSizeUsageEstimate() ),
+    Printf( "Used stack (estimated): %zu from %u bytes." EOL,
+             GetStackSizeUsageEstimate(),
              stackAreaSize );
 
     const struct mallinfo mi = mallinfo();
     const unsigned usedFromArea = unsigned( mi.arena );
     assert ( usedFromArea <= heapAreaSize );
 
-    Printf( "Heap: %u allocated bytes, %u area size, %u area limit." EOL,
-            unsigned( mi.uordblks ),
+    Printf( "Heap: %zu allocated bytes, %u area size, %u area limit." EOL,
+            mi.uordblks,
             usedFromArea,
             heapAreaSize );
 

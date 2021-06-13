@@ -142,10 +142,10 @@ static void Configure ( void )
 
     if ( false )
     {
-      SerialPrintf( "A PIO_OWSR: 0x%08X" EOL, unsigned( PIOA->PIO_OWSR ) );
-      SerialPrintf( "B PIO_OWSR: 0x%08X" EOL, unsigned( PIOB->PIO_OWSR ) );
-      SerialPrintf( "C PIO_OWSR: 0x%08X" EOL, unsigned( PIOC->PIO_OWSR ) );
-      SerialPrintf( "D PIO_OWSR: 0x%08X" EOL, unsigned( PIOD->PIO_OWSR ) );
+      SerialPrintf( "A PIO_OWSR: 0x%08" PRIX32 EOL, PIOA->PIO_OWSR );
+      SerialPrintf( "B PIO_OWSR: 0x%08" PRIX32 EOL, PIOB->PIO_OWSR );
+      SerialPrintf( "C PIO_OWSR: 0x%08" PRIX32 EOL, PIOC->PIO_OWSR );
+      SerialPrintf( "D PIO_OWSR: 0x%08" PRIX32 EOL, PIOD->PIO_OWSR );
     }
   }
 
@@ -162,10 +162,10 @@ static void Configure ( void )
 
   if ( false )
   {
-    SerialPrintf( "A PIO_PSR: 0x%08X" EOL, unsigned( PIOA->PIO_PSR ) );
-    SerialPrintf( "B PIO_PSR: 0x%08X" EOL, unsigned( PIOB->PIO_PSR ) );
-    SerialPrintf( "C PIO_PSR: 0x%08X" EOL, unsigned( PIOC->PIO_PSR ) );
-    SerialPrintf( "D PIO_PSR: 0x%08X" EOL, unsigned( PIOD->PIO_PSR ) );
+    SerialPrintf( "A PIO_PSR: 0x%08" PRIX32 EOL, PIOA->PIO_PSR );
+    SerialPrintf( "B PIO_PSR: 0x%08" PRIX32 EOL, PIOB->PIO_PSR );
+    SerialPrintf( "C PIO_PSR: 0x%08" PRIX32 EOL, PIOC->PIO_PSR );
+    SerialPrintf( "D PIO_PSR: 0x%08" PRIX32 EOL, PIOD->PIO_PSR );
   }
 
   InitJtagPins();
@@ -213,9 +213,9 @@ void StartOfUserCode ( void )
 
     if ( IsDebugBuild() )
     {
-      SerialPrintf( "Stack entering main loop: current depth: %" PRIuPTR ", estimated usage %" PRIuPTR ", max room %u bytes." EOL,
-                    uintptr_t( GetCurrentStackDepth() ),
-                    uintptr_t( GetStackSizeUsageEstimate() ),
+      SerialPrintf( "Stack entering main loop: current depth: %zu, estimated usage %zu, max room %u bytes." EOL,
+                    GetCurrentStackDepth(),
+                    GetStackSizeUsageEstimate(),
                     STACK_SIZE );
 
     }
@@ -264,10 +264,14 @@ void StartOfUserCode ( void )
 
       longestIterationTime = MaxFrom( longestIterationTime, currentIterationTime );
 
+      // Early warning if the value gets too high, although I do not think that this will ever overflow.
+      assert( longestIterationTime < 10000 );
+
       if ( PRINT_LONGEST_ITERATION_TIME &&
            longestIterationTime != prevLongestInterationTime )
       {
-          SerialPrintf( "%u" EOL, unsigned( longestIterationTime ) );
+        // In case the C runtime does not support printing 64-bit integers, reduce it to 32 bits.
+        SerialPrintf( "%" PRIu32 EOL, uint32_t( longestIterationTime ) );
       }
 
       MainLoopSleep();
