@@ -22,7 +22,6 @@
 
 #include <assert.h>  // For the function prototype of Newlib's __assert_func().
 #include <stdio.h>
-#include <malloc.h>  // For M_TRIM_THRESHOLD.
 
 #include <BareMetalSupport/LinkScriptSymbols.h>
 
