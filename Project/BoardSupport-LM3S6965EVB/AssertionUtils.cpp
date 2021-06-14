@@ -59,6 +59,6 @@ void ForeverHangAfterPanic ( void ) throw()
     // When running under Qemu, WFE is ignored, which yields a busy wait.
     // But WFI under Qemu does seem to pause the simulated CPU, so that
     // the host CPU is no longer busy.
-    asm volatile ("wfi":::"memory");
+    __asm__ volatile ("wfi":::"memory");
   }
 }

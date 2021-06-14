@@ -68,10 +68,10 @@ inline bool AreInterruptsEnabled ( void ) throw()
     {
       // Alternative implementation with inline assembly.
 
-      asm volatile( "mrs %[primaskValue], primask"
-                    // output operand list
-                    : [primaskValue] "=&r" (primaskValue)
-                  );
+      __asm__ volatile( "mrs %[primaskValue], primask"
+                        // output operand list
+                        : [primaskValue] "=&r" (primaskValue)
+                      );
     }
 
     const bool areEnabledAccordingToPrimask = ( 0 == primaskValue );
@@ -110,5 +110,5 @@ void ResetBoard ( bool triggerWatchdogDuringWait ) throw() __attribute__ ((__nor
 inline void AssumeMemoryHasChanged ( void ) throw()
 {
   // This routine is used to try to compensate for the lack of 'volatile' in some complex data structures.
-  asm volatile( "" ::: "memory" );
+  __asm__ volatile( "" ::: "memory" );
 }

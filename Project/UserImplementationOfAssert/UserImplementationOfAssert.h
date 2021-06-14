@@ -57,7 +57,7 @@
   inline void __assert_func_debug_break ( void )
   {
     // Alternatively, see CMSIS' __BKPT() and GCC's intrinsic __builtin_trap().
-    asm volatile( "bkpt 0" );
+    __asm__ volatile( "bkpt 0" );
   }
 
 #endif  // #ifndef ASSERT_FUNC_ETC_WAS_DEFINED

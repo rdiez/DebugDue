@@ -436,6 +436,8 @@ EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 #  GCC 10:  gnu18, gnu++14
 #  GCC 11:  gnu18, gnu++17
 if $IS_GCC_8_OR_LATER; then
+  # Alternatively, use -std=c18 and -std=c++17 to prevent getting
+  # inadvertently used to GCC-specific language extensions.
   EXTRA_C_FLAGS+=" -std=gnu18"
   EXTRA_CXX_FLAGS+=" -std=gnu++17"
 fi

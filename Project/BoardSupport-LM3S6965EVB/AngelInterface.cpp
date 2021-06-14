@@ -8,12 +8,12 @@ static const int UNUSED_ARG = 0;
   // __attribute__ ((noinline))  // Not inlining can be helpful while debugging this routine.
 static int CallAngel ( const int operation, const int arg1, const int arg2 ) throw()
 {
-  register int r0 asm("r0") = operation;
-  register int r1 asm("r1") __attribute__((unused)) = arg1;
-  register int r2 asm("r2") __attribute__((unused)) = arg2;
-  register int result asm ("r0");  // We are using another name for R0. There is a similar example in the GCC documentation.
+  register int r0 __asm__("r0") = operation;
+  register int r1 __asm__("r1") __attribute__((unused)) = arg1;
+  register int r2 __asm__("r2") __attribute__((unused)) = arg2;
+  register int result __asm__ ("r0");  // We are using another name for R0. There is a similar example in the GCC documentation.
 
-  asm volatile(
+  __asm__ volatile(
 
      // Use instruction BKTP for ARMv6-M and ARMv7-M, Thumb state only.
      // Otherwise, instruction SVC (previously called SWI) is normally used instead.

@@ -45,7 +45,7 @@ void Panic ( const char * const msg ) throw()
     // should also call ForeverHangAfterPanic(), otherwise you may enter an infinite loop
     // that keeps running the HardFault vector over and over.
     // An alternative to BKPT could be GCC's __builtin_trap().
-    asm volatile( "BKPT" );
+    __asm__ volatile( "BKPT" );
 
     ForeverHangAfterPanic();
 }

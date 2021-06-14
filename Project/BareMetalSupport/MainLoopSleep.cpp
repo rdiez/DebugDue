@@ -187,7 +187,7 @@ static void CpuLoadAsmLoop ( volatile bool * const /* wasMainLoopEventTriggered 
   // 2) Do not access the stack arguments by address, but use their names
   //    from the function prototype.
 
-  asm volatile
+  __asm__ volatile
   (
      "ldrb    r3, [r0, #0]"  "\n"
      "push    {r4, r5, r6}"  "\n"

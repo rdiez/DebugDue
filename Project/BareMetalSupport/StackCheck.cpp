@@ -31,8 +31,8 @@ void FillStackCanary ( void ) throw()
     const uintptr_t stackStartAddr = uintptr_t( & __StackLimit );
 
     // Possible alternatives:
-    //   register unsigned long current_sp asm ("sp");
-    //   asm ("mov %0, r13" : "=r" (current_sp));
+    //   register unsigned long current_sp __asm__ ("sp");
+    //   __asm__ ("mov %0, r13" : "=r" (current_sp));
     const uintptr_t currentStackPtr = uintptr_t( __builtin_frame_address(0) );
 
     assert( stackStartAddr + SAFETY_MARGIN < currentStackPtr );
