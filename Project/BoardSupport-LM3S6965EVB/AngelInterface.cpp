@@ -1,5 +1,7 @@
 
-#include <BareMetalSupport/AssertionUtils.h>  // Include file for this module comes first.
+#include <BoardSupport-LM3S6965EVB/AngelInterface.h>  // Include file for this module comes first.
+
+#include <BareMetalSupport/AssertionUtils.h>
 
 
 static const int UNUSED_ARG = 0;
@@ -44,4 +46,6 @@ void Angel_ExitApp ( void ) throw()
   const int ADP_Stopped_ApplicationExit = 0x20026;
 
   CallAngel( TARGET_SYS_EXIT, ADP_Stopped_ApplicationExit, UNUSED_ARG );
+
+  Panic( "Unexpected." );
 }

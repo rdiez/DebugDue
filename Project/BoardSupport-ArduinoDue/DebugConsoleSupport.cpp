@@ -16,6 +16,8 @@
 
 #include "DebugConsoleSupport.h"  // The include file for this module should come first.
 
+#include <BareMetalSupport/DebugConsoleSerialSync.h>
+
 #include <BareMetalSupport/AssertionUtils.h>
 
 #include <sam3xa.h>

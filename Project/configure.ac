@@ -571,7 +571,11 @@ fi
 
 EXTRA_C_FLAGS+=" -Wc++-compat"
 EXTRA_C_FLAGS+=" -Wstrict-prototypes"
-EXTRA_C_FLAGS+=" -Wmissing-prototypes"
+
+EXTRA_C_FLAGS+=" -Wmissing-prototypes"      # "no previous prototype"   warning for C   mode.
+EXTRA_CXX_FLAGS+=" -Wmissing-declarations"  # "no previous declaration" warning for C++ mode.
+
+
 EXTRA_C_FLAGS+=" -Wpointer-to-int-cast"
 
 # Turn off warnings that occur too often in the libraries.

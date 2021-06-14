@@ -150,7 +150,10 @@ static void SetupCpuClock ( void )
 
 extern "C" void __libc_init_array ( void );  // Provided by some GCC library.
 
-extern "C" void BareMetalSupport_Reset_Handler ( void )
+
+extern "C" void BareMetalSupport_Reset_Handler ( void );  // Prevent "no previous declaration" warning.
+
+void BareMetalSupport_Reset_Handler ( void )
 {
     SetupCpuClock();
 
