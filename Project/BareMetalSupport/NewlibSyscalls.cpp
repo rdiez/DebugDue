@@ -191,8 +191,10 @@ extern "C" void __assert_func ( const char * const filename,
 {
   char buffer[ ASSERT_MSG_BUFSIZE ];
 
+  // Panic() automatically adds a new-line character at the end.
+
   snprintf( buffer, sizeof(buffer),
-            "Assertion \"%s\" failed at file %s, line %d%s%s.\n",
+            "Assertion \"%s\" failed at file %s, line %d%s%s.",
             failedexpr ? failedexpr : "<expr unavail>",
             filename,
             line,
@@ -215,7 +217,7 @@ extern "C" void __assert_func_only_file_and_line ( const char * const filename,
 {
   char buffer[ ASSERT_MSG_BUFSIZE ];
 
-  // Wir geben hier kein DEBUG_OUTPUT_EOL vorne und hinten, weil Panic() es bereits macht.
+  // Panic() automatically adds a new-line character at the end.
 
   snprintf( buffer, sizeof(buffer),
             "Assertion failed at file %s, line %d.",
