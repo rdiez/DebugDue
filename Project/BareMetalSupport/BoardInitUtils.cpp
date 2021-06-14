@@ -168,10 +168,32 @@ void RuntimeTerminationChecks ( void ) throw()
   }
 
 
-  // We could free more memory by calling routines like these on termination:
-  // - __gnu_cxx::__freeres()
-  //   Currently (as of GCC version 10) that only frees the C++ exception emergency memory pool in libsupc++,
-  //   but we have patched the toolchain so that it does not get allocated in the first place.
-  // - __libc_freeres()
-  //   Unfortunately, this routine is only available in the GNU C Library, and not in Newlib or Picolibc.
+  // You may have to disable this final memory check, as it is not easy to make some libraries
+  // like lwIP and even Newlib itself free all memory on termination.
+  if ( true )
+  {
+    // We could free more memory by calling routines like these on termination:
+    // - __gnu_cxx::__freeres()
+    //   Currently (as of GCC version 10) that only frees the C++ exception emergency memory pool in libsupc++,
+    //   but we have patched the toolchain so that it does not get allocated in the first place.
+    // - __libc_freeres()
+    //   Unfortunately, this routine is only available in the GNU C Library, and not in Newlib or Picolibc.
+
+    // At this point, we should have freed all memory that we have allocated with malloc().
+    // You may of course decide to implement termination differently, or not at all,
+    // in which case you need to remove this check.
+    const struct mallinfo terminateMallinfo = mallinfo();
+
+    if ( terminateMallinfo.uordblks != 0 )
+    {
+      // If you hit this assert, set a breakpoint at the following locations, and let execution continue:
+      // - free()
+      // - RunUserCode()
+      // This way, you have a chance to see which memory has not been freed before this point,
+      // but you only want to keep breaking on free() before the application restarts.
+      // If you do not hit free() anymore, you may have a real memory leak. Or maybe some library
+      // is not freeing everything upon termination.
+      assert( false );
+    }
+  }
 }
