@@ -1,5 +1,5 @@
 
-// Copyright (C) 2012 R. Diez
+// Copyright (C) 2012-2021 R. Diez
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the Affero GNU General Public License version 3
@@ -13,44 +13,51 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
+#include <newlib.h>  // For _PICOLIBC__, if we are actually using Picolibc.
 
-#include <sys/types.h>  // For caddr_t.
+#ifdef _PICOLIBC__
+  #include <unistd.h>  // For sbrk() and getpid().
+  #include <signal.h>  // For kill().
+#endif
 
-#include <assert.h>  // For the function prototype of newlib's __assert_func().
+#include <assert.h>  // For the function prototype of Newlib's __assert_func().
 #include <stdio.h>
 #include <malloc.h>  // For M_TRIM_THRESHOLD.
 
 #include <BareMetalSupport/LinkScriptSymbols.h>
 
 #include "AssertionUtils.h"
-#include "StackCheck.h"
 
-extern "C" void _exit( int status ) ;
-extern "C" void _kill( int pid, int sig ) ;
-extern "C" int _getpid ( void ) ;
-extern "C" caddr_t _sbrk( int incr ) ;
 
-/* We should not need any of these. If you get linker errors about them, you are probably trying to use
-   some C runtime library function that is not supported on our 'bare metal' environment.
+#ifndef _PICOLIBC__
 
-extern "C" int _write( int file, char *ptr, int len ) ;
-extern "C" int link( char *cOld, char *cNew ) ;
-extern "C" int _close( int file ) ;
-extern "C" int _fstat( int file, struct stat *st ) ;
-extern "C" int _isatty( int file ) ;
-extern "C" int _lseek( int file, int ptr, int dir ) ;
-extern "C" int _read(int file, char *ptr, int len) ;
-*/
+  // In the case of Newlib's nano allocator, the prototype for _sbrk() is declared within _sbrk_r(),
+  // so there is no header file we could include for it.
+  extern "C" void * _sbrk ( ptrdiff_t );
+
+  // I do not know what Newlib header file could provide these prototypes.
+  extern "C" pid_t _getpid ( void );
+  extern "C" int _kill ( pid_t, int );
+
+#endif
+
 
 static uintptr_t s_heapEndAddr = uintptr_t( &__end__ );  // At the beginning the heap is 0 bytes long.
 
 
-caddr_t _sbrk ( const int incr )
+void *
+  #ifdef _PICOLIBC__
+    sbrk
+  #else
+    _sbrk
+  #endif
+  ( const ptrdiff_t incr )
 {
     // I read somewhere that the increment can be negative, in order to release memory,
     // but I have yet to see this in real life, because the default value of
-    // newlib's M_TRIM_THRESHOLD is rather high, if not disabled altogether.
+    // Newlib's M_TRIM_THRESHOLD is rather high, if not disabled altogether.
     static_assert( M_TRIM_THRESHOLD == -1, "" );
+
     assert( incr >= 0 );  // If the value does indeed go negative, we need to adjust
                           // the code below (signed instead of unsigned integers and so on).
                           //
@@ -66,44 +73,46 @@ caddr_t _sbrk ( const int incr )
 
     s_heapEndAddr += incr;
 
-    return caddr_t( prevHeapEnd );
+    return (void *) prevHeapEnd;
 }
 
 
-/*
-int link ( char * cOld, char * cNew )
+/* We should not need any of these. If you get linker errors about them, you are probably trying to use
+   some C runtime library function that is not supported on our 'bare metal' environment.
+
+extern "C" int link ( char * cOld, char * cNew )
 {
     return -1 ;
 }
 
-int _close( int file )
+extern "C" int _close( int file )
 {
     return -1 ;
 }
 
-int _fstat ( int file, struct stat * st )
+extern "C" int _fstat ( int file, struct stat * st )
 {
     st->st_mode = S_IFCHR ;
 
     return 0 ;
 }
 
-int _isatty ( int file )
+extern "C" int _isatty ( int file )
 {
     return 1 ;
 }
 
-int _lseek ( int file, int ptr, int dir )
+extern "C" int _lseek ( int file, int ptr, int dir )
 {
     return 0 ;
 }
 
-int _read ( int file, char *ptr, int len )
+extern "C" int _read ( int file, char *ptr, int len )
 {
     return 0 ;
 }
 
-int _write ( int file, char *ptr, int len )
+extern "C" int _write ( int file, char *ptr, int len )
 {
     UNUSED_ALWAYS( file );
     UNUSED_ALWAYS( ptr );
@@ -117,23 +126,35 @@ int _write ( int file, char *ptr, int len )
 */
 
 
-void _exit ( int status )
+extern "C" void _exit ( int status )
 {
     UNUSED_ALWAYS( status );
     Panic("_exit() called.");
 }
 
 
-void _kill ( int pid, int sig )
+int
+  #ifdef _PICOLIBC__
+    kill
+  #else
+    _kill
+  #endif
+   ( pid_t pid, int sig )
 {
-    UNUSED_ALWAYS( pid );
-    UNUSED_ALWAYS( sig );
+  UNUSED_ALWAYS( pid );
+  UNUSED_ALWAYS( sig );
 
-    Panic("_kill() called.");
+  Panic("_kill() called.");
 }
 
 
-int _getpid ( void )
+pid_t
+  #ifdef _PICOLIBC__
+    getpid
+  #else
+    _getpid
+  #endif
+  ( void )
 {
     Panic("_getpid() called.");
     return -1 ;
