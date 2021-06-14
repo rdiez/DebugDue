@@ -59,12 +59,16 @@ SECTIONS
            and the C library. This also provides support for C++ code. */
         . = ALIGN(4);
         KEEP(*(.init))
+
         . = ALIGN(4);
         __preinit_array_start = .;
         KEEP (*(.preinit_array))
         __preinit_array_end = .;
 
         . = ALIGN(4);
+        /* We are not using .ctors/.dtors, but the alternative .init_array/.fini_array.
+           Unfortunately, I haven't found out yet how to check in the application's
+           source code wheter INIT_SECTION_ASM_OP is defined, to be sure. */
         __init_array_start = .;
         /* If you use "__attribute__ ((constructor (200)))", GCC generates a name like ".init_array.00200".
            Alternatively, you can use SORT_BY_INIT_PRIORITY, but with the naming scheme that GCC uses,
@@ -73,15 +77,6 @@ SECTIONS
         /* Objects with a priority are constructed before objects without priority. */
         KEEP (*(.init_array))
         __init_array_end = .;
-
-        /* We are not using .ctors/.dtors, but the alternative .init_array/.fini_array.
-           Unfortunately, I haven't found out yet how to check in the application's
-           source code wheter INIT_SECTION_ASM_OP is defined, to be sure. */
-        . = ALIGN(0x4);
-        KEEP (*crtbegin.o(.ctors))
-        KEEP (*(EXCLUDE_FILE (*crtend.o) .ctors))
-        KEEP (*(SORT(.ctors.*)))
-        KEEP (*crtend.o(.ctors))
 
         . = ALIGN(4);
         KEEP(*(.fini))
@@ -93,11 +88,6 @@ SECTIONS
         KEEP (*(SORT(.fini_array.*)))
         KEEP (*(.fini_array))
         __fini_array_end = .;
-
-        KEEP (*crtbegin.o(.dtors))
-        KEEP (*(EXCLUDE_FILE (*crtend.o) .dtors))
-        KEEP (*(SORT(.dtors.*)))
-        KEEP (*crtend.o(.dtors))
 
         . = ALIGN(4);
         _efixed = .;            /* End of text section */

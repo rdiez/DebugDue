@@ -49,27 +49,15 @@ SECTIONS
     KEEP(*(.init))
     KEEP(*(.fini))
 
-    /* We are not using .ctors/.dtors, but the alternative .init_array/.fini_array.
-       Unfortunately, I haven't found out yet how to check in the application's
-       source code wheter INIT_SECTION_ASM_OP is defined, to be sure. */
-    *crtbegin.o(.ctors)
-    *crtbegin?.o(.ctors)
-    *(EXCLUDE_FILE(*crtend?.o *crtend.o) .ctors)
-    *(SORT(.ctors.*))
-    *(.ctors)
-
-    *crtbegin.o(.dtors)
-    *crtbegin?.o(.dtors)
-    *(EXCLUDE_FILE(*crtend?.o *crtend.o) .dtors)
-    *(SORT(.dtors.*))
-    *(.dtors)
-
     . = ALIGN(4);
     __preinit_array_start = .;
     KEEP(*(.preinit_array))
     __preinit_array_end = .;
 
     . = ALIGN(4);
+    /* We are not using .ctors/.dtors, but the alternative .init_array/.fini_array.
+       Unfortunately, I haven't found out yet how to check in the application's
+       source code wheter INIT_SECTION_ASM_OP is defined, to be sure. */
     __init_array_start = .;
     /* If you use "__attribute__ ((constructor (200)))", GCC generates a name like ".init_array.00200".
        Alternatively, you can use SORT_BY_INIT_PRIORITY, but with the naming scheme that GCC uses,
