@@ -203,6 +203,9 @@ extern "C" void __assert_func ( const char * const filename,
 }
 
 
+// I haven't written support for ASSERT_TYPE for Picolibc yet.
+#ifndef _PICOLIBC__
+
 #ifndef INCLUDE_USER_IMPLEMENTATION_OF_ASSERT
   #error "INCLUDE_USER_IMPLEMENTATION_OF_ASSERT should be defined at this point."
 #endif
@@ -229,3 +232,5 @@ extern "C" void __assert_func_generic_err_msg ( void )
 }
 
 #endif  // #ifndef NDEBUG
+
+#endif  // #ifndef _PICOLIBC__

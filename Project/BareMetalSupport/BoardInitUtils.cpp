@@ -147,12 +147,18 @@ void RuntimeStartupChecks ( void ) throw()
     Panic( "Unexpected entries in atexit table." );
   }
 
+
+  // I haven't patched strerror() in Picolibc yet.
+  #ifndef _PICOLIBC__
+
   // Check whether the patch to remove all strerror() strings is working properly.
   // "n/a" means "not available".
   if ( 0 != strcmp( "<n/a>", strerror( ENOENT ) ) )
   {
     Panic( "strerror() does not deliver the expected patched string." );
   }
+
+  #endif  // #ifndef _PICOLIBC__
 }
 
 
