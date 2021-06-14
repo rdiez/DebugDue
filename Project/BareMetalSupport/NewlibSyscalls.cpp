@@ -42,7 +42,7 @@
 #endif
 
 
-static uintptr_t s_heapEndAddr = uintptr_t( &__end__ );  // At the beginning the heap is 0 bytes long.
+static uint8_t * s_heapEndAddr = (uint8_t *) &__end__;  // At the beginning the heap is 0 bytes long.
 
 
 void *
@@ -53,27 +53,45 @@ void *
   #endif
   ( const ptrdiff_t incr )
 {
-    // I read somewhere that the increment can be negative, in order to release memory,
-    // but I have yet to see this in real life, because the default value of
-    // Newlib's M_TRIM_THRESHOLD is rather high, if not disabled altogether.
-    static_assert( M_TRIM_THRESHOLD == -1, "" );
+  // Note that, during start-up, Newlib may call with incr == 0,
+  // see sbrk_aligned() in newlib/libc/stdlib/nano-mallocr.c .
 
-    assert( incr >= 0 );  // If the value does indeed go negative, we need to adjust
-                          // the code below (signed instead of unsigned integers and so on).
-                          //
-                          // Note that, during start-up, newlib may call with incr == 0,
-                          // see sbrk_aligned() in newlib/libc/stdlib/nano-mallocr.c .
+  uint8_t * const prevHeapEnd = s_heapEndAddr;
 
-    const uintptr_t prevHeapEnd = s_heapEndAddr;
+  bool isOutOfMemory;
 
-    if ( prevHeapEnd + incr > uintptr_t( &__HeapLimit ) )
+  if ( incr < 0 )
+  {
+    assert( false );  // Releasing memory is theoretically possible, but very rare. See malloc_trim().
+
+    isOutOfMemory = prevHeapEnd - (uint8_t *) &__end__ < -incr;
+
+    // The allocator should actually never release more memory than it has allocated.
+    assert( !isOutOfMemory );
+  }
+  else
+  {
+    isOutOfMemory = (uint8_t *) &__HeapLimit - prevHeapEnd < incr;
+  }
+
+  if ( isOutOfMemory )
+  {
+    // An out-of-memory situation is probably going to wreak havoc,
+    // and it should never happen in well-designed firmware.
+    // But if you trust your firmware, you can return an error instead.
+    if ( true )
     {
-        Panic( "Out of heap memory." );
+      Panic( "Out of heap memory." );
     }
+    else
+    {
+      return (void *) -1;
+    }
+  }
 
-    s_heapEndAddr += incr;
+  s_heapEndAddr += incr;
 
-    return (void *) prevHeapEnd;
+  return prevHeapEnd;
 }
 
 
