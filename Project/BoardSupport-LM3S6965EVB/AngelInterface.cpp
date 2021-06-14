@@ -40,7 +40,7 @@ static int CallAngel ( const int operation, const int arg1, const int arg2 ) thr
 
 void Angel_ExitApp ( void ) throw()
 {
-  // See also TARGET_SYS_EXIT_EXTENDED.
+  // See also TARGET_SYS_EXIT_EXTENDED (0x20), which allows an 8-bit exit status code.
   const int TARGET_SYS_EXIT = 0x18;
 
   const int ADP_Stopped_ApplicationExit = 0x20026;
