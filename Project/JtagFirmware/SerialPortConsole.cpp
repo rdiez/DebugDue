@@ -196,7 +196,7 @@ void ServiceSerialPortConsole ( const uint64_t currentTime )
 }
 
 
-void SerialPortRxInterruptHandler ( void )
+static void SerialPortRxInterruptHandler ( void )
 {
   // There is no FIFO in our UART, so we process just 1 character every time this interrupt is triggered.
 

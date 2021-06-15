@@ -14,7 +14,7 @@
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
 
-#include "BusPirateConnection.h"  // The include file for this module should come first.
+#include "BusPirateConsole.h"  // The include file for this module should come first.
 
 #include <BareMetalSupport/Miscellaneous.h>
 #include <BareMetalSupport/GenericSerialConsole.h>
@@ -27,6 +27,7 @@
 
 #include "Globals.h"
 #include "BusPirateBinaryMode.h"
+#include "BusPirateConnection.h"
 #include "UsbConnection.h"
 #include "CommandProcessor.h"
 
