@@ -21,7 +21,14 @@
 #include <malloc.h>
 #include <string.h>
 #include <errno.h>
-#include <sys/reent.h> // For _GLOBAL_ATEXIT.
+
+#ifdef _PICOLIBC__
+  // Unfortunately, we cannot access this private header here:
+  //   #include <atexit.h>
+  // So there is no way to get the declaration for _atexit.
+#else
+  #include <sys/reent.h> // For _GLOBAL_ATEXIT.
+#endif
 
 #include <BareMetalSupport/AssertionUtils.h>
 #include <BareMetalSupport/LinkScriptSymbols.h>
@@ -138,15 +145,23 @@ void RuntimeStartupChecks ( void ) throw()
   // See the comments next to compilation option -fuse-cxa-atexit for more information.
   // You may of course have a different opinion or different needs with regards to initialisation and atexit,
   // in which case you need to remove this check.
-  //
-  // _GLOBAL_REENT is _global_impure_ptr.
-  // _GLOBAL_ATEXIT can be either _global_atexit or _GLOBAL_REENT->_atexit, therefore _global_impure_ptr->_atexit .
-  // If not nullptr, then I guess that _GLOBAL_ATEXIT->_ind will not be 0 either.
-  if ( _GLOBAL_ATEXIT != nullptr )
-  {
-    Panic( "Unexpected entries in atexit table." );
-  }
 
+  #ifdef _PICOLIBC__
+
+    // Unfortunately, we cannot access _atexit here, because the corresponding private header file is not accessible.
+    //   assert( _atexit == nullptr );
+
+  #else
+
+    // _GLOBAL_REENT is _global_impure_ptr.
+    // _GLOBAL_ATEXIT can be either _global_atexit or _GLOBAL_REENT->_atexit, therefore _global_impure_ptr->_atexit .
+    // If not nullptr, then I guess that _GLOBAL_ATEXIT->_ind will not be 0 either.
+    if ( _GLOBAL_ATEXIT != nullptr )
+    {
+      Panic( "Unexpected entries in atexit table." );
+    }
+
+  #endif
 
   // I haven't patched strerror() in Picolibc yet.
   #ifndef _PICOLIBC__
@@ -164,15 +179,23 @@ void RuntimeStartupChecks ( void ) throw()
 
 void RuntimeTerminationChecks ( void ) throw()
 {
-  // C++ objects inside static routines can be initialised later, and might land in the atexit() list.
-  // Make sure that we did not have any of those by checking the atexit list again at the end.
-  // Note that it is best to avoid such static construction and destruction inside C++ routines.
-  // You may of course have a different opinion or different needs, in which case you need to remove this check.
-  if ( _GLOBAL_ATEXIT != nullptr )
-  {
-    Panic( "Unexpected entries in atexit table." );
-  }
+  #ifdef _PICOLIBC__
 
+    // Unfortunately, we cannot access _atexit here, because the corresponding private header file is not accessible.
+    //   assert( _atexit == nullptr );
+
+  #else
+
+    // C++ objects inside static routines can be initialised later, and might land in the atexit() list.
+    // Make sure that we did not have any of those by checking the atexit list again at the end.
+    // Note that it is best to avoid such static construction and destruction inside C++ routines.
+    // You may of course have a different opinion or different needs, in which case you need to remove this check.
+    if ( _GLOBAL_ATEXIT != nullptr )
+    {
+      Panic( "Unexpected entries in atexit table." );
+    }
+
+  #endif
 
   // You may have to disable this final memory check, as it is not easy to make some libraries
   // like lwIP and even Newlib itself free all memory on termination.
