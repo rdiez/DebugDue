@@ -15,8 +15,9 @@
 
 #include <newlib.h>  // For _PICOLIBC__, if we are actually using Picolibc.
 
+#include <unistd.h>  // For _exit(). For Picolibc, for sbrk() and getpid() too.
+
 #ifdef _PICOLIBC__
-  #include <unistd.h>  // For sbrk() and getpid().
   #include <signal.h>  // For kill().
 #endif
 
@@ -24,6 +25,10 @@
 #include <stdio.h>
 
 #include <BareMetalSupport/LinkScriptSymbols.h>
+
+#if ! IS_QEMU_FIRMWARE
+  #include <BareMetalSupport/Miscellaneous.h>
+#endif
 
 #include "AssertionUtils.h"
 
@@ -52,6 +57,16 @@ void *
   #endif
   ( const ptrdiff_t incr )
 {
+  // Malloc is generally not safe in interrupt context.
+  // You would normally do this kind of check inside a malloc() hook,
+  // but not all malloc implementations offer such hooks
+
+  // We do not have the necessary CMSIS routines available in the QEMU project yet.
+  #if ! IS_QEMU_FIRMWARE
+    assert( ! IsCpuHandlingAnInterrupt() );
+  #endif
+
+
   // Note that, during start-up, Newlib may call with incr == 0,
   // see sbrk_aligned() in newlib/libc/stdlib/nano-mallocr.c .
 

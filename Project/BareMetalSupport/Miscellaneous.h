@@ -40,6 +40,13 @@ IntegerType MaxFrom ( const IntegerType a, const IntegerType b ) throw()
 void ForeverHang ( bool keepWatchdogHappy ) throw()  __attribute__ ((__noreturn__));
 
 
+inline bool IsCpuHandlingAnInterrupt ( void ) throw()
+{
+  // 0 = Thread mode
+  return 0 != ( __get_IPSR() & IPSR_ISR_Msk );
+}
+
+
 // Please do not use __enable_irq() and __disable_irq() directly, as they do not update
 // global variable g_interrupt_enabled. Use the functions in the Atmel Software Framework instead:
 //   cpu_irq_enable(), cpu_irq_disable().
