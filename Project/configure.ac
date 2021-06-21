@@ -584,7 +584,9 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated-declarations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdiv-by-zero"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"  # Types 'float' and 'double' are not the same, especially if the FPU only supports single precision.
 
-EXTRA_C_AND_CXX_FLAGS+=" -Wconversion"  # Warn for implicit conversions that may alter a value.
+# EXTRA_C_AND_CXX_FLAGS+=" -Wconversion"       # Warn for implicit conversions that may alter a value. Unfortunately too noisy.
+# EXTRA_C_AND_CXX_FLAGS+=" -Wsign-conversion"  # Unfortunately too noisy as well.
+EXTRA_C_AND_CXX_FLAGS+=" -Wfloat-conversion"
 
 if $IS_GCC_8_OR_LATER; then
   :
