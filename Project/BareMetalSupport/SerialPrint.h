@@ -19,4 +19,4 @@ void SerialPrintHexDump ( const void * ptr, size_t byteCount, const char * endOf
 // so use with care while in interrupt context.
 #define MAX_SERIAL_PRINT_LEN 256
 void SerialPrintf ( const char * formatStr, ... ) __attribute__ ((format(printf, 1, 2)));
-void SerialPrintV ( const char * const formatStr, va_list argList );
+void SerialPrintV ( const char * const formatStr, va_list argList ) __attribute__ ((format(printf, 1, 0)));
