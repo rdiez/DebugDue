@@ -267,6 +267,8 @@ fi
 
 BUILD_FLAGS+=" -g2"
 
+BUILD_FLAGS+=" -fno-common"  # Should be the default, but just in case.
+
 
 # ----------- Project Name -----------
 
@@ -406,6 +408,25 @@ EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 # And having a proper termination path makes it easier to detect and analyse memory leaks.
 EXTRA_CXX_FLAGS+=" -fno-use-cxa-atexit"
 
+# These flags may save a little program space:
+if false; then
+
+  EXTRA_CXX_FLAGS+=" -fno-use-cxa-get-exception-ptr"  # Don't use the __cxa_get_exception_ptr runtime routine. This causes std::uncaught_exception
+                                                      # to be incorrect, but is necessary if the runtime routine is not available.
+                                                      # Note that std::uncaught_exception was deprecated in C++17 and removed in C++20.
+                                                      # It has been replaced by std::uncaught_exceptions (plural).
+
+  EXTRA_CXX_FLAGS+=" -fnothrow-opt"  # Reduce or eliminate the text size overhead for throw(). Further information:
+                                     # - throw():
+                                     #   - Since  C++17: Same as noexcept(true), so this flag may actually have no effect.
+                                     #   - Before C++17: On exception, it calls std::unexpected().
+                                     #                   Performs stack unwinding and can eventually recover.
+                                     # - noexcept: on exception, no stack unwinding, calls std::terminate().
+
+  EXTRA_CXX_FLAGS+=" -fno-enforce-eh-specs"  # Don't generate code to check for violation of exception specifications at runtime.
+
+fi
+
 
 # The Arduino Framework specifies --param max-inline-insns-single=500,
 # but I am not sure whether that is a good idea.
@@ -523,15 +544,16 @@ EXTRA_C_AND_CXX_FLAGS+=" -fdiagnostics-show-option"
 # It is specially useful when building with LTO.
 #  EXTRA_C_AND_CXX_FLAGS+=" -fanalyzer"
 
-EXTRA_C_AND_CXX_FLAGS+=" -Wall"
+EXTRA_C_AND_CXX_FLAGS+=" -Wall -Wextra"
 
 EXTRA_C_AND_CXX_FLAGS+=" -Wundef"  # It is a very common error to forget defining a symbol, and then "#if SYMBOL" will not fail or warn you,
                                    # because such undefined identifiers are quietly replaced with zero.
                                    # This warning tries to help prevent such mistakes.
                                    # -Wundef is not enabled automatically by -Wall, at least with GCC 9.3.
 
-EXTRA_C_AND_CXX_FLAGS+=" -Wall -Wextra"
-EXTRA_C_AND_CXX_FLAGS+=" -Wshadow -Wpointer-arith -Wcast-qual"
+EXTRA_C_AND_CXX_FLAGS+=" -Wshadow"  # Variables with the same name in different scopes can lead to confusion.
+EXTRA_C_AND_CXX_FLAGS+=" -Wpointer-arith" # Warn on sizeof(void), and on arithmetic with NULL.
+EXTRA_C_AND_CXX_FLAGS+=" -Wcast-qual"  # For example, casting "const char *" to "char *".
 EXTRA_C_AND_CXX_FLAGS+=" -Wunreachable-code"
 EXTRA_C_AND_CXX_FLAGS+=" -Wredundant-decls"
 EXTRA_C_AND_CXX_FLAGS+=" -Wwrite-strings"
@@ -543,16 +565,16 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wtrampolines"
 EXTRA_C_AND_CXX_FLAGS+=" -Wnormalized=nfc"
 EXTRA_C_AND_CXX_FLAGS+=" -Wpragmas"
 EXTRA_C_AND_CXX_FLAGS+=" -Wlogical-op"
+EXTRA_C_AND_CXX_FLAGS+=" -Wduplicated-cond"
 EXTRA_C_AND_CXX_FLAGS+=" -Wunsafe-loop-optimizations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wstack-protector"
 EXTRA_C_AND_CXX_FLAGS+=" -Wbuiltin-macro-redefined"
-# EXTRA_C_AND_CXX_FLAGS+=" -Wmudflap"  # Not available from GCC version 4.9.
 EXTRA_C_AND_CXX_FLAGS+=" -Wcpp"
 EXTRA_C_AND_CXX_FLAGS+=" -Wendif-labels"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated-declarations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdiv-by-zero"
-EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"
+EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"  # Types 'float' and 'double' are not the same, especially if the FPU only supports single precision.
 
 if $IS_GCC_7_OR_LATER; then
   # This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
@@ -596,6 +618,12 @@ if $IS_DEBUG_BUILD; then
   # However, you then get the occasional warning "stack usage computation not supported for this target",
   # at least when using inline assembly.
 fi
+
+EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=format"
+EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=malloc"
+# EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=pure"
+# EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=noreturn"
+# EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=cold"
 
 # --- Compiler warning configuration, end ---
 
