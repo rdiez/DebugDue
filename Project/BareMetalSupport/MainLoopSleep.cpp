@@ -89,7 +89,7 @@ static void ShiftSlot ( const uint8_t cpuLoad )
 
     s_lastLongPeriod[ s_lastLongPeriodIndex ] = uint8_t( average );
 
-    s_lastLongPeriodIndex = ( s_lastLongPeriodIndex + 1 ) % CPU_LOAD_LONG_PERIOD_SLOT_COUNT;
+    s_lastLongPeriodIndex = uint8_t( s_lastLongPeriodIndex + 1 ) % CPU_LOAD_LONG_PERIOD_SLOT_COUNT;
   }
 }
 

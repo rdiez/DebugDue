@@ -514,12 +514,6 @@ if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
 
   EXTRA_CPP_FLAGS+=" -DUSB_VID=0x2341 -DUSB_PID=0x1234"
 
-  if $IS_GCC_8_OR_LATER; then
-    # Disable warning "ISO C++17 does not allow 'register' storage class specifier",
-    # which appears often in CMSIS source files.
-    EXTRA_CXX_FLAGS+=" -Wno-register"
-  fi
-
   AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/drivers/pmc"
   AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/boards"
   AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/boards"
@@ -590,14 +584,7 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wdeprecated-declarations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdiv-by-zero"
 EXTRA_C_AND_CXX_FLAGS+=" -Wdouble-promotion"  # Types 'float' and 'double' are not the same, especially if the FPU only supports single precision.
 
-if $IS_GCC_7_OR_LATER; then
-  # This warning is new in GCC 7. Atmel's ASF library versions 3.34.2.53 and the latest 3.40.0 generate many of these.
-  # The warning message is: "warning: this use of "defined" may not be portable".
-  # Alternatively, if you want to keep the warning for your own code,
-  # you could specify the paths to the library's header files with '-isystem dir' which turns off compilation warnings,
-  # instead of with '-I dir' .
-  EXTRA_C_AND_CXX_FLAGS+=" -Wno-expansion-to-defined"
-fi
+EXTRA_C_AND_CXX_FLAGS+=" -Wconversion"  # Warn for implicit conversions that may alter a value.
 
 if $IS_GCC_8_OR_LATER; then
   :
@@ -613,9 +600,6 @@ EXTRA_CXX_FLAGS+=" -Wmissing-declarations"  # "no previous declaration" warning 
 
 
 EXTRA_C_FLAGS+=" -Wpointer-to-int-cast"
-
-# Turn off warnings that occur too often in the libraries.
-EXTRA_C_AND_CXX_FLAGS+=" -Wno-missing-field-initializers"
 
 # You may want to disable this warning with certain versions of GCC:
 if false; then

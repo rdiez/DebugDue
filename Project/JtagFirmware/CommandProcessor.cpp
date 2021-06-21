@@ -636,7 +636,9 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
     // but produces only 1 bit, TDO.
     const uint32_t jtagByteCount = m_rxBuffer->GetElemCount() / 2;
 
-    const uint16_t bitCount = jtagByteCount * 8;
+    assert( jtagByteCount * 8 < UINT16_MAX * 2 / 3 );  // Early warning against overflow.
+
+    const uint16_t bitCount = uint16_t( jtagByteCount * 8 );
 
     // Shift all JTAG data through several times.
 

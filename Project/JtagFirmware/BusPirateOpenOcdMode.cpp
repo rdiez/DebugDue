@@ -403,7 +403,7 @@ static uint8_t ShiftSeveralBits ( const uint8_t tdi8,
     const bool isTdoSet = ShiftSingleBit( tdiBit, tmsBit );
 
     // MSB comes in first.
-    tdo8 = (tdo8 >> 1) | ( isTdoSet ? (1<<7) : 0 );
+    tdo8 = (tdo8 >> 1) | uint8_t( isTdoSet ? (1<<7) : 0 );
   }
 
   if ( TRACE_JTAG_SHIFTING )
@@ -466,7 +466,7 @@ static uint8_t Shift2Bits ( uint8_t tdi8,
       const bool isTdoSet = ShiftSingleBit( tdiBit, tmsBit );
 
       // MSB comes in first.
-      byteToSend = (byteToSend >> 1) | ( isTdoSet ? (1<<1) : 0 );
+      byteToSend = (byteToSend >> 1) | uint8_t( isTdoSet ? (1<<1) : 0 );
     }
 
     return byteToSend;
@@ -609,8 +609,10 @@ static uint8_t ShiftFullByte ( const uint8_t tdi8,
   const uint8_t tdo3 = Shift2Bits( tdi8 >> 4, tms8 >> 4 );
   const uint8_t tdo4 = Shift2Bits( tdi8 >> 6, tms8 >> 6 );
 
-  const uint8_t tdo = ( tdo4 << 6 ) | ( tdo3 << 4 ) | ( tdo2 << 2 ) | tdo1;
-
+  const uint8_t tdo = uint8_t( tdo4 << 6 ) |
+                      uint8_t( tdo3 << 4 ) |
+                      uint8_t( tdo2 << 2 ) |
+                               tdo1;
   return tdo;
 }
 
@@ -661,7 +663,7 @@ static void ShiftJtagData_InBufferBlocks ( CUsbRxBuffer * const rxBuffer,
                                            CUsbTxBuffer * const txBuffer,
                                            const uint16_t fullDataByteCount )
 {
-  uint32_t remainingBytes = fullDataByteCount;
+  uint16_t remainingBytes = fullDataByteCount;
 
   while ( remainingBytes > 0 )
   {
@@ -677,7 +679,7 @@ static void ShiftJtagData_InBufferBlocks ( CUsbRxBuffer * const rxBuffer,
     // We need to read 2 bytes for each byte we write, because we output 2 bits (TDI and TMS)
     // for each TDO bit we sample in.
 
-    const uint32_t maxIterationCount = MinFrom( MinFrom( maxReadCount / 2, maxWriteCount ), remainingBytes );
+    const uint16_t maxIterationCount = uint16_t( MinFrom( MinFrom( maxReadCount / 2, maxWriteCount ), uint32_t( remainingBytes ) ) );
 
     // SerialPrint( "It cnt: %u" EOL, unsigned( maxIterationCount ) );
 
@@ -758,7 +760,7 @@ static bool ShiftCommand ( CUsbRxBuffer * const rxBuffer,
   const uint8_t len1 = cmdHeader[ FIRST_PARAM_POS + 0 ];
   const uint8_t len2 = cmdHeader[ FIRST_PARAM_POS + 1 ];
 
-  const uint16_t dataBitCount = (len1 << 8) | len2;
+  const uint16_t dataBitCount = uint16_t( len1 << 8 | len2 );
 
   // A command with more data bits than MAX_JTAG_TAP_SHIFT_BIT_COUNT will never fit
   // in the Rx Buffer, so we would be waiting forever for the command to be complete.

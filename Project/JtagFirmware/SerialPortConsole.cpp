@@ -207,7 +207,7 @@ static void SerialPortRxInterruptHandler ( void )
   if ( status & UART_SR_RXRDY )
   {
     // We must always read the available character, otherwise the interrupt will trigger again.
-    const char c = UART->UART_RHR;
+    const char c = char( UART->UART_RHR );
 
     { // Scope for autoDisableInterrupts.
 
