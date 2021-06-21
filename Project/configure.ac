@@ -80,10 +80,11 @@ AM_EXTRA_RECURSIVE_TARGETS([disassemble])
 ABS_SRCDIR="$(readlink --verbose --canonicalize -- "$srcdir")"
 
 
-AppendIncludeDir ()
+AppendIncludeOrSystemIncludeDir ()
 {
   local VARIABLE_NAME="$1"
   local INCLUDE_PATH="$2"
+  local INCLUDE_FLAG="$3"
 
   # It is not really necessary to check whether the directory exists,
   # but it helps catch problems in the build system.
@@ -93,9 +94,22 @@ AppendIncludeDir ()
   fi
 
   printf -v "$VARIABLE_NAME" \
-         "%s -I%q" \
+         "%s %q %q" \
          "${!VARIABLE_NAME}" \
+         "$INCLUDE_FLAG" \
          "$INCLUDE_PATH"
+}
+
+AppendIncludeDir ()
+{
+  AppendIncludeOrSystemIncludeDir "$1" "$2" "-I"
+}
+
+# Option -isystem turns off compilation warnings for the related include files.
+# That often makes sense for libraries that we cannot fix ourselves.
+AppendSystemIncludeDir ()
+{
+  AppendIncludeOrSystemIncludeDir "$1" "$2" "-isystem"
 }
 
 
@@ -506,30 +520,30 @@ if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
     EXTRA_CXX_FLAGS+=" -Wno-register"
   fi
 
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/drivers/pmc"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/boards"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/boards"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/clock"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/sleepmgr"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/class/cdc"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/class/cdc/device"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/udc"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/cmsis/sam3x/include"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/cmsis/sam3x/source/templates"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/thirdparty/CMSIS/Include"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/preprocessor"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/header_files"
-  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/utils"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/drivers/pmc"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/boards"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/boards"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/clock"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/sleepmgr"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/class/cdc"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/class/cdc/device"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb/udc"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/services/usb"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/cmsis/sam3x/include"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/cmsis/sam3x/source/templates"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/thirdparty/CMSIS/Include"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/preprocessor"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/sam/utils/header_files"
+  AppendSystemIncludeDir ASF_INCLUDE_COMMON "$srcdir/AsfSrc/common/utils"
 
   EXTRA_CPP_FLAGS+="$ASF_INCLUDE_COMMON"
 
-  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/pio"
-  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/rstc"
-  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/wdt"
-  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/adc"
-  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/uart"
+  AppendSystemIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/pio"
+  AppendSystemIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/rstc"
+  AppendSystemIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/wdt"
+  AppendSystemIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/adc"
+  AppendSystemIncludeDir EXTRA_CPP_FLAGS "$srcdir/AsfSrc/sam/drivers/uart"
 
 fi
 
