@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2020 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2021 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 .DELETE_ON_ERROR:
@@ -67,15 +67,41 @@ SHELL := bash  -o nounset  -o pipefail  -o errexit
 #   .SHELLFLAGS := -o nounset  -o pipefail  -e  -c
 
 
+# Check file or directory paths for whitespace.
+#
+# This alternative implementation does not need 'eval', but it does not detect leading or trailing whitespace.
+# Adding 'pre' and 'post' to the string would help, but then we would need to check for an empty string beforehand:
+#   $(if $(filter-out 1,$(words $($(1)))),$(error Variable $(1) is empty or contains whitespace. Its value is: "$($(1))"))
+
+define check_variable_non_empty_and_contains_no_whitespace_needs_eval =
+
+  ifeq ($($1),)
+    $$(error Variable '$(1)' is empty, but it must have a value)
+  else
+    # GNU Make does not support spaces inside filenames, but I keep forgetting, so check.
+    # Adding 'pre' and 'post' checks for leading and trailing whitespace too,
+    # because otherwise it is automatically removed.
+    # It is hard to pass leading whitespace on the 'make' command line, as it tends to be discarded.
+    # Use the escape character ('\') to test leading whitespace.
+    ifneq (1,$(words pre$($(1))post))
+      $$(error Variable '$(1)' contains whitespace, but that is disallowed)
+    endif
+  endif
+
+endef
+
+check_variable_non_empty_and_contains_no_whitespace = $(eval $(call check_variable_non_empty_and_contains_no_whitespace_needs_eval,$(1)))
+
+
 # ------- Common variables -------
 
 THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
 
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
 
-
-# Kept in case I need this again:
-#  verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
+# Variable CROSS_TOOLCHAIN_BUILD_DIR is often overriden on the 'make' command line,
+# so checking just THIS_MAKEFILE_DIR is not enough.
+$(call check_variable_non_empty_and_contains_no_whitespace,CROSS_TOOLCHAIN_BUILD_DIR)
 
 
 TARGET_NAME_ALL := all
@@ -86,30 +112,47 @@ TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
 TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
 
+# Kept in case I need this again:
+#  verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
 
+# If a variable is needed, it usually must be defined and non-empty.
+# However, we cannot always check upfront, because not all targets need all variables.
+# For example, the "help" target needs less variables than most other targets.
+# The idea of "poisoning" is to make a variable fail only if it is needed
+# and it does not fulfil those conditions.
+#
 # Note 1) If a variable may be poisoned, all variables using it must be "recursively expanded".
 #         Variables of type "simply expanded" will fail straight away (or maybe defer expansion of the poisoned variable).
 # Note 2) If the variable's value consists of only space characters, it will be considered empty too.
 #
 # If we only needed the "is defined" condition (and not the "is empty" too), we could use VAR ?= ... below.
 
-define poison_variable_if_undef_or_empty_needs_eval =
+define poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval =
 
   ifeq ($(origin $(1)),undefined)
     $(1)=$$(error Variable '$(1)' is not defined, but it should be at this point)
   else
     ifeq ($($1),)
       override $(1)=$$(error Variable '$(1)' is empty, but it should not be at this point)
+    else
+      # GNU Make does not support spaces inside filenames, but I keep forgetting, so check.
+      # Adding 'pre' and 'post' checks for leading and trailing whitespace too,
+      # because otherwise it is automatically removed.
+      # It is hard to pass leading whitespace on the 'make' command line, as it tends to be discarded.
+      # Use the escape character ('\') to test leading whitespace.
+      ifneq (1,$(words pre$($(1))post))
+        override $(1)=$$(error Variable '$(1)' contains whitespace, but that is disallowed)
+      endif
     endif
   endif
 
 endef
 
-poison_variable_if_undef_or_empty = $(eval $(call poison_variable_if_undef_or_empty_needs_eval,$(1)))
+poison_variable_if_undef_or_empty_or_contains_whitespace = $(eval $(call poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval,$(1)))
 
 
-$(call poison_variable_if_undef_or_empty,CROSS_TOOLCHAIN_DIR)
-$(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
+$(call poison_variable_if_undef_or_empty_or_contains_whitespace,CROSS_TOOLCHAIN_DIR)
+$(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_SERVER)
 
 
 
