@@ -115,6 +115,11 @@ $(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
 
 # ------- User Configuration -------
 
+# - GMP:  https://gmplib.org/
+# - MPFR: https://www.mpfr.org/
+# - MPC:  http://www.multiprecision.org/mpc/
+# - Binutils: https://www.gnu.org/software/binutils/
+#
 # You can check out GCC's contrib/download_prerequisites for inspiration
 # on libraries and version numbers. Unfortunately, that script looks
 # outdated and has no comments about why a version was chosen or skipped.
@@ -123,8 +128,8 @@ $(call poison_variable_if_undef_or_empty,PATH_TO_TARBALLS_ON_FILE_SERVER)
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-# GCC 11 is too new, and version 11.1 does even build properly, so I am not using VersionSet8 yet.
-VERSION_SET := VersionSet7
+# GCC versions 11.1 and 11.2 do not build properly, so I am not using VersionSet9 yet.
+VERSION_SET := VersionSet8
 
 ifeq ($(VERSION_SET),VersionSet1)
 
@@ -210,19 +215,29 @@ else ifeq ($(VERSION_SET),VersionSet7)
 
 else ifeq ($(VERSION_SET),VersionSet8)
 
-  # GCC 11.1 fails to build with this error message:
-  #   g++ -static-libstdc++ -static-libgcc   -o g++-mapper-server server.o resolver.o ../libcody/libcody.a ../gcc/version.o ../libiberty/libiberty.a
-  #   /usr/bin/ld: /tmp/g++-mapper-server.K0n1nG.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
-  # It is probably this bug:
-  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
-
-  BINUTILS_VERSION := 2.36.1
+  BINUTILS_VERSION := 2.37
   GMP_VERSION := 6.2.1
   MPFR_VERSION := 4.1.0
   MPC_VERSION := 1.2.1
-  GCC_VERSION := 11.1.0
+  GCC_VERSION := 10.3.0
   NEWLIB_VERSION := 4.1.0
-  GDB_VERSION := 10.2
+  GDB_VERSION := 11.1
+
+else ifeq ($(VERSION_SET),VersionSet9)
+
+  # GCC versions 11.1 and 11.2 fail to build with this error message:
+  #   g++ -static-libstdc++ -static-libgcc   -o g++-mapper-server server.o resolver.o ../libcody/libcody.a ../gcc/version.o ../libiberty/libiberty.a
+  #   /usr/bin/ld: /tmp/g++-mapper-server.K0n1nG.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
+  # It is very similar to this bug:
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
+
+  BINUTILS_VERSION := 2.37
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.1
+  GCC_VERSION := 11.2.0
+  NEWLIB_VERSION := 4.1.0
+  GDB_VERSION := 11.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
@@ -1242,7 +1257,10 @@ $(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
 	echo "Unpacking GDB finished."
 
-$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
+# GDB version 11.1 is the first one to require the GMP library.
+# This makefile could drop the dependency when building older GDB versions.
+
+$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL) $(GMP_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)/" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
@@ -1258,6 +1276,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 	  $(HOST_FLAGS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
+	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
 	  --target=$(ARM_TARGET) && \
 	popd >/dev/null && \
 	echo "The GDB configuration has finished."
@@ -1356,10 +1375,10 @@ $(TARGET_NAME_HELP):
 	@echo "   # Remember to delete any old build and installation directories first."
 	@echo
 	@echo "   make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-14-bin\" \\"
-	@echo "       CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-14-build\" \\"
-	@echo "       --no-builtin-variables \\"
-	@echo "       -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\" \\"
-	@echo "       $(TARGET_NAME_ALL)"
+	@echo "        CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-14-build\" \\"
+	@echo "        --no-builtin-variables \\"
+	@echo "        -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\" --output-sync=recurse \\"
+	@echo "        $(TARGET_NAME_ALL)"
 	@echo
 	@echo "7) If you are worried whether the generated toolchain is reliable,"
 	@echo "   run target '$(TARGET_NAME_CHECK)' at the end."
