@@ -171,8 +171,7 @@ $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-# GCC versions 11.1 and 11.2 do not build properly, so I am not using VersionSet9 yet.
-VERSION_SET := VersionSet8
+VERSION_SET := VersionSet9
 
 ifeq ($(VERSION_SET),VersionSet1)
 
