@@ -109,12 +109,14 @@ declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS=false
 declare -r SKIP_TOOLCHAIN_BUILD=false
 declare -r SKIP_TOOLCHAIN_CHECK=false
 
+# We want all build messages to be in English, regardless of the current operating system language.
+export LANG=C
 
 TOOLS_DIR="$(readlink --canonicalize --verbose -- ".")"
 GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "..")"
 declare -r TOOLCHAIN_DIR="$GIT_REPOSITORY_BASE/Toolchain"
 
-if [ $# -ne 0 ]; then
+if (( $# != 0 )); then
   abort "Invalid number of command-line arguments."
 fi
 
