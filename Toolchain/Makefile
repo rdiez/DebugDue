@@ -268,12 +268,6 @@ else ifeq ($(VERSION_SET),VersionSet8)
 
 else ifeq ($(VERSION_SET),VersionSet9)
 
-  # GCC versions 11.1 and 11.2 fail to build with this error message:
-  #   g++ -static-libstdc++ -static-libgcc   -o g++-mapper-server server.o resolver.o ../libcody/libcody.a ../gcc/version.o ../libiberty/libiberty.a
-  #   /usr/bin/ld: /tmp/g++-mapper-server.K0n1nG.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
-  # It is very similar to this bug:
-  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
-
   BINUTILS_VERSION := 2.37
   GMP_VERSION := 6.2.1
   MPFR_VERSION := 4.1.0
@@ -310,12 +304,26 @@ HF :=
 HF += -g0
 
 # The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
-# so we want to optimise them as much as we reasonably can.
+# so we want to optimise them as much as we can.
+HF += -O3
+
 # If your host compiler ist GCC version 7 or newer, you can enable LTO builds here.
+# Unfortunately, this has stopped working when the cross-compiler is GCC version 11.1 or 11.2. The error message is:
+#   /usr/bin/ld: /tmp/g++-mapper-server.98PJcy.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
+#   collect2: error: ld returned 1 exit status
+#   make[3]: *** [Makefile:94: g++-mapper-server] Error 1
+#   make[2]: *** [Makefile:10549: all-c++tools] Error 2
+# This problem is very similar to this bug:
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
+ENABLE_LTO_TOOLCHAIN := 0
+
 # See the project's configure.ac file for more information about why we are
 # not using "-flto=jobserver" here.
-LTO_PARALLEL_LEVEL=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
-HF += -O3 -flto=$(LTO_PARALLEL_LEVEL)
+
+ifneq ($(ENABLE_LTO_TOOLCHAIN), 0)
+  LTO_PARALLEL_LEVEL=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
+  HF += -flto=$(LTO_PARALLEL_LEVEL)
+endif
 
 # Building for the current CPU makes this toolchain not portable, but can yield
 # a good performance boost, especially on newer CPUs.
@@ -654,8 +662,9 @@ COMMON_GCC_OPTIONS += --disable-libstdcxx-verbose
 
 COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
-COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
-
+ifneq ($(ENABLE_LTO_TOOLCHAIN), 0)
+  COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
+endif
 
 ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
 
