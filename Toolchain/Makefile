@@ -97,9 +97,10 @@ check_variable_non_empty_and_contains_no_whitespace = $(eval $(call check_variab
 
 THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
 
-MAKEFILE_TOOLS_DIR := $(THIS_MAKEFILE_DIR)/Tools
-
+MAKEFILE_TOOLS_DIR        := $(THIS_MAKEFILE_DIR)/Tools
+MAKEFILE_PATCHES_DIR      := $(THIS_MAKEFILE_DIR)/Patches
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
+TARBALLS_DOWNLOAD_DIR     := $(THIS_MAKEFILE_DIR)/Tarballs
 
 # Variable CROSS_TOOLCHAIN_BUILD_DIR is often overriden on the 'make' command line,
 # so checking just THIS_MAKEFILE_DIR is not enough.
@@ -369,8 +370,6 @@ SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE := 1
 ARM_TARGET := arm-none-eabi
 
 SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
-
-TARBALLS_DOWNLOAD_DIR := $(THIS_MAKEFILE_DIR)/Tarballs
 
 PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 
@@ -671,7 +670,7 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
 
   ifneq "$(or $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X) )" ""
     # The patch for version 5.1.0 works in the next versions too.
-    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
+    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
     $(error Unknown GCC version)
   endif
@@ -695,11 +694,11 @@ NEWLIB_NEWLIB_MAKEFILE := $(NEWLIB_NEWLIB_OBJ_DIR)/Makefile
 NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
 NEWLIB_NEWLIB_INSTALL_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
 
-NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibUserImplementationOfAssert.patch
+NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibUserImplementationOfAssert.patch
 
 # If you are using an Newlib version from before 2018-01-17, you will have to use an older version
 # of this patch stored next to the latest one.
-NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(THIS_MAKEFILE_DIR)/NewlibRemoveStrerrorMessages.patch
+NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibRemoveStrerrorMessages.patch
 
 # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
 NEWLIB_CFLAGS := $(COMMON_CFLAGS_FOR_TARGET)
