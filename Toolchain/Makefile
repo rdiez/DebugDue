@@ -189,19 +189,28 @@ HF :=
 # automatically prepend the compiler flags with '-g'.
 HF += -g0
 
+
+HF_WITH_OPT :=
+
 # The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
 # so we want to optimise them as much as we reasonably can.
 # If your host compiler ist GCC version 7 or newer, you can enable LTO builds here.
 # See the project's configure.ac file for more information about why we are
 # not using "-flto=jobserver" here.
 LTO_PARALLEL_LEVEL=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
-HF += -O3 -flto=$(LTO_PARALLEL_LEVEL)
+HF_WITH_OPT += -O3 -flto=$(LTO_PARALLEL_LEVEL)
 
 # Building for the current CPU makes this toolchain not portable, but can yield
 # a good performance boost, especially on newer CPUs.
-HF += -march=native
+HF_WITH_OPT += -march=native
 
-HOST_FLAGS := CFLAGS="$(HF)"  CXXFLAGS="$(HF)"
+
+# The GCC phase 1 compiler is only used once to build Newlib and it is not worth optimising it.
+HF_WITHOUT_OPT := -O0
+
+
+HOST_FLAGS_WITH_OPT    := CFLAGS="$(HF) $(HF_WITH_OPT)"     CXXFLAGS="$(HF) $(HF_WITH_OPT)"
+HOST_FLAGS_WITHOUT_OPT := CFLAGS="$(HF) $(HF_WITHOUT_OPT)"  CXXFLAGS="$(HF) $(HF_WITHOUT_OPT)"
 
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
@@ -424,9 +433,9 @@ MPC_CHECK_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcCheckSentinel
 GCC_ENABLE_DEBUG_BUILD := 0
 
 ifeq ($(GCC_ENABLE_DEBUG_BUILD),1)
-  GCC_DEBUG_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
+  GCC_PHASE_2_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
 else
-  GCC_DEBUG_BUILD_FLAGS :=
+  GCC_PHASE_2_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT)
 endif
 
 
@@ -498,7 +507,6 @@ GCC_CFLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
 # GCC_CFLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
 
 COMMON_GCC_OPTIONS =
-COMMON_GCC_OPTIONS += $(HOST_FLAGS)
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
 
 COMMON_GCC_OPTIONS += --target=$(TARGET_ARCH)
@@ -588,7 +596,7 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 NEWLIB_CFG_FLAGS =
 
-NEWLIB_CFG_FLAGS += $(HOST_FLAGS)
+NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT)
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(TARGET_ARCH)
 NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
@@ -721,9 +729,9 @@ GDB_ENABLE_DEBUG_BUILD := 0
 
 ifeq ($(GDB_ENABLE_DEBUG_BUILD),1)
   # GDB is written in C only, so CXXFLAGS is not needed yet. But it might be necessary in the future.
-  GDB_DEBUG_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
+  GDB_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
 else
-  GDB_DEBUG_BUILD_FLAGS :=
+  GDB_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT)
 endif
 
 
@@ -777,7 +785,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfig.report" \
 	  $(BINUTILS_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS) \
+	    $(HOST_FLAGS_WITH_OPT) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(TARGET_ARCH) \
 	    $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
@@ -867,7 +875,7 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigure.report" \
 	  $(GMP_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS) \
+	    $(HOST_FLAGS_WITH_OPT) \
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
@@ -942,7 +950,7 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigure.report" \
 	  $(MPFR_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS) \
+	    $(HOST_FLAGS_WITH_OPT) \
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
@@ -1018,7 +1026,7 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigure.report" \
 	  $(MPC_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS) \
+	    $(HOST_FLAGS_WITH_OPT) \
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
@@ -1113,7 +1121,7 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL)
 	    --enable-languages=c \
 	    --without-headers \
 	    --prefix="$(PHASE_1_INSTALL_DIR)" \
-	    $(COMMON_GCC_OPTIONS) && \
+	    $(HOST_FLAGS_WITHOUT_OPT) $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
 	echo "The GCC phase 1 configuration has finished."
 
@@ -1244,10 +1252,9 @@ $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL) $(BINU
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Configure.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Configure.report" \
 	    $(GCC_SRC_DIR)/configure \
-	      $(GCC_DEBUG_BUILD_FLAGS) \
 	      --enable-languages=c,c++ \
 	      --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	      $(COMMON_GCC_OPTIONS) && \
+	      $(GCC_PHASE_2_BUILD_FLAGS) $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
 	echo "The GCC phase 2 configuration has finished."
 
@@ -1328,14 +1335,18 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL) $(GMP_INSTALL_SE
 	$(GDB_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
-	$(GDB_SRC_DIR)/configure \
-	  $(GDB_DEBUG_BUILD_FLAGS) \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
-	  --target=$(TARGET_ARCH) && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GDbConfigure" \
+	  "GDB Configure" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigure.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigure.report" \
+	  $(GDB_SRC_DIR)/configure \
+	    $(GDB_BUILD_FLAGS) \
+	    $(CONFIG_CACHE_OPTION)  \
+	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	    --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
+	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
+	    --target=$(TARGET_ARCH) && \
 	popd >/dev/null && \
 	echo "The GDB configuration has finished."
 
