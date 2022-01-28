@@ -4,96 +4,7 @@
 # Copyright (c) 2013-2022 - R. Diez - Licensed under the GNU AGPLv3.
 
 
-.DELETE_ON_ERROR:
-
-
-# Setting option '--no-builtin-variables' inside the makefile has no effect, at least when expanding
-# the top-level makefile expressions with GNU Make version 4.3. I guess it is too late to set
-# the option at this point. That means that option '--no-builtin-rules' does not get automatically enabled either.
-# Incidentally, '--no-builtin-variables' does seem to have an effect later on when executing the recipes, which
-# means its behaviour is then inconsistent and confusing if set here.
-# I recommend that you call this makefile with option '--no-builtin-variables' passed in the command-line. This makes
-# the makefile more robust, because this makefile is designed to define all variables it needs.
-#   MAKEFLAGS += --no-builtin-variables
-
-# Disable all implicit rules, in case the user did not specify '--no-builtin-variables' in the command line.
-# This makefile defines all rules it needs because it is then easier to debug.
-# Besides, if implicit rules are active, GNU Make seems to look for many different possible source file types
-# when trying to find a suitable rule for each target file. That can trigger many stat syscalls per target file,
-# dramatically slowing down makefiles for large projects.
-# Turning implicit rules off at this point is actually a little late. If you run the makefile with option '--debug=a',
-# you will see messages like this:
-#   Considering target file 'Makefile'.
-#    Looking for an implicit rule for 'Makefile'.
-#    No implicit rule found for 'Makefile'.
-# But that only happens for the Makefile itself and it does not really matter.
-MAKEFLAGS += --no-builtin-rules
-
-# This makefile defines all variables that its recipes needs. Turning on the following warning
-# makes the makefile easier to debug.
-MAKEFLAGS += --warn-undefined-variables
-
-# Unfortunately, option "--output-sync" leads to long periods of time with no output, followed by large bursts of output.
-# It is annoying, but it is actually the only sane way of generating a build log when building in parallel.
-# And you want to build in parallel on today's multicore computers.
-#
-# Option "--output-sync" is only available in GNU Make version 4.0 (released in 2013) or later.
-# I have noticed that this option seems to be ignored by the GNU Make version 4.2.1 that comes with Ubuntu 20.04.2,
-# even if explicitly passed on the command line (not with MAKEFLAGS inside the makefile).
-# I tested on the same system with a self-compiled GNU Make 4.3, and "--output-sync" worked fine.
-#
-# I am no longer unconditionally enabling this option inside the makefile, because then
-# "make download-tarballs-from-internet" will not show the download progress messages in a timely manner.
-# The user will probably want to pass option "--output-sync=recurse" if building in parallel.
-#
-# We could add this flag conditionally by looking at MAKECMDGOALS, but it gets complicated and
-# would not be completely reliable. After all, the user can specify several targets at the same time.
-#
-# I tried to add this flag only if the user requested a parallel build, but I could not find
-# a way to achieve that. Option "-j" is not reflected in MAKEFLAGS at this point, it gets added later
-# when executing a rule.
-#
-#  MAKEFLAGS += --output-sync=recurse
-
-
-# This makefile has only been tested with Bash.
-# Option 'pipefail' is necessary. Otherwise, piping to 'tee' would mask any errors on the left side of the pipeline.
-# Option 'nounset' helps us debug this makefile.
-# Option 'errexit' makes it pretty hard to ignore errors. For example, a recipe like "false; true" would now fail.
-# GNU Make appends option '-c' and a single argument with the command to execute.
-SHELL := bash  -o nounset  -o pipefail  -o errexit
-# This way of passing shell options is only available in modern GNU Make versions,
-# and not in version 3.81 shipped with Ubuntu 14.04. Option -e is equivalent to "-o errexit":
-#   .SHELLFLAGS := -o nounset  -o pipefail  -e  -c
-
-
-# Check file or directory paths for whitespace.
-#
-# This alternative implementation does not need 'eval', but it does not detect leading or trailing whitespace.
-# Adding 'pre' and 'post' to the string would help, but then we would need to check for an empty string beforehand:
-#   $(if $(filter-out 1,$(words $($(1)))),$(error Variable $(1) is empty or contains whitespace. Its value is: "$($(1))"))
-
-define check_variable_non_empty_and_contains_no_whitespace_needs_eval =
-
-  ifeq ($($1),)
-    $$(error Variable '$(1)' is empty, but it must have a value)
-  else
-    # GNU Make does not support spaces inside filenames, but I keep forgetting, so check.
-    # Adding 'pre' and 'post' checks for leading and trailing whitespace too,
-    # because otherwise it is automatically removed.
-    # It is hard to pass leading whitespace on the 'make' command line, as it tends to be discarded.
-    # Use the escape character ('\') to test leading whitespace.
-    ifneq (1,$(words pre$($(1))post))
-      $$(error Variable '$(1)' contains whitespace, but that is disallowed)
-    endif
-  endif
-
-endef
-
-check_variable_non_empty_and_contains_no_whitespace = $(eval $(call check_variable_non_empty_and_contains_no_whitespace_needs_eval,$(1)))
-
-
-# ------- Common variables -------
+# ------- Standard Configuration -------
 
 THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
 
@@ -101,6 +12,8 @@ MAKEFILE_TOOLS_DIR        := $(THIS_MAKEFILE_DIR)/Tools
 MAKEFILE_PATCHES_DIR      := $(THIS_MAKEFILE_DIR)/Patches
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
 TARBALLS_DOWNLOAD_DIR     := $(THIS_MAKEFILE_DIR)/Tarballs
+
+include $(MAKEFILE_TOOLS_DIR)/MakefileCommon.mk
 
 # Variable CROSS_TOOLCHAIN_BUILD_DIR is often overriden on the 'make' command line,
 # so checking just THIS_MAKEFILE_DIR is not enough.
@@ -115,48 +28,9 @@ TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
 TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
 
-# Kept in case I need this again:
-#  verify_variable_is_defined = $(if $(filter undefined,$(origin $(1))),$(error "The variable '$(1)' is not defined, but it should be at this point."))
-
-# If a variable is needed, it usually must be defined and non-empty.
-# However, we cannot always check upfront, because not all targets need all variables.
-# For example, the "help" target needs less variables than most other targets.
-# The idea of "poisoning" is to make a variable fail only if it is needed
-# and it does not fulfil those conditions.
-#
-# Note 1) If a variable may be poisoned, all variables using it must be "recursively expanded".
-#         Variables of type "simply expanded" will fail straight away (or maybe defer expansion of the poisoned variable).
-# Note 2) If the variable's value consists of only space characters, it will be considered empty too.
-#
-# If we only needed the "is defined" condition (and not the "is empty" too), we could use VAR ?= ... below.
-
-define poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval =
-
-  ifeq ($(origin $(1)),undefined)
-    $(1)=$$(error Variable '$(1)' is not defined, but it should be at this point)
-  else
-    ifeq ($($1),)
-      override $(1)=$$(error Variable '$(1)' is empty, but it should not be at this point)
-    else
-      # GNU Make does not support spaces inside filenames, but I keep forgetting, so check.
-      # Adding 'pre' and 'post' checks for leading and trailing whitespace too,
-      # because otherwise it is automatically removed.
-      # It is hard to pass leading whitespace on the 'make' command line, as it tends to be discarded.
-      # Use the escape character ('\') to test leading whitespace.
-      ifneq (1,$(words pre$($(1))post))
-        override $(1)=$$(error Variable '$(1)' contains whitespace, but that is disallowed)
-      endif
-    endif
-  endif
-
-endef
-
-poison_variable_if_undef_or_empty_or_contains_whitespace = $(eval $(call poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval,$(1)))
-
 
 $(call poison_variable_if_undef_or_empty_or_contains_whitespace,CROSS_TOOLCHAIN_DIR)
 $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_SERVER)
-
 
 
 # ------- User Configuration -------
