@@ -15,6 +15,9 @@ TARBALLS_DOWNLOAD_DIR     := $(THIS_MAKEFILE_DIR)/Tarballs
 
 include $(MAKEFILE_TOOLS_DIR)/MakefileCommon.mk
 
+RUN_AND_REPORT_TOOL_PATH := $(MAKEFILE_TOOLS_DIR)/RunAndReport.sh
+
+
 # Variable CROSS_TOOLCHAIN_BUILD_DIR is often overriden on the 'make' command line,
 # so checking just THIS_MAKEFILE_DIR is not enough.
 $(call check_variable_non_empty_and_contains_no_whitespace,CROSS_TOOLCHAIN_BUILD_DIR)
@@ -767,13 +770,18 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	$(BINUTILS_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
-	$(BINUTILS_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --target=$(TARGET_ARCH) \
-	  $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
-	  --disable-nls && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "BinutilsConfig" \
+	  "BinUtils Configuration" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfig.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfig.report" \
+	  $(BINUTILS_SRC_DIR)/configure \
+	    $(CONFIG_CACHE_OPTION)  \
+	    $(HOST_FLAGS) \
+	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	    --target=$(TARGET_ARCH) \
+	    $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
+	    --disable-nls && \
 	popd >/dev/null && \
 	echo "The Binutils configuration has finished."
 
@@ -781,7 +789,12 @@ $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
 	echo && \
 	echo "Building Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "BinutilsMake" \
+	  "BinUtils Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsMake.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsMake.report" \
+	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
 	echo "The Binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
 	echo "The Binutils build has finished."
 
@@ -789,7 +802,12 @@ $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "BinutilsInstall" \
+	  "BinUtils Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsInstall.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsInstall.report" \
+	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
 	echo "The Binutils installation has finished."
 
@@ -797,7 +815,12 @@ $(BINUTILS_INSTALL_SENTINEL_PHASE_1): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Binutils to separate phase 1 directory..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" DESTDIR="$(PHASE_1_DESTDIR)" "$(INSTALL_TARGET)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "BinutilsPhase1Install" \
+	  "BinUtils Phase 1 Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsPhase1Install.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsPhase1Install.report" \
+	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" DESTDIR="$(PHASE_1_DESTDIR)" "$(INSTALL_TARGET)" && \
 	echo "The Binutils phase 1 installation has finished." >"$(BINUTILS_INSTALL_SENTINEL_PHASE_1)" && \
 	echo "The Binutils phase 1 installation has finished."
 
@@ -805,7 +828,12 @@ $(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
 	echo "Checking Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(BINUTILS_OBJ_DIR)" check && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "BinutilsCheck" \
+	  "BinUtils Check" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsCheck.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsCheck.report" \
+	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" check && \
 	echo "The Binutils check has finished." >"$(BINUTILS_CHECK_SENTINEL)" && \
 	echo "The Binutils check has finished."
 
@@ -832,11 +860,16 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	$(GMP_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
-	$(GMP_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GmpConfigure" \
+	  "GMP Configure" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigure.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigure.report" \
+	  $(GMP_SRC_DIR)/configure \
+	    $(CONFIG_CACHE_OPTION)  \
+	    $(HOST_FLAGS) \
+	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
+	    --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
 	echo "The GMP configuration has finished."
 
@@ -844,7 +877,12 @@ $(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
 	echo && \
 	echo "Building GMP ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GmpMake" \
+	  "GMP Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpMake.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpMake.report" \
+	  $(MAKE) -C "$(GMP_OBJ_DIR)" && \
 	echo "The GMP build has finished." >"$(GMP_MAKE_SENTINEL)" && \
 	echo "The GMP build has finished."
 
@@ -852,7 +890,12 @@ $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GMP ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GmpInstall" \
+	  "GMP Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpInstall.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpInstall.report" \
+	  $(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
 	echo "The GMP installation has finished."
 
@@ -860,7 +903,12 @@ $(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo && \
 	echo "Checking GMP ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GMP_OBJ_DIR)" check && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GmpCheck" \
+	  "GMP Check" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpCheck.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpCheck.report" \
+	  $(MAKE) -C "$(GMP_OBJ_DIR)" check && \
 	echo "The GMP check has finished." >"$(GMP_CHECK_SENTINEL)" && \
 	echo "The GMP check has finished."
 
@@ -887,12 +935,17 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	$(MPFR_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
-	$(MPFR_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpfrConfigure" \
+	  "MPFR Configure" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigure.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigure.report" \
+	  $(MPFR_SRC_DIR)/configure \
+	    $(CONFIG_CACHE_OPTION)  \
+	    $(HOST_FLAGS) \
+	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
+	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
 	echo "The MPFR configuration has finished."
 
@@ -900,7 +953,12 @@ $(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
 	echo && \
 	echo "Building MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpfrMake" \
+	  "MPFR Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.report" \
+	  $(MAKE) -C "$(MPFR_OBJ_DIR)" && \
 	echo "The MPFR build has finished." >"$(MPFR_MAKE_SENTINEL)" && \
 	echo "The MPFR build has finished."
 
@@ -908,7 +966,12 @@ $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo && \
 	echo "Installing MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpfrInstall" \
+	  "MPFR Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrInstall.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrInstall.report" \
+	  $(MAKE) -C "$(MPFR_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
 	echo "The MPFR installation has finished."
 
@@ -916,7 +979,12 @@ $(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo && \
 	echo "Checking MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpfrMake" \
+	  "MPFR Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.report" \
+	  $(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
 	echo "The MPFR check has finished." >"$(MPFR_CHECK_SENTINEL)" && \
 	echo "The MPFR check has finished."
 
@@ -943,13 +1011,18 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	$(MPC_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
-	$(MPC_SRC_DIR)/configure \
-	  $(CONFIG_CACHE_OPTION)  \
-	  $(HOST_FLAGS) \
-	  $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
-	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
-	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpcConfigure" \
+	  "MPC Configure" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigure.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigure.report" \
+	  $(MPC_SRC_DIR)/configure \
+	    $(CONFIG_CACHE_OPTION)  \
+	    $(HOST_FLAGS) \
+	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
+	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
+	    --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
 	echo "The MPC configuration has finished."
 
@@ -957,7 +1030,12 @@ $(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
 	echo && \
 	echo "Building MPC ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpcMake" \
+	  "MPC Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcMake.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcMake.report" \
+	  $(MAKE) -C "$(MPC_OBJ_DIR)" && \
 	echo "The MPC build has finished." >"$(MPC_MAKE_SENTINEL)" && \
 	echo "The MPC build has finished."
 
@@ -965,7 +1043,12 @@ $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo && \
 	echo "Installing MPC ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpcInstall" \
+	  "MPC Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcInstall.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcInstall.report" \
+	  $(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
 	echo "The MPC installation has finished."
 
@@ -973,7 +1056,12 @@ $(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo && \
 	echo "Checking MPC ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(MPC_OBJ_DIR)" check && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "MpcCheck" \
+	  "MPC Check" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcCheck.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcCheck.report" \
+	  $(MAKE) -C "$(MPC_OBJ_DIR)" check && \
 	echo "The MPC check has finished." >"$(MPC_CHECK_SENTINEL)" && \
 	echo "The MPC check has finished."
 
@@ -1016,6 +1104,11 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL)
 	$(GCC_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GccPhase1Configure" \
+	  "GCC Phase 1 Configure" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Configure.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Configure.report" \
 	  $(GCC_SRC_DIR)/configure \
 	    --enable-languages=c \
 	    --without-headers \
@@ -1028,6 +1121,11 @@ $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	echo && \
 	echo "Building GCC phase 1 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GccPhase1Make" \
+	  "GCC Phase 1 Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Make.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Make.report" \
 	  $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
 	echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
 	echo "The GCC phase 1 build has finished."
@@ -1036,6 +1134,11 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GCC phase 1 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GccPhase1Install" \
+	  "GCC Phase 1 Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Install.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Install.report" \
 	  $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
 	echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
 	echo "The GCC phase 1 installation has finished."
@@ -1075,10 +1178,15 @@ $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring Newlib:" && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
-	  CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
-	  CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
-	  $(NEWLIB_SRC_DIR)/configure \
-	    $(NEWLIB_CFG_FLAGS) && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "NewlibConfigure" \
+	    "Newlib Configure" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibConfigure.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibConfigure.report" \
+	    CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+	    CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+	    $(NEWLIB_SRC_DIR)/configure \
+	      $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
 	echo "The Newlib configuration has finished."
 
@@ -1087,7 +1195,12 @@ $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
 	echo "Building Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "NewlibMake" \
+	    "Newlib Make" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibMake.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibMake.report" \
+	    $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
 	echo "The Newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
 	echo "The Newlib build has finished."
 
@@ -1096,7 +1209,12 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	echo "Installing Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "NewlibInstall" \
+	    "Newlib Install" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibInstall.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibInstall.report" \
+	    $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
 	echo "The Newlib installation has finished."
 
@@ -1120,11 +1238,16 @@ $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL) $(BINU
 	mkdir --parents -- "$(GCC2_OBJ_DIR)" && \
 	pushd "$(GCC2_OBJ_DIR)" >/dev/null && \
 	$(GCC_PHASE_2_SET_PATH_DIR) \
-	  $(GCC_SRC_DIR)/configure \
-	    $(GCC_DEBUG_BUILD_FLAGS) \
-	    --enable-languages=c,c++ \
-	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	    $(COMMON_GCC_OPTIONS) && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "GccPhase2Configure" \
+	    "GCC Phase 2 Configure" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Configure.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Configure.report" \
+	    $(GCC_SRC_DIR)/configure \
+	      $(GCC_DEBUG_BUILD_FLAGS) \
+	      --enable-languages=c,c++ \
+	      --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	      $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
 	echo "The GCC phase 2 configuration has finished."
 
@@ -1133,9 +1256,14 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	echo "Building GCC phase 2 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	$(GCC_PHASE_2_SET_PATH_DIR) \
-	  $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
-	    CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "GccPhase2Make" \
+	    "GCC Phase 2 Make" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Make.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Make.report" \
+	    $(MAKE) -C "$(GCC2_OBJ_DIR)" \
+	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
+	      CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
 	echo "The GCC phase 2 build has finished."
 
@@ -1147,7 +1275,12 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo "Installing GCC phase 2 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "GccPhase2Install" \
+	    "GCC Phase 2 Install" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Install.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Install.report" \
+	    $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
 	echo "The GCC phase 2 installation has finished."
 
@@ -1156,9 +1289,14 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo "Checking GCC phase 2 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PATH_DIR):$$PATH \
-	  $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
-	    CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
-	    CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "GccPhase2Install" \
+	    "GCC Phase 2 Install" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.report" \
+	    $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
+	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
+	      CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
 	echo "The GCC phase 2 check has finished."
 
@@ -1205,7 +1343,12 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	echo && \
 	echo "Building GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GDB_OBJ_DIR)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GDbMake" \
+	  "GDB Make" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbMake.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbMake.report" \
+	  $(MAKE) -C "$(GDB_OBJ_DIR)" && \
 	echo "The GDB build has finished." >"$(GDB_MAKE_SENTINEL)" && \
 	echo "The GDB build has finished."
 
@@ -1213,7 +1356,12 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
-	$(MAKE) -C "$(GDB_OBJ_DIR)" "$(GDB_INSTALL_TARGET)" && \
+	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	  "GDbInstall" \
+	  "GDB Install" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbInstall.log" \
+	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbInstall.report" \
+	  $(MAKE) -C "$(GDB_OBJ_DIR)" "$(GDB_INSTALL_TARGET)" && \
 	echo "The GDB installation has finished." >"$(GDB_INSTALL_SENTINEL)" && \
 	echo "The GDB installation has finished."
 
