@@ -277,7 +277,8 @@ EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_
 
 # ------- Build directory definitions -------
 
-CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)BuildDirSentinel
+CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)BuildDirSentinel
+CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBuilder-LogFiles
 
 
 # ------- Common C/C++ Compilation flags -------
@@ -739,6 +740,7 @@ $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL):
 	echo && \
 	echo "Creating directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\"..." && \
 	mkdir --parents -- "$(CROSS_TOOLCHAIN_BUILD_DIR)" && \
+	mkdir -- "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)" && \
 	{ echo "Target CPU: $(TOOLCHAIN_TARGET_CPU)" && echo "Toolchain kind: $(TOOLCHAIN_KIND)"; } >"$(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainInfo.txt" && \
 	echo "Creation of directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\" finished." >"$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)"
 
@@ -762,7 +764,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
 	echo "Help text from the 'configure' script:" && \
-	$(BINUTILS_SRC_DIR)/configure --help && \
+	$(BINUTILS_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
 	$(BINUTILS_SRC_DIR)/configure \
@@ -827,7 +829,7 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
 	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
 	echo "Help text from the 'configure' script:" && \
-	$(GMP_SRC_DIR)/configure --help && \
+	$(GMP_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
 	$(GMP_SRC_DIR)/configure \
@@ -882,7 +884,7 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
 	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
 	echo "Help text from the 'configure' script:" && \
-	$(MPFR_SRC_DIR)/configure --help && \
+	$(MPFR_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
 	$(MPFR_SRC_DIR)/configure \
@@ -938,7 +940,7 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
 	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
 	echo "Help text from the 'configure' script:" && \
-	$(MPC_SRC_DIR)/configure --help && \
+	$(MPC_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
 	$(MPC_SRC_DIR)/configure \
@@ -1011,7 +1013,7 @@ $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL)
 	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
 	echo "Help text from the 'configure' script:" && \
-	$(GCC_SRC_DIR)/configure --help && \
+	$(GCC_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
 	  $(GCC_SRC_DIR)/configure \
@@ -1066,10 +1068,10 @@ $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
 	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
-	$(NEWLIB_SRC_DIR)/configure --help && \
+	$(NEWLIB_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibTopLevelConfigHelp.txt" && \
 	echo && \
 	echo "Help text from 'configure' script for the newlib/ subdir:" && \
-	$(NEWLIB_SRC_DIR)/newlib/configure --help && \
+	$(NEWLIB_SRC_DIR)/newlib/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibNewlibConfigHelp.txt" && \
 	echo && \
 	echo "Configuring Newlib:" && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
@@ -1185,7 +1187,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL) $(GMP_INSTALL_SE
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
 	echo "Help text from the 'configure' script:" && \
-	$(GDB_SRC_DIR)/configure --help && \
+	$(GDB_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigHelp.txt" && \
 	echo && \
 	echo "Configuring:" && \
 	$(GDB_SRC_DIR)/configure \
