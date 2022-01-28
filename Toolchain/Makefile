@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2021 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2022 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 .DELETE_ON_ERROR:
@@ -96,6 +96,8 @@ check_variable_non_empty_and_contains_no_whitespace = $(eval $(call check_variab
 # ------- Common variables -------
 
 THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
+
+MAKEFILE_TOOLS_DIR := $(THIS_MAKEFILE_DIR)/Tools
 
 CROSS_TOOLCHAIN_BUILD_DIR := $(THIS_MAKEFILE_DIR)/Tmp
 
@@ -1458,7 +1460,7 @@ $(TARGET_NAME_CLEAN):
 
 GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
 
-DOWNLOAD_TARBALL_TOOL_PATH := $(THIS_MAKEFILE_DIR)/DownloadTarball.sh
+DOWNLOAD_TARBALL_TOOL_PATH := $(MAKEFILE_TOOLS_DIR)/DownloadTarball.sh
 
 # An alternative to this target could be script contrib/download_prerequisites in the GCC sources.
 $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
