@@ -367,7 +367,7 @@ SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE := 1
 
 # ------- Miscellaneous definitions -------
 
-ARM_TARGET := arm-none-eabi
+TARGET_ARCH := arm-none-eabi
 
 SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
 
@@ -623,7 +623,7 @@ COMMON_GCC_OPTIONS =
 COMMON_GCC_OPTIONS += $(HOST_FLAGS)
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
 
-COMMON_GCC_OPTIONS += --target=$(ARM_TARGET)
+COMMON_GCC_OPTIONS += --target=$(TARGET_ARCH)
 COMMON_GCC_OPTIONS += $(GCC_FLOATING_POINT_FLAGS)
 
 COMMON_GCC_OPTIONS += --disable-nls           # --enable-nls lets GCC output diagnostics in languages other than American English.
@@ -712,7 +712,7 @@ NEWLIB_CFG_FLAGS =
 
 NEWLIB_CFG_FLAGS += $(HOST_FLAGS)
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
-NEWLIB_CFG_FLAGS += --target=$(ARM_TARGET)
+NEWLIB_CFG_FLAGS += --target=$(TARGET_ARCH)
 NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
 NEWLIB_CFG_FLAGS += --disable-libssp
 
@@ -895,7 +895,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	  $(CONFIG_CACHE_OPTION)  \
 	  $(HOST_FLAGS) \
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	  --target=$(ARM_TARGET) \
+	  --target=$(TARGET_ARCH) \
 	  $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
 	  --disable-nls && \
 	popd >/dev/null && \
@@ -1321,7 +1321,7 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL) $(GMP_INSTALL_SE
 	  --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
 	  --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
-	  --target=$(ARM_TARGET) && \
+	  --target=$(TARGET_ARCH) && \
 	popd >/dev/null && \
 	echo "The GDB configuration has finished."
 
