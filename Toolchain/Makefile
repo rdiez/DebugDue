@@ -181,36 +181,39 @@ INSTALL_TARGET := install-strip
 
 # These are the compilation flags for the toolchain itself when running on the cross-compiling PC.
 # HF stands for "Host Flags".
-HF :=
+HF_COMMON :=
 
 # Building without debug information cuts the Binutils build time alone with GCC 5.4.0 and
 # "-O3 -march=native" on my Intel Core i3 M 380 from 5 minutes, 22 seconds to 4 minutes.
 # You need to explicitly add -g0 to disable debug information, because some components
 # automatically prepend the compiler flags with '-g'.
-HF += -g0
-
-
-HF_WITH_OPT :=
-
-# The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
-# so we want to optimise them as much as we reasonably can.
-# If your host compiler ist GCC version 7 or newer, you can enable LTO builds here.
-# See the project's configure.ac file for more information about why we are
-# not using "-flto=jobserver" here.
-LTO_PARALLEL_LEVEL=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
-HF_WITH_OPT += -O3 -flto=$(LTO_PARALLEL_LEVEL)
-
-# Building for the current CPU makes this toolchain not portable, but can yield
-# a good performance boost, especially on newer CPUs.
-HF_WITH_OPT += -march=native
+HF_COMMON += -g0
 
 
 # The GCC phase 1 compiler is only used once to build Newlib and it is not worth optimising it.
-HF_WITHOUT_OPT := -O0
+HF_NO_OPT := -O0
 
 
-HOST_FLAGS_WITH_OPT    := CFLAGS="$(HF) $(HF_WITH_OPT)"     CXXFLAGS="$(HF) $(HF_WITH_OPT)"
-HOST_FLAGS_WITHOUT_OPT := CFLAGS="$(HF) $(HF_WITHOUT_OPT)"  CXXFLAGS="$(HF) $(HF_WITHOUT_OPT)"
+HF_OPT :=
+
+# The GCC compiler and the Binutils linker, among other components, need to do heavy lifting,
+# so we want to optimise them as much as we can.
+HF_OPT += -O3
+
+# Building for the current CPU makes this toolchain not portable, but can yield
+# a good performance boost, especially on newer CPUs.
+HF_OPT += -march=native
+
+
+# See the project's configure.ac file for more information about why we are
+# not using "-flto=jobserver" here.
+LTO_PARALLEL_LEVEL:=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
+HF_LTO := -flto=$(LTO_PARALLEL_LEVEL)
+
+
+HOST_FLAGS_WITHOUT_OPT      := CFLAGS="$(HF_COMMON) $(HF_NO_OPT)"        CXXFLAGS="$(HF_COMMON) $(HF_NO_OPT)"
+HOST_FLAGS_WITH_OPT         := CFLAGS="$(HF_COMMON) $(HF_OPT)"           CXXFLAGS="$(HF_COMMON) $(HF_OPT)"
+HOST_FLAGS_WITH_OPT_AND_LTO := CFLAGS="$(HF_COMMON) $(HF_OPT) $(HF_LTO)" CXXFLAGS="$(HF_COMMON) $(HF_OPT) $(HF_LTO)"
 
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
@@ -427,13 +430,25 @@ MPC_CHECK_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcCheckSentinel
 
 # ------- GCC configuration -------
 
+# If your host compiler ist GCC version 7 or newer, you can enable LTO builds here.
+# Unfortunately, this has stopped working when the cross-compiler is GCC version 11.1 or 11.2. The error message is:
+#   /usr/bin/ld: /tmp/g++-mapper-server.98PJcy.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
+#   collect2: error: ld returned 1 exit status
+#   make[3]: *** [Makefile:94: g++-mapper-server] Error 1
+#   make[2]: *** [Makefile:10549: all-c++tools] Error 2
+# This problem is very similar to this bug:
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
+ENABLE_LTO_FOR_GCC_PHASE_2 := 0
+
 # This enables building a debug version of GCC in phase 2, instead of a release version,
 # which is only useful if you need to debug GCC itself.
-
 GCC_ENABLE_DEBUG_BUILD := 0
 
 ifeq ($(GCC_ENABLE_DEBUG_BUILD),1)
+  # Note that HF_COMMON is ignored below. Use with care.
   GCC_PHASE_2_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
+else ifeq ($(ENABLE_LTO_FOR_GCC_PHASE_2),1)
+  GCC_PHASE_2_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT_AND_LTO)
 else
   GCC_PHASE_2_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT)
 endif
@@ -541,7 +556,12 @@ COMMON_GCC_OPTIONS += --disable-libstdcxx-verbose
 
 COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
-COMMON_GCC_OPTIONS += --enable-lto  # This flag is probably only required in GCC phase 2.
+# It is not clearly documented what --enable-lto does.
+# By looking at GCC's configure.ac, it looks like it enables LTO support by building the LTO plug-ins
+# for the linker. This option is enabled by default on most interesting platforms.
+# We could probably disable it and save some build time for the GCC phase 1,
+# but we may want to build Newlib with LTO support in the future.
+COMMON_GCC_OPTIONS += --enable-lto
 
 
 ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
@@ -596,7 +616,7 @@ NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
 
 NEWLIB_CFG_FLAGS =
 
-NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT)
+NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT_AND_LTO)
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(TARGET_ARCH)
 NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
@@ -731,7 +751,7 @@ ifeq ($(GDB_ENABLE_DEBUG_BUILD),1)
   # GDB is written in C only, so CXXFLAGS is not needed yet. But it might be necessary in the future.
   GDB_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
 else
-  GDB_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT)
+  GDB_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT_AND_LTO)
 endif
 
 
@@ -785,7 +805,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfig.report" \
 	  $(BINUTILS_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS_WITH_OPT) \
+	    $(HOST_FLAGS_WITH_OPT_AND_LTO) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(TARGET_ARCH) \
 	    $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
@@ -875,7 +895,7 @@ $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigure.report" \
 	  $(GMP_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS_WITH_OPT) \
+	    $(HOST_FLAGS_WITH_OPT_AND_LTO) \
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
@@ -950,7 +970,7 @@ $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigure.report" \
 	  $(MPFR_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS_WITH_OPT) \
+	    $(HOST_FLAGS_WITH_OPT_AND_LTO) \
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
@@ -1026,7 +1046,7 @@ $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_
 	  "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigure.report" \
 	  $(MPC_SRC_DIR)/configure \
 	    $(CONFIG_CACHE_OPTION)  \
-	    $(HOST_FLAGS_WITH_OPT) \
+	    $(HOST_FLAGS_WITH_OPT_AND_LTO) \
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
