@@ -157,10 +157,27 @@ else ifeq ($(VERSION_SET),VersionSet9)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
   NEWLIB_VERSION := 4.1.0
+  # PICOLIBC_VERSION := 1.7.4
   GDB_VERSION := 11.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
+endif
+
+
+ifdef NEWLIB_VERSION
+  ifdef PICOLIBC_VERSION
+    $(error Both NEWLIB_VERSION and PICOLIBC_VERSION are set)
+  else
+    TARGET_LIBC := newlib
+  endif
+else
+  ifdef PICOLIBC_VERSION
+    TARGET_LIBC := picolibc
+    $(error Support for Picolibc is not ready yet)
+  else
+    $(error Either NEWLIB_VERSION or PICOLIBC_VERSION must be set)
+  endif
 endif
 
 
@@ -588,9 +605,11 @@ endif
 
 # ------- Newlib configuration -------
 
+ifeq ($(TARGET_LIBC), newlib)
+
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
-NEWLIB_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
+NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
 NEWLIB_NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
 
 NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
@@ -727,6 +746,26 @@ NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc
 #
 NEWLIB_CFG_FLAGS += --disable-libgloss
 NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
+
+endif
+
+
+# ------- Picolibc configuration -------
+
+ifeq ($(TARGET_LIBC), picolibc)
+
+  PICOLIBC_TAR_FILE := picolibc-$(PICOLIBC_VERSION).tar.xz
+
+  PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
+  PICOLIBC_SRC_DIR := $(PICOLIBC_UNTAR_DIR)
+  PICOLIBC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)-obj
+
+  PICOLIBC_UNTAR_SENTINEL := $(PICOLIBC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+  PICOLIBC_CONFIGURE_SENTINEL :=$(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)ConfigureSentinel
+  PICOLIBC_MAKE_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
+  PICOLIBC_INSTALL_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
+
+endif
 
 
 # ------- GDB configuration -------
@@ -1178,6 +1217,8 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 
 # ----------------- Build Newlib -----------------
 
+ifeq ($(TARGET_LIBC), newlib)
+
 $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo && \
 	echo "Unpacking $(NEWLIB_TAR_FILE) ..." && \
@@ -1250,6 +1291,77 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
 	echo "The Newlib installation has finished."
 
+endif
+
+
+# ----------------- Build Picolibc -----------------
+
+ifeq ($(TARGET_LIBC), picolibc)
+
+$(PICOLIBC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
+	echo && \
+	echo "Unpacking $(PICOLIBC_TAR_FILE) ..." && \
+	if [ -d "$(PICOLIBC_UNTAR_DIR)" ]; then rm -rf -- "$(PICOLIBC_UNTAR_DIR)"; fi && \
+	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
+	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(PICOLIBC_TAR_FILE)" && \
+	popd >/dev/null && \
+	echo "Unpacking Picolibc finished." >"$(PICOLIBC_UNTAR_SENTINEL)" && \
+	echo "Unpacking Picolibc finished."
+
+$(PICOLIBC_CONFIGURE_SENTINEL): $(PICOLIBC_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
+	echo && \
+	echo "About to configure Picolibc from $(PICOLIBC_SRC_DIR)/ to $(PICOLIBC_OBJ_DIR)/" && \
+	if [ -d "$(PICOLIBC_OBJ_DIR)" ]; then rm -rf -- "$(PICOLIBC_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(PICOLIBC_OBJ_DIR)" && \
+	pushd "$(PICOLIBC_OBJ_DIR)" >/dev/null && \
+	echo "Configuring Picolibc:" && \
+	PATH=$(PHASE_1_PATH_DIR):$$PATH \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "PicolibcConfigure" \
+	    "Picolibc Configure" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcConfigure.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcConfigure.report" \
+	    meson \
+	      setup \
+	      --prefix="$(CROSS_TOOLCHAIN_DIR)" \
+	      -Dincludedir="$(TARGET_ARCH)/include" \
+	      -Dlibdir="$(TARGET_ARCH)/lib" \
+	      "$(PICOLIBC_SRC_DIR)" \
+	      "$(PICOLIBC_OBJ_DIR)" && \
+	popd >/dev/null && \
+	echo "The Picolibc installation has finished." >"$(PICOLIBC_CONFIGURE_SENTINEL)" && \
+	echo "The Picolibc configuration has finished."
+
+$(PICOLIBC_MAKE_SENTINEL): $(PICOLIBC_CONFIGURE_SENTINEL)
+	echo && \
+	echo "Building Picolibc ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PHASE_1_PATH_DIR):$$PATH \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "PicolibcMake" \
+	    "Picolibc Make" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcMake.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcMake.report" \
+	    meson compile --verbose  -C "$(PICOLIBC_OBJ_DIR)"  && \
+	echo "The Picolibc build has finished." >"$(PICOLIBC_MAKE_SENTINEL)" && \
+	echo "The Picolibc build has finished."
+
+$(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
+	echo && \
+	echo "Installing Picolibc ..." && \
+	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	PATH=$(PHASE_1_PATH_DIR):$$PATH \
+	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
+	    "PicolibcInstall" \
+	    "Picolibc Install" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.log" \
+	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.report" \
+	    meson install  -C "$(PICOLIBC_OBJ_DIR)"  && \
+	echo "The Picolibc installation has finished." >"$(PICOLIBC_INSTALL_SENTINEL)" && \
+	echo "The Picolibc installation has finished."
+
+endif
+
 
 # ----------------- GCC phase 2 -----------------
 
@@ -1263,7 +1375,15 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 # There might be some confusion, because both instances of Binutils are available,
 # once over the '--prefix' directory, and one over PATH. But both instances are identical anyway.
 
-$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(NEWLIB_NEWLIB_INSTALL_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
+ifeq ($(TARGET_LIBC), newlib)
+  $(GCC2_MAKEFILE): $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
+endif
+
+ifeq ($(TARGET_LIBC), picolibc)
+  $(GCC2_MAKEFILE): $(PICOLIBC_INSTALL_SENTINEL)
+endif
+
+$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)/" && \
 	if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf -- "$(GCC2_OBJ_DIR)"; fi && \
@@ -1314,6 +1434,9 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
 	echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
 	echo "The GCC phase 2 installation has finished."
+
+# Short target name for building and installing GCC without GDB. Sometimes useful when testing this makefile.
+gcc: $(GCC2_INSTALL_SENTINEL)
 
 $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo && \
@@ -1427,7 +1550,12 @@ $(TARGET_NAME_HELP):
 	@echo "   Alternatively, manually download the following files and place them in the Tarballs subdirectory:"
 	@echo "     $(BINUTILS_TAR_FILE)"
 	@echo "     $(GCC_TAR_FILE)"
-	@echo "     $(NEWLIB_TAR_FILE)"
+	@if [ $(TARGET_LIBC) = "newlib" ]; then \
+	 echo "     $(NEWLIB_TAR_FILE)"; \
+	 fi
+	@if [ $(TARGET_LIBC) = "picolibc" ]; then \
+	 echo "     $(PICOLIBC_TAR_FILE)"; \
+	 fi
 	@echo "     $(GDB_TAR_FILE)"
 	@if [ $(BUILD_GMP_MPFR_MPC) -ne 0 ]; then \
 	echo "     $(GMP_TAR_FILE)" && \
@@ -1528,7 +1656,12 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET):
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/binutils/$(BINUTILS_TAR_FILE)"           "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gcc/gcc-$(GCC_VERSION)/$(GCC_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gdb/$(GDB_TAR_FILE)"                     "$(TARBALLS_DOWNLOAD_DIR)"
-	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "ftp://sourceware.org/pub/newlib/$(NEWLIB_TAR_FILE)"             "$(TARBALLS_DOWNLOAD_DIR)"
+	if [ $(TARGET_LIBC) = "newlib" ]; then \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "ftp://sourceware.org/pub/newlib/$(NEWLIB_TAR_FILE)"           "$(TARBALLS_DOWNLOAD_DIR)" ; \
+	fi
+	if [ $(TARGET_LIBC) = "picolibc" ]; then \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "https://github.com/picolibc/picolibc/releases/download/$(PICOLIBC_VERSION)/$(PICOLIBC_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)" ; \
+	fi
 	if [ $(BUILD_GMP_MPFR_MPC) -ne 0 ]; then \
 	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/gmp/$(GMP_TAR_FILE)"    "$(TARBALLS_DOWNLOAD_DIR)" && \
 	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "$(GNU_MIRROR_BASE_URL)/mpfr/$(MPFR_TAR_FILE)"  "$(TARBALLS_DOWNLOAD_DIR)" && \
@@ -1542,7 +1675,12 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(BINUTILS_TAR_FILE)" "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GCC_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"
 	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GDB_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)"
-	"$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(NEWLIB_TAR_FILE)"   "$(TARBALLS_DOWNLOAD_DIR)"
+	if [ $(TARGET_LIBC) = "newlib" ]; then \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(NEWLIB_TAR_FILE)"   "$(TARBALLS_DOWNLOAD_DIR)" ; \
+	fi
+	if [ $(TARGET_LIBC) = "picolibc" ]; then \
+	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(PICOLIBC_TAR_FILE)" "$(TARBALLS_DOWNLOAD_DIR)" ; \
+	fi
 	if [ $(BUILD_GMP_MPFR_MPC) -ne 0 ]; then \
 	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(GMP_TAR_FILE)"      "$(TARBALLS_DOWNLOAD_DIR)" && \
 	  "$(DOWNLOAD_TARBALL_TOOL_PATH)" "file://$(PATH_TO_TARBALLS_ON_FILE_SERVER)/$(MPFR_TAR_FILE)"     "$(TARBALLS_DOWNLOAD_DIR)" && \
@@ -1554,6 +1692,10 @@ $(TARGET_NAME_TEST_MAKEFLAGS):
 	@$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && echo "MAKEFLAGS passed in the environment: $$MAKEFLAGS"
 
 $(TARGET_NAME_CHECK): $(BINUTILS_CHECK_SENTINEL)
-$(TARGET_NAME_CHECK): $(GMP_CHECK_SENTINEL) $(MPFR_CHECK_SENTINEL) $(MPC_CHECK_SENTINEL)
+
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  $(TARGET_NAME_CHECK): $(GMP_CHECK_SENTINEL) $(MPFR_CHECK_SENTINEL) $(MPC_CHECK_SENTINEL)
+endif
+
 # We cannot run the GCC checks on the host PC:
 # $(TARGET_NAME_CHECK): $(GCC2_CHECK_SENTINEL)
