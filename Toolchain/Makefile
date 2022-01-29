@@ -51,8 +51,7 @@ $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-# GCC versions 11.1 and 11.2 do not build properly, so I am not using VersionSet9 yet.
-VERSION_SET := VersionSet8
+VERSION_SET := VersionSet9
 
 ifeq ($(VERSION_SET),VersionSet1)
 
@@ -147,12 +146,6 @@ else ifeq ($(VERSION_SET),VersionSet8)
   GDB_VERSION := 11.1
 
 else ifeq ($(VERSION_SET),VersionSet9)
-
-  # GCC versions 11.1 and 11.2 fail to build with this error message:
-  #   g++ -static-libstdc++ -static-libgcc   -o g++-mapper-server server.o resolver.o ../libcody/libcody.a ../gcc/version.o ../libiberty/libiberty.a
-  #   /usr/bin/ld: /tmp/g++-mapper-server.K0n1nG.ltrans0.ltrans.o: relocation R_X86_64_32 against `.rodata.str1.1' can not be used when making a PIE object; recompile with -fPIE
-  # It is very similar to this bug:
-  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=98324
 
   BINUTILS_VERSION := 2.37
   GMP_VERSION := 6.2.1
