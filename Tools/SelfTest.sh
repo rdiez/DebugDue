@@ -116,7 +116,7 @@ TOOLS_DIR="$(readlink --canonicalize --verbose -- ".")"
 GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "..")"
 declare -r TOOLCHAIN_DIR="$GIT_REPOSITORY_BASE/Toolchain"
 
-if [ $# -ne 0 ]; then
+if (( $# != 0 )); then
   abort "Invalid number of command-line arguments."
 fi
 
