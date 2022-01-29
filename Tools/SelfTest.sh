@@ -324,8 +324,9 @@ fi
 
 pushd "$COPY_OF_REPOSITORY" >/dev/null
 
+# About option '--show-build-commands': Sometimes it is useful to look at the compiler flags used when building the projects.
 
-printf -v BUILD_BASE_CMD "%q  --toolchain-dir=%q"  "$COPY_OF_REPOSITORY/JtagDueBuilder.sh"  "$TOOLCHAIN_BIN_DIR"
+printf -v BUILD_BASE_CMD "%q  --show-build-commands  --toolchain-dir=%q"  "$COPY_OF_REPOSITORY/JtagDueBuilder.sh"  "$TOOLCHAIN_BIN_DIR"
 
 printf -v BUILD_BASE_ASF_CMD "%s  --atmel-software-framework=%q"  "$BUILD_BASE_CMD"  "$ASF_PATH"
 
