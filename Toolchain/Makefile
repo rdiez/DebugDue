@@ -38,10 +38,14 @@ $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS
 
 # ------- User Configuration -------
 
-# - GMP:  https://gmplib.org/
-# - MPFR: https://www.mpfr.org/
-# - MPC:  http://www.multiprecision.org/mpc/
 # - Binutils: https://www.gnu.org/software/binutils/
+# - Building the GMP, MPFR and MPC is optional. If you do not build them,
+#   the ones installed on the host system are used instead.
+#   The corresponding package names in Ubuntu/Debian are libgmp-dev, libmpfr-dev and libmpc-dev.
+#   This makefile can either build these 3 libraries itself, or none of them.
+#   - GMP:  https://gmplib.org/
+#   - MPFR: https://www.mpfr.org/
+#   - MPC:  http://www.multiprecision.org/mpc/
 #
 # You can check out GCC's contrib/download_prerequisites for inspiration
 # on libraries and version numbers. Unfortunately, that script looks
@@ -241,7 +245,8 @@ DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
 
 # Recent GCC versions may require newer versions of the GMP, MPFR and MPC
 # libraries than the ones available in your linux distribution.
-# With this option you can choose whether to download a build these libraries too.
+# With this option you can choose whether to download and build these libraries too.
+# Possible makefile improvement: We could calculate this variable automatically based on the presence of GMP_VERSION etc.
 BUILD_GMP_MPFR_MPC := 1
 
 SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE := 1
@@ -293,12 +298,12 @@ CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBui
 
 # WARNING: The following components must be ABI compatible, which means they must be compiled
 #          with similar CFLAGS:
-# - Newlib
+# - Newlib.
 #   Keep in mind that Newlib's configure.host may provide additional compilation flags.
 #   The best thing to do is probably to run this makefile once and then look for the compilation flags
 #   in the log output of some Newlib source file like "strlen.c".
-# - GCC's libgcc und libstdc++
-# - Your operating system and application, so you will have to keep the CFLAGS/CXXFLAGS in your
+# - GCC's libgcc und libstdc++ (and its libsupc++).
+# - Your our application, so you will have to keep the CFLAGS/CXXFLAGS in your
 #   own makefile in sync with this one.
 
 COMMON_CFLAGS_FOR_TARGET :=
@@ -740,13 +745,19 @@ GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GdbInstallSent
 # which is only useful if you need to debug GDB itself.
 GDB_ENABLE_DEBUG_BUILD := 0
 
+GDB_BUILD_FLAGS =
+
 ifeq ($(GDB_ENABLE_DEBUG_BUILD),1)
   # GDB is written in C only, so CXXFLAGS is not needed yet. But it might be necessary in the future.
-  GDB_BUILD_FLAGS := CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
+  GDB_BUILD_FLAGS += CFLAGS="-O0 -g"  CXXFLAGS="-O0 -g"
 else
-  GDB_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT_AND_LTO)
+  GDB_BUILD_FLAGS += $(HOST_FLAGS_WITH_OPT_AND_LTO)
 endif
 
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  GDB_BUILD_FLAGS += --with-mpfr="$(CROSS_TOOLCHAIN_DIR)"
+  GDB_BUILD_FLAGS += --with-gmp="$(CROSS_TOOLCHAIN_DIR)"
+endif
 
 # We cannot use INSTALL_TARGET here, because unfortunately GDB does not support the 'install-strip' target,
 # at least as of versions 8.1 and 9.1. The error message is about not finding makefile recipes for targets
@@ -1335,10 +1346,13 @@ $(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
 	echo "Unpacking GDB finished."
 
-# GDB version 11.1 is the first one to require the GMP library.
-# This makefile could drop the dependency when building older GDB versions.
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  # GDB version 11.1 is the first one to require the GMP library.
+  # This makefile could drop the dependency when building older GDB versions.
+  $(GDB_MAKEFILE): $(GMP_INSTALL_SENTINEL) $(MPFR_INSTALL_SENTINEL)
+endif
 
-$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL) $(GMP_INSTALL_SENTINEL)
+$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	echo && \
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)/" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
@@ -1357,8 +1371,6 @@ $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL) $(MPFR_INSTALL_SENTINEL) $(GMP_INSTALL_SE
 	    $(GDB_BUILD_FLAGS) \
 	    $(CONFIG_CACHE_OPTION)  \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	    --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" \
-	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(TARGET_ARCH) && \
 	popd >/dev/null && \
 	echo "The GDB configuration has finished."
