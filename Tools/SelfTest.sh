@@ -149,8 +149,10 @@ echo "  $ROTATED_DIR"
 
 declare -r COPY_OF_TOOLCHAIN_DIRNAME="$ROTATED_DIR/CopyOfToolchainDir"
 declare -r DOWNLOADED_TARBALLS_DIRNAME="$ROTATED_DIR/DownloadedTarballs"
+declare -r LOG_FILES_DIRNAME="$ROTATED_DIR/Logs"
 
 mkdir -- "$COPY_OF_TOOLCHAIN_DIRNAME"
+mkdir -- "$LOG_FILES_DIRNAME"
 
 printf -v CMD  "git ls-files -z -- . | xargs --null -- cp --parents --target-directory=%q"  "$COPY_OF_TOOLCHAIN_DIRNAME"
 
@@ -170,25 +172,25 @@ set_make_parallel_jobs_flag
 # Running make without arguments should just display the help text.
 # It should not attempt to do anything else and fail.
 
-run_cmd "Testing running 'make' with no arguments..." "make" "$ROTATED_DIR/toolchain-make-no-targets.txt"  stdout
+run_cmd "Testing running 'make' with no arguments..." "make" "$LOG_FILES_DIRNAME/toolchain-make-no-targets.txt"  stdout
 
 printf -v CMD "make %s"  "$USUAL_ARGS"
-run_cmd "Testing running 'make' with the usual arguments and no targets..."  "$CMD"  "$ROTATED_DIR/toolchain-make-usual-no-targets.txt"  stdout
+run_cmd "Testing running 'make' with the usual arguments and no targets..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-usual-no-targets.txt"  stdout
 
 # Check that "make help" does not fail.
-run_cmd "Testing 'make help' with no arguments..." "make help" "$ROTATED_DIR/toolchain-make-help.txt"  stdout
+run_cmd "Testing 'make help' with no arguments..." "make help" "$LOG_FILES_DIRNAME/toolchain-make-help.txt"  stdout
 
 printf -v CMD "make %s  help"  "$USUAL_ARGS"
-run_cmd "Testing 'make help' with the usual arguments..."  "$CMD" "$ROTATED_DIR/toolchain-make-usual-help.txt"  stdout
+run_cmd "Testing 'make help' with the usual arguments..."  "$CMD" "$LOG_FILES_DIRNAME/toolchain-make-usual-help.txt"  stdout
 
 # Check that "make test-makeflags" works.
 printf -v CMD "make %s  %s  test-makeflags"  "$USUAL_ARGS"  "$PARALLEL_ARGS"
-run_cmd "Testing 'make test-makeflags'..." "$CMD" "$ROTATED_DIR/toolchain-make-test-makeflags.txt"  stdout
+run_cmd "Testing 'make test-makeflags'..." "$CMD" "$LOG_FILES_DIRNAME/toolchain-make-test-makeflags.txt"  stdout
 
-run_cmd "Testing 'make clean' with nothing to clean..."  "make clean"  "$ROTATED_DIR/toolchain-make-clean.txt"  stdout
+run_cmd "Testing 'make clean' with nothing to clean..."  "make clean"  "$LOG_FILES_DIRNAME/toolchain-make-clean.txt"  stdout
 
 printf -v CMD "make %s  clean"  "$USUAL_ARGS"
-run_cmd "Testing 'make clean' with nothing to clean and the usual arguments..."  "$CMD" "$ROTATED_DIR/toolchain-make-usual-clean.txt"  stdout
+run_cmd "Testing 'make clean' with nothing to clean and the usual arguments..."  "$CMD" "$LOG_FILES_DIRNAME/toolchain-make-usual-clean.txt"  stdout
 
 if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS; then
 
@@ -198,7 +200,7 @@ if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS; then
          "$DOWNLOADED_TARBALLS_DIRNAME" \
          "$TOOLCHAIN_DIR/Tarballs"
 
-  run_cmd "Testing downloading tarballs from a file server to a different directory..."  "$CMD"  "$ROTATED_DIR/toolchain-make-download-to-specific-dir.txt" both
+  run_cmd "Testing downloading tarballs from a file server to a different directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-to-specific-dir.txt" both
 
 
   printf -v CMD \
@@ -206,13 +208,13 @@ if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS; then
          "$USUAL_ARGS" \
          "$TOOLCHAIN_DIR/Tarballs"
 
-  run_cmd "Testing downloading tarballs from a file server to the default directory..."  "$CMD"  "$ROTATED_DIR/toolchain-make-download-to-default-dir.txt" both
+  run_cmd "Testing downloading tarballs from a file server to the default directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-to-default-dir.txt" both
 
 fi
 
 
-declare -r BUILD_DIR="$ROTATED_DIR/build"
-declare -r INSTALLATION_DIR="$ROTATED_DIR/ToolchainBin"
+declare -r BUILD_DIR="$ROTATED_DIR/Toolchain-Build"
+declare -r INSTALLATION_DIR="$ROTATED_DIR/Toolchain-Bin"
 
 if $SKIP_TOOLCHAIN_BUILD; then
 
@@ -227,16 +229,16 @@ else
        "$INSTALLATION_DIR" \
        "$BUILD_DIR"
 
-  run_cmd "Testing building the toolchain..."  "$CMD"  "$ROTATED_DIR/toolchain-make-build-all.txt"  both
+  run_cmd "Testing building the toolchain..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all.txt"  both
 
 
   # LANG="C" is to make sure that the tools print messages in English,
   # because we will be searching for an English text later on in the output.
   CMD="LANG=\"C\"  $CMD"
 
-  run_cmd "Testing running the toolchain building makefile a second time..."  "$CMD"  "$ROTATED_DIR/toolchain-make-build-all-2.txt"  both
+  run_cmd "Testing running the toolchain building makefile a second time..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all-2.txt"  both
 
-  OUTPUT_FILE_CONTENTS=$(<"$ROTATED_DIR/toolchain-make-build-all-2.txt")
+  OUTPUT_FILE_CONTENTS=$(<"$LOG_FILES_DIRNAME/toolchain-make-build-all-2.txt")
 
   declare -r NOTHING_TO_DO_REGEX=".*Nothing to be done for.*"
 
@@ -257,7 +259,7 @@ if ! $SKIP_TOOLCHAIN_CHECK; then
        "$INSTALLATION_DIR" \
        "$BUILD_DIR"
 
-  run_cmd "Checking the toolchain..."  "$CMD"  "$ROTATED_DIR/toolchain-make-check.txt"  both
+  run_cmd "Checking the toolchain..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-check.txt"  both
 
 fi
 
@@ -282,7 +284,7 @@ run_cmd  "Copy all checked-in repository files to another directory..."  "$CMD" 
 popd >/dev/null
 
 printf -v CMD "%q --help"  "$COPY_OF_REPOSITORY/JtagDueBuilder.sh"
-run_cmd "Testing the JtagDue builder script with --help ..."  "$CMD"  "$ROTATED_DIR/JtagDueBuilder-output-help.txt"  stdout
+run_cmd "Testing the JtagDue builder script with --help ..."  "$CMD"  "$LOG_FILES_DIRNAME/JtagDueBuilder-output-help.txt"  stdout
 
 if false; then
 
@@ -330,19 +332,19 @@ printf -v BUILD_BASE_CMD "%q  --show-build-commands  --toolchain-dir=%q"  "$COPY
 
 printf -v BUILD_BASE_ASF_CMD "%s  --atmel-software-framework=%q"  "$BUILD_BASE_CMD"  "$ASF_PATH"
 
-run_cmd "Building JtagDue, debug build..."  "$BUILD_BASE_ASF_CMD  --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-debug.txt" both
+run_cmd "Building JtagDue, debug build..."  "$BUILD_BASE_ASF_CMD  --build-type=debug --build"  "$LOG_FILES_DIRNAME/JtagDueBuilder-JtagDue-debug.txt" both
 
-run_cmd "Building JtagDue, debug build with disassemble..."  "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-debug-disassemble.txt"  both
+run_cmd "Building JtagDue, debug build with disassemble..."  "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble"  "$LOG_FILES_DIRNAME/JtagDueBuilder-JtagDue-debug-disassemble.txt"  both
 
-run_cmd "Building JtagDue, release build..."  "$BUILD_BASE_ASF_CMD  --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-JtagDue-release.txt" both
+run_cmd "Building JtagDue, release build..."  "$BUILD_BASE_ASF_CMD  --build-type=release --build"  "$LOG_FILES_DIRNAME/JtagDueBuilder-JtagDue-release.txt" both
 
-run_cmd "Building EmptyFirmware, debug build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-debug.txt"  both
+run_cmd "Building EmptyFirmware, debug build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build"  "$LOG_FILES_DIRNAME/JtagDueBuilder-EmptyFirmware-debug.txt"  both
 
-run_cmd "Building EmptyFirmware, release build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-EmptyFirmware-release.txt"  both
+run_cmd "Building EmptyFirmware, release build..."  "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build"  "$LOG_FILES_DIRNAME/JtagDueBuilder-EmptyFirmware-release.txt"  both
 
-run_cmd "Building QemuFirmware, debug build..."  "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build"  "$ROTATED_DIR/JtagDueBuilder-QemuFirmware-debug.txt"  both
+run_cmd "Building QemuFirmware, debug build..."  "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build"  "$LOG_FILES_DIRNAME/JtagDueBuilder-QemuFirmware-debug.txt"  both
 
-run_cmd "Building QemuFirmware, release build..."  "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build"  "$ROTATED_DIR/JtagDueBuilder-QemuFirmware-release.txt"  both
+run_cmd "Building QemuFirmware, release build..."  "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build"  "$LOG_FILES_DIRNAME/JtagDueBuilder-QemuFirmware-release.txt"  both
 
 popd >/dev/null
 
