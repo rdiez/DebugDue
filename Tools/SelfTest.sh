@@ -108,6 +108,7 @@ set_make_parallel_jobs_flag ()
 declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS=false
 declare -r SKIP_TOOLCHAIN_BUILD=false
 declare -r SKIP_TOOLCHAIN_CHECK=false
+declare -r SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC=false
 
 # We want all build messages to be in English, regardless of the current operating system language.
 export LANG=C
@@ -214,14 +215,13 @@ fi
 
 
 declare -r BUILD_DIR="$ROTATED_DIR/Toolchain-Build"
+declare -r BUILD_DIR_WITHOUT_GMP_MPFR_MPC="$ROTATED_DIR/Toolchain-WithoutGmpMpfrMpc-Build"
 declare -r INSTALLATION_DIR="$ROTATED_DIR/Toolchain-Bin"
+declare -r INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC="$ROTATED_DIR/Toolchain-WithoutGmpMpfrMpc-Bin"
 
-if $SKIP_TOOLCHAIN_BUILD; then
+TOOLCHAIN_BIN_DIR=""
 
-  TOOLCHAIN_BIN_DIR="$OUTPUT_BASE_DIR/CurrentToolchain"
-  # TOOLCHAIN_BIN_DIR="$HOME/some-other-toolchain-when-testing-this-script"
-
-else
+if ! $SKIP_TOOLCHAIN_BUILD; then
 
   printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  all" \
        "$USUAL_ARGS" \
@@ -246,7 +246,9 @@ else
     abort "Trying to run the makefile as second time still finds something to be built."
   fi
 
-  TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR"
+  if [ -z "$TOOLCHAIN_BIN_DIR" ]; then
+    TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR"
+  fi
 
 fi
 
@@ -263,6 +265,29 @@ if ! $SKIP_TOOLCHAIN_CHECK; then
 
 fi
 
+
+if ! $SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC; then
+
+  printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  all" \
+       "$USUAL_ARGS" \
+       "$PARALLEL_ARGS" \
+       "$INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC" \
+       "$BUILD_DIR_WITHOUT_GMP_MPFR_MPC"
+
+  run_cmd "Testing building the toolchain without GMP, MPFR and MPC..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all-without-gmp-mpfr-mpc.txt"  both
+
+  if [ -z "$TOOLCHAIN_BIN_DIR" ]; then
+    TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC"
+  fi
+fi
+
+if [ -z "$TOOLCHAIN_BIN_DIR" ]; then
+
+  # If we are not building a new toolchain, use whatever toolchain we have been using.
+  TOOLCHAIN_BIN_DIR="$OUTPUT_BASE_DIR/CurrentToolchain"
+  # Otherwise, specify your own like this:
+  #   TOOLCHAIN_BIN_DIR="$HOME/some-other-toolchain-when-testing-this-script"
+fi
 
 popd >/dev/null
 
