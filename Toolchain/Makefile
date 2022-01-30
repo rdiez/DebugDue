@@ -468,7 +468,6 @@ else
   GCC_PHASE_2_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT)
 endif
 
-
 # Usually, you install the GCC phase 1 to the same directory where everything else goes.
 # Later on, GCC phase 2 will be installed in the same place, and will overwrite phase 1.
 #
@@ -637,6 +636,8 @@ NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT_AND_LTO)
 NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
 NEWLIB_CFG_FLAGS += --target=$(TARGET_ARCH)
 NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
+
+# libssp provides Stack Smashing Protection.
 NEWLIB_CFG_FLAGS += --disable-libssp
 
 
@@ -675,7 +676,7 @@ NEWLIB_CFG_FLAGS += --disable-newlib-multithread
 # - %ll for printing "long long" integers, normally 64-bits long.
 #   PRIu64 will probably fail.
 # - %hhu for 8-bit integers, which may make PRIu8 fail, if it is not using the older "hu" definition.
-# - Positional printf arguments.
+# - Positional printf arguments (actually a POSIX extension, and not C99).
 
 ENABLE_NEWLIB_NANO_FORMATTED_IO := 0
 
@@ -760,10 +761,45 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_SRC_DIR := $(PICOLIBC_UNTAR_DIR)
   PICOLIBC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)-obj
 
+  # This file will be automatically generated in the future.
+  PICOLIBC_TARGET_FLAGS_FILENAME := ToolchainBuilder-cross-$(TARGET_ARCH).txt
+
+  # Many years ago compilers could not optimise and emit debug information at the same time,
+  # so libg.a was a version of libc.a without optimisation and with debugging information.
+  # If the -g to produce debugging information is present, GCC will link with libg.a.
+  # Most GCC targets stopped using libg.a a long time ago, but the embedded targets
+  # apparently continue to use it.
+  # Nowadays, we will just link libg.a to libc.a .
+  PICOLIBC_LIBC_INSTALLATION_DIR = $(CROSS_TOOLCHAIN_DIR)/$(TARGET_ARCH)/lib
+
   PICOLIBC_UNTAR_SENTINEL := $(PICOLIBC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
   PICOLIBC_CONFIGURE_SENTINEL :=$(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)ConfigureSentinel
   PICOLIBC_MAKE_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-  PICOLIBC_INSTALL_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
+  PICOLIBC_INSTALL_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)InstallSentinel
+
+  PICOLIBC_CFG_FLAGS =
+
+  PICOLIBC_CFG_FLAGS += -Dincludedir="$(TARGET_ARCH)/include"
+  PICOLIBC_CFG_FLAGS += -Dlibdir="$(TARGET_ARCH)/lib"
+
+  # 'picocrt' provides crt0.o, which initialises the C environment.
+  # Our embedded application will be doing the initialisation itself.
+  PICOLIBC_CFG_FLAGS += -Dpicocrt=false
+
+  # 'picolib' provides startup helpers like the ARM interrupt vector, TLS support and sbrk.
+  # Our embedded application will provide its own interrupt vector, its own sbrk,
+  # and has no threading, so it does not need TLS.
+  PICOLIBC_CFG_FLAGS += -Dpicolib=false
+
+  # Enable C99 support in IO functions like printf/scanf.
+  # Note that Picolib's tinystdio is still missing support for positional arguments like "%1$",
+  # as of Picolibc version 1.7.4 from November 2021. That is actually a POSIX extension, and not C99.
+  PICOLIBC_CFG_FLAGS += -Dio-c99-formats=true
+
+  # Enable long long (normally 64-bits) type support in IO functions like printf/scanf.
+  PICOLIBC_CFG_FLAGS += -Dio-long-long=true
+
+  PICOLIBC_CFG_FLAGS += -Dthread-local-storage=false
 
 endif
 
@@ -1313,6 +1349,7 @@ $(PICOLIBC_CONFIGURE_SENTINEL): $(PICOLIBC_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTIN
 	echo "About to configure Picolibc from $(PICOLIBC_SRC_DIR)/ to $(PICOLIBC_OBJ_DIR)/" && \
 	if [ -d "$(PICOLIBC_OBJ_DIR)" ]; then rm -rf -- "$(PICOLIBC_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(PICOLIBC_OBJ_DIR)" && \
+	cp -- "$(MAKEFILE_TOOLS_DIR)/$(PICOLIBC_TARGET_FLAGS_FILENAME)" "$(PICOLIBC_OBJ_DIR)/$(PICOLIBC_TARGET_FLAGS_FILENAME)" && \
 	pushd "$(PICOLIBC_OBJ_DIR)" >/dev/null && \
 	echo "Configuring Picolibc:" && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
@@ -1324,8 +1361,8 @@ $(PICOLIBC_CONFIGURE_SENTINEL): $(PICOLIBC_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTIN
 	    meson \
 	      setup \
 	      --prefix="$(CROSS_TOOLCHAIN_DIR)" \
-	      -Dincludedir="$(TARGET_ARCH)/include" \
-	      -Dlibdir="$(TARGET_ARCH)/lib" \
+	      $(PICOLIBC_CFG_FLAGS) \
+	      --cross-file "$(PICOLIBC_OBJ_DIR)/$(PICOLIBC_TARGET_FLAGS_FILENAME)" \
 	      "$(PICOLIBC_SRC_DIR)" \
 	      "$(PICOLIBC_OBJ_DIR)" && \
 	popd >/dev/null && \
@@ -1357,6 +1394,7 @@ $(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.report" \
 	    meson install  -C "$(PICOLIBC_OBJ_DIR)"  && \
+	ln --symbolic --force -- "$(PICOLIBC_LIBC_INSTALLATION_DIR)/libc.a"  "$(PICOLIBC_LIBC_INSTALLATION_DIR)/libg.a" && \
 	echo "The Picolibc installation has finished." >"$(PICOLIBC_INSTALL_SENTINEL)" && \
 	echo "The Picolibc installation has finished."
 
