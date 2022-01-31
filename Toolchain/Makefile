@@ -253,8 +253,9 @@ EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_
 
 # ------- Build directory definitions -------
 
-CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(call sentinel_filename,BuildDirCreation)
-CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBuilder-LogFiles
+CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL   := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(call sentinel_filename,BuildDirCreation)
+CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES  := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBuilder-LogFiles
+CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBuilder-HelpFiles
 
 
 # ------- Common C/C++ Compilation flags -------
@@ -327,6 +328,7 @@ BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.xz
 BINUTILS_GOLD_CONFIGURE_OPTIONS := --enable-gold=yes --enable-plugins
 
 BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(call sentinel_filename,BinutilsDecompress)
+BINUTILS_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,BinutilsHelp)
 BINUTILS_MAKEFILE := $(BINUTILS_OBJ_DIR)/Makefile
 BINUTILS_MAKE_SENTINEL := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsMake)
 BINUTILS_INSTALL_SENTINEL := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsInstall)
@@ -341,6 +343,7 @@ GMP_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gmp-$(GMP_VERSION)-obj
 GMP_TAR_FILE := gmp-$(GMP_VERSION).tar.bz2
 
 GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(call sentinel_filename,GmpDecompress)
+GMP_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,GmpHelp)
 GMP_MAKEFILE := $(GMP_OBJ_DIR)/Makefile
 GMP_MAKE_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpMake)
 GMP_INSTALL_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpInstall)
@@ -367,6 +370,7 @@ MPFR_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpfr-$(MPFR_VERSION)-obj
 MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
 
 MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(call sentinel_filename,MpfrDecompress)
+MPFR_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,MpfrHelp)
 MPFR_MAKEFILE := $(MPFR_OBJ_DIR)/Makefile
 MPFR_MAKE_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrMake)
 MPFR_INSTALL_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrInstall)
@@ -383,6 +387,7 @@ MPC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)-obj
 MPC_TAR_FILE := mpc-$(MPC_VERSION).tar.gz
 
 MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(call sentinel_filename,MpcDecompress)
+MPC_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,MpcHelp)
 MPC_MAKEFILE := $(MPC_OBJ_DIR)/Makefile
 MPC_MAKE_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcMake)
 MPC_INSTALL_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcInstall)
@@ -481,6 +486,7 @@ endif
 GCC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.xz
 GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(call sentinel_filename,GccDecompress)
+GCC_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,GccHelp)
 
 GCC1_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase1
 GCC1_MAKEFILE := $(GCC1_OBJ_DIR)/Makefile
@@ -570,9 +576,11 @@ ifeq ($(TARGET_LIBC), newlib)
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
+NEWLIB_HELP_DIR := $(NEWLIB_SRC_DIR)/newlib
 NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
 
 NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(call sentinel_filename,NewlibDecompress)
+NEWLIB_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,NewlibHelp)
 NEWLIB_MAKEFILE := $(NEWLIB_OBJ_DIR)/Makefile
 NEWLIB_MAKE_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
 NEWLIB_INSTALL_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
@@ -778,6 +786,7 @@ GDB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
 
 GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(call sentinel_filename,GdbDecompress)
+GDB_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,GdbHelp)
 GDB_MAKEFILE := $(GDB_OBJ_DIR)/Makefile
 GDB_MAKE_SENTINEL := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbMake)
 GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbInstall)
@@ -818,6 +827,7 @@ $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL):
 	echo "Creating directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\"..." && \
 	mkdir --parents -- "$(CROSS_TOOLCHAIN_BUILD_DIR)" && \
 	mkdir -- "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)" && \
+	mkdir -- "$(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)" && \
 	{ echo "Target CPU: $(TOOLCHAIN_TARGET_CPU)" && echo "Toolchain kind: $(TOOLCHAIN_KIND)"; } >"$(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainInfo.txt" && \
 	echo "Creation of directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\" finished." >"$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)"
 
@@ -834,16 +844,15 @@ $(BINUTILS_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking Binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
 	echo "Unpacking Binutils finished."
 
+$(BINUTILS_HELP_SENTINEL): $(BINUTILS_UNTAR_SENTINEL)
+	$(call store_recursive_help,BINUTILS_SRC_DIR,BinUtils)
+
 $(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
 	echo && \
 	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)/" && \
 	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(BINUTILS_OBJ_DIR)" && \
 	pushd "$(BINUTILS_OBJ_DIR)" >/dev/null && \
-	echo "Help text from the 'configure' script:" && \
-	$(BINUTILS_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsConfigHelp.txt" && \
-	echo && \
-	echo "Configuring:" && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
 	  "BinutilsConfig" \
 	  "BinUtils Configuration" \
@@ -924,16 +933,15 @@ $(GMP_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking GMP finished." >"$(GMP_UNTAR_SENTINEL)" && \
 	echo "Unpacking GMP finished."
 
+$(GMP_HELP_SENTINEL): $(GMP_UNTAR_SENTINEL)
+	$(call store_recursive_help,GMP_SRC_DIR,Gmp)
+
 $(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
 	echo && \
 	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)/" && \
 	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GMP_OBJ_DIR)" && \
 	pushd "$(GMP_OBJ_DIR)" >/dev/null && \
-	echo "Help text from the 'configure' script:" && \
-	$(GMP_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpConfigHelp.txt" && \
-	echo && \
-	echo "Configuring:" && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
 	  "GmpConfigure" \
 	  "GMP Configure" \
@@ -999,16 +1007,15 @@ $(MPFR_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking MPFR finished." >"$(MPFR_UNTAR_SENTINEL)" && \
 	echo "Unpacking MPFR finished."
 
+$(MPFR_HELP_SENTINEL): $(MPFR_UNTAR_SENTINEL)
+	$(call store_recursive_help,MPFR_SRC_DIR,Mpfr)
+
 $(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)/" && \
 	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(MPFR_OBJ_DIR)" && \
 	pushd "$(MPFR_OBJ_DIR)" >/dev/null && \
-	echo "Help text from the 'configure' script:" && \
-	$(MPFR_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrConfigHelp.txt" && \
-	echo && \
-	echo "Configuring:" && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
 	  "MpfrConfigure" \
 	  "MPFR Configure" \
@@ -1075,16 +1082,15 @@ $(MPC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking MPC finished." >"$(MPC_UNTAR_SENTINEL)" && \
 	echo "Unpacking MPC finished."
 
+$(MPC_HELP_SENTINEL): $(MPC_UNTAR_SENTINEL)
+	$(call store_recursive_help,MPC_SRC_DIR,Mpc)
+
 $(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)/" && \
 	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(MPC_OBJ_DIR)" && \
 	pushd "$(MPC_OBJ_DIR)" >/dev/null && \
-	echo "Help text from the 'configure' script:" && \
-	$(MPC_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcConfigHelp.txt" && \
-	echo && \
-	echo "Configuring:" && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
 	  "MpcConfigure" \
 	  "MPC Configure" \
@@ -1168,16 +1174,15 @@ else
   $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL)
 endif
 
+$(GCC_HELP_SENTINEL): $(GCC_UNTAR_SENTINEL)
+	$(call store_recursive_help,GCC_SRC_DIR,Gcc)
+
 $(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL)
 	echo && \
 	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)/" && \
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GCC1_OBJ_DIR)" && \
 	pushd "$(GCC1_OBJ_DIR)" >/dev/null && \
-	echo "Help text from the 'configure' script:" && \
-	$(GCC_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccConfigHelp.txt" && \
-	echo && \
-	echo "Configuring:" && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
 	  "GccPhase1Configure" \
 	  "GCC Phase 1 Configure" \
@@ -1240,18 +1245,16 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
 	echo "Unpacking Newlib finished."
 
+# Note that we are getting the help only for subdir newlib/ , and not for example libgloss/ .
+$(NEWLIB_HELP_SENTINEL): $(NEWLIB_UNTAR_SENTINEL)
+	$(call store_recursive_help_ignore_error,NEWLIB_HELP_DIR,Newlib)
+
 $(NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
 	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_OBJ_DIR)/" && \
 	if [ -d "$(NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(NEWLIB_OBJ_DIR)" && \
 	pushd "$(NEWLIB_OBJ_DIR)" >/dev/null && \
-	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
-	$(NEWLIB_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibTopLevelConfigHelp.txt" && \
-	echo && \
-	echo "Help text from 'configure' script for the newlib/ subdir:" && \
-	$(NEWLIB_SRC_DIR)/newlib/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibNewlibConfigHelp.txt" && \
-	echo && \
 	echo "Configuring Newlib:" && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
 	  "$(RUN_AND_REPORT_TOOL_PATH)" -- \
@@ -1480,16 +1483,15 @@ ifeq ($(BUILD_GMP_MPFR_MPC),1)
   $(GDB_MAKEFILE): $(GMP_INSTALL_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 endif
 
+$(GDB_HELP_SENTINEL): $(GDB_UNTAR_SENTINEL)
+	$(call store_recursive_help,GDB_SRC_DIR,Gdb)
+
 $(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
 	echo && \
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)/" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
-	echo "Help text from the 'configure' script:" && \
-	$(GDB_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigHelp.txt" && \
-	echo && \
-	echo "Configuring:" && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" -- \
 	  "GDbConfigure" \
 	  "GDB Configure" \
@@ -1636,7 +1638,22 @@ $(TARGET_ALL_SENTINEL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
 	echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
 	fi
 
-$(TARGET_NAME_ALL): $(TARGET_ALL_SENTINEL)
+.PHONY: AllHelpFiles
+
+AllHelpFiles: $(BINUTILS_HELP_SENTINEL)
+AllHelpFiles: $(GCC_HELP_SENTINEL)
+AllHelpFiles: $(GDB_HELP_SENTINEL)
+ifeq ($(TARGET_LIBC), newlib)
+  AllHelpFiles: $(NEWLIB_HELP_SENTINEL)
+endif
+ifeq ($(BUILD_GMP_MPFR_MPC),1)
+  AllHelpFiles: $(GMP_HELP_SENTINEL)
+  AllHelpFiles: $(MPFR_HELP_SENTINEL)
+  AllHelpFiles: $(MPC_HELP_SENTINEL)
+endif
+
+
+$(TARGET_NAME_ALL): $(TARGET_ALL_SENTINEL) AllHelpFiles
 
 
 # This 'clean' rule does not delete the toolchain bin directory (variable CROSS_TOOLCHAIN_DIR),

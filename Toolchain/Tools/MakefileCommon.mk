@@ -126,3 +126,17 @@ endef
 poison_variable_if_undef_or_empty_or_contains_whitespace = $(eval $(call poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval,$(1)))
 
 sentinel_filename = $(SENTINEL_FILENAME_PREFIX)$(1)-sentinel
+
+store_recursive_help = \
+	echo && \
+	echo "Help text from the $(2) 'configure' script:" && \
+	$($(1))/configure --help=recursive | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(2)ConfigHelp.txt" && \
+	echo "The $(2) help generation has finished." >"$@" && \
+	echo "The $(2) help generation has finished."
+
+store_recursive_help_ignore_error = \
+	echo && \
+	echo "Help text from the $(2) 'configure' script:" && \
+	{ $($(1))/configure --help=recursive | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(2)ConfigHelp.txt"; true; } && \
+	echo "The $(2) help generation has finished." >"$@" && \
+	echo "The $(2) help generation has finished."
