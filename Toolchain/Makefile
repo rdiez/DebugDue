@@ -468,6 +468,21 @@ else
   GCC_PHASE_2_BUILD_FLAGS := $(HOST_FLAGS_WITH_OPT)
 endif
 
+ifeq ($(TARGET_LIBC), picolibc)
+
+  # Option "--enable-stdio=stdio_pure" tells libstdc++-v3 to not use 'fdopen'
+  # and only use FILE* for C++ stream I/O.
+  # That is the only method that Picolibc's tinystdio supports.
+  # This option is only available from GCC version 11 onwards.
+  # Without this flag, libstdc++ optimises performance with custom code
+  # for both glibc and Newlib, directly manipulating private fields
+  # within the FILE struct etc.
+  # In any case, you should not really be using file-based I/O in a bare-metal application.
+  GCC_PHASE_2_BUILD_FLAGS += --enable-cstdio=stdio_pure
+
+endif
+
+
 # Usually, you install the GCC phase 1 to the same directory where everything else goes.
 # Later on, GCC phase 2 will be installed in the same place, and will overwrite phase 1.
 #
@@ -791,9 +806,15 @@ ifeq ($(TARGET_LIBC), picolibc)
   # and has no threading, so it does not need TLS.
   PICOLIBC_CFG_FLAGS += -Dpicolib=false
 
+  # The tinystdio library has a much smaller memory footprint than Newlib's stdio library.
+  # Drawbacks are:
+  # - Reduced I/O performance. But a bare-metal application will probably not use
+  #   much file-based I/O or C++ stream I/O, if at all.
+  # - No support for positional arguments like "%1$" (a POSIX extension) in printf,
+  #   as of Picolibc version 1.7.4 from November 2021.
+  PICOLIBC_CFG_FLAGS += -Dtinystdio=true
+
   # Enable C99 support in IO functions like printf/scanf.
-  # Note that Picolib's tinystdio is still missing support for positional arguments like "%1$",
-  # as of Picolibc version 1.7.4 from November 2021. That is actually a POSIX extension, and not C99.
   PICOLIBC_CFG_FLAGS += -Dio-c99-formats=true
 
   # Enable long long (normally 64-bits) type support in IO functions like printf/scanf.
