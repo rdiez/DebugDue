@@ -57,39 +57,7 @@ $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS
 
 VERSION_SET := VersionSet9
 
-ifeq ($(VERSION_SET),VersionSet1)
-
-  BINUTILS_VERSION := 2.30
-
-  # Unfortunately, GMP version 6.1.2 is known to fail "make check" test 't-get_d_2exp' when building with LTO.
-  GMP_VERSION := 6.1.2
-
-  MPFR_VERSION := 3.1.6
-  MPC_VERSION := 1.0.3
-  GCC_VERSION := 7.3.0
-  NEWLIB_VERSION := 3.0.0.20180226
-  GDB_VERSION := 8.1
-
-else ifeq ($(VERSION_SET),VersionSet2)
-
-  BINUTILS_VERSION := 2.32
-
-  # Unfortunately, GMP version 6.1.2 is known to fail "make check" test 't-get_d_2exp' when building with LTO.
-  # But it looks alright With the GMP version 6.2.0 and GCC 9.3, as used in VersionSet3 below.
-  GMP_VERSION := 6.1.2
-
-  MPFR_VERSION := 4.0.2
-  MPC_VERSION := 1.1.0
-  GCC_VERSION := 8.3.0
-  NEWLIB_VERSION := 3.1.0
-
-  # Do not use GDB versions 8.1.x or 8.2.x with GCC 8.x, or you will
-  # immediately hit the following issue when debugging binaries built with LTO:
-  #   Assertion: SYMBOL_LANGUAGE (sym) == DICT_LANGUAGE (dict)->la_language
-  #   https://sourceware.org/bugzilla/show_bug.cgi?id=23010
-  GDB_VERSION := 8.3
-
-else ifeq ($(VERSION_SET),VersionSet3)
+ifeq ($(VERSION_SET),VersionSet3)
 
   BINUTILS_VERSION := 2.34
   GMP_VERSION := 6.2.0
@@ -108,26 +76,6 @@ else ifeq ($(VERSION_SET),VersionSet4)
   GCC_VERSION := 9.3.0
   NEWLIB_VERSION := 3.3.0
   GDB_VERSION := 9.2
-
-else ifeq ($(VERSION_SET),VersionSet5)
-
-  BINUTILS_VERSION := 2.36.1
-  GMP_VERSION := 6.2.1
-  MPFR_VERSION := 4.1.0
-  MPC_VERSION := 1.2.1
-  GCC_VERSION := 10.2.0
-  NEWLIB_VERSION := 4.1.0
-  GDB_VERSION := 10.1
-
-else ifeq ($(VERSION_SET),VersionSet6)
-
-  BINUTILS_VERSION := 2.36.1
-  GMP_VERSION := 6.2.1
-  MPFR_VERSION := 4.1.0
-  MPC_VERSION := 1.2.1
-  GCC_VERSION := 10.3.0
-  NEWLIB_VERSION := 4.1.0
-  GDB_VERSION := 10.1
 
 else ifeq ($(VERSION_SET),VersionSet7)
 
