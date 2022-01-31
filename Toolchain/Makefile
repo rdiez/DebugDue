@@ -570,12 +570,12 @@ ifeq ($(TARGET_LIBC), newlib)
 NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
 NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
-NEWLIB_NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
+NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
 
 NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(call sentinel_filename,NewlibDecompress)
-NEWLIB_NEWLIB_MAKEFILE := $(NEWLIB_NEWLIB_OBJ_DIR)/Makefile
-NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
-NEWLIB_NEWLIB_INSTALL_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
+NEWLIB_MAKEFILE := $(NEWLIB_OBJ_DIR)/Makefile
+NEWLIB_MAKE_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
+NEWLIB_INSTALL_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
 
 NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibUserImplementationOfAssert.patch
 
@@ -1240,12 +1240,12 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
 	echo "Unpacking Newlib finished."
 
-$(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
+$(NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
-	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_NEWLIB_OBJ_DIR)/" && \
-	if [ -d "$(NEWLIB_NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_NEWLIB_OBJ_DIR)"; fi && \
-	mkdir --parents -- "$(NEWLIB_NEWLIB_OBJ_DIR)" && \
-	pushd "$(NEWLIB_NEWLIB_OBJ_DIR)" >/dev/null && \
+	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_OBJ_DIR)/" && \
+	if [ -d "$(NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_OBJ_DIR)"; fi && \
+	mkdir --parents -- "$(NEWLIB_OBJ_DIR)" && \
+	pushd "$(NEWLIB_OBJ_DIR)" >/dev/null && \
 	echo "Help text from 'configure' script for top-level Newlib dir (see further below for the newlib/ subdir):" && \
 	$(NEWLIB_SRC_DIR)/configure --help | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibTopLevelConfigHelp.txt" && \
 	echo && \
@@ -1266,7 +1266,7 @@ $(NEWLIB_NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	popd >/dev/null && \
 	echo "The Newlib configuration has finished."
 
-$(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
+$(NEWLIB_MAKE_SENTINEL): $(NEWLIB_MAKEFILE)
 	echo && \
 	echo "Building Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1276,11 +1276,11 @@ $(NEWLIB_NEWLIB_MAKE_SENTINEL): $(NEWLIB_NEWLIB_MAKEFILE)
 	    "Newlib Make" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibMake.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibMake.report" \
-	    $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)"  && \
-	echo "The Newlib build has finished." >"$(NEWLIB_NEWLIB_MAKE_SENTINEL)" && \
+	    $(MAKE) -C "$(NEWLIB_OBJ_DIR)"  && \
+	echo "The Newlib build has finished." >"$(NEWLIB_MAKE_SENTINEL)" && \
 	echo "The Newlib build has finished."
 
-$(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
+$(NEWLIB_INSTALL_SENTINEL): $(NEWLIB_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1290,8 +1290,8 @@ $(NEWLIB_NEWLIB_INSTALL_SENTINEL): $(NEWLIB_NEWLIB_MAKE_SENTINEL)
 	    "Newlib Install" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibInstall.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibInstall.report" \
-	    $(MAKE) -C "$(NEWLIB_NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The Newlib installation has finished." >"$(NEWLIB_NEWLIB_INSTALL_SENTINEL)" && \
+	    $(MAKE) -C "$(NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
+	echo "The Newlib installation has finished." >"$(NEWLIB_INSTALL_SENTINEL)" && \
 	echo "The Newlib installation has finished."
 
 endif
@@ -1381,7 +1381,7 @@ endif
 # once over the '--prefix' directory, and one over PATH. But both instances are identical anyway.
 
 ifeq ($(TARGET_LIBC), newlib)
-  $(GCC2_MAKEFILE): $(NEWLIB_NEWLIB_INSTALL_SENTINEL)
+  $(GCC2_MAKEFILE): $(NEWLIB_INSTALL_SENTINEL)
 endif
 
 ifeq ($(TARGET_LIBC), picolibc)
