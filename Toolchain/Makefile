@@ -221,8 +221,6 @@ SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE := 1
 
 TARGET_ARCH := arm-none-eabi
 
-SENTINEL_FILENAME_PREFIX := ToolchainBuilder-
-
 PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 
 
@@ -255,7 +253,7 @@ EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_
 
 # ------- Build directory definitions -------
 
-CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)BuildDirSentinel
+CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(call sentinel_filename,BuildDirCreation)
 CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBuilder-LogFiles
 
 
@@ -328,12 +326,12 @@ BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.xz
 # Option --enable-plugins is necessary for Gold to understand the --plugin command-line switch that the GCC driver passes.
 BINUTILS_GOLD_CONFIGURE_OPTIONS := --enable-gold=yes --enable-plugins
 
-BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(call sentinel_filename,BinutilsDecompress)
 BINUTILS_MAKEFILE := $(BINUTILS_OBJ_DIR)/Makefile
-BINUTILS_MAKE_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-BINUTILS_INSTALL_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)BinutilsInstallSentinel
-BINUTILS_INSTALL_SENTINEL_PHASE_1 := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)BinutilsInstallSentinelPhase1
-BINUTILS_CHECK_SENTINEL := $(BINUTILS_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)CheckSentinel
+BINUTILS_MAKE_SENTINEL := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsMake)
+BINUTILS_INSTALL_SENTINEL := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsInstall)
+BINUTILS_INSTALL_SENTINEL_PHASE_1 := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsInstallPhase1)
+BINUTILS_CHECK_SENTINEL := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsCheck)
 
 
 # ------- GMP lib configuration -------
@@ -342,11 +340,11 @@ GMP_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gmp-$(GMP_VERSION)
 GMP_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gmp-$(GMP_VERSION)-obj
 GMP_TAR_FILE := gmp-$(GMP_VERSION).tar.bz2
 
-GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(call sentinel_filename,GmpDecompress)
 GMP_MAKEFILE := $(GMP_OBJ_DIR)/Makefile
-GMP_MAKE_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-GMP_INSTALL_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpInstallSentinel
-GMP_CHECK_SENTINEL := $(GMP_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GmpCheckSentinel
+GMP_MAKE_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpMake)
+GMP_INSTALL_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpInstall)
+GMP_CHECK_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpCheck)
 
 
 # According to GMP's documentation, when building for Windows:
@@ -368,11 +366,11 @@ MPFR_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpfr-$(MPFR_VERSION)
 MPFR_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpfr-$(MPFR_VERSION)-obj
 MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
 
-MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(call sentinel_filename,MpfrDecompress)
 MPFR_MAKEFILE := $(MPFR_OBJ_DIR)/Makefile
-MPFR_MAKE_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-MPFR_INSTALL_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrInstallSentinel
-MPFR_CHECK_SENTINEL := $(MPFR_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpfrCheckSentinel
+MPFR_MAKE_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrMake)
+MPFR_INSTALL_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrInstall)
+MPFR_CHECK_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrCheck)
 
 
 # ------- MPC lib configuration -------
@@ -384,11 +382,11 @@ MPC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)
 MPC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)-obj
 MPC_TAR_FILE := mpc-$(MPC_VERSION).tar.gz
 
-MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(call sentinel_filename,MpcDecompress)
 MPC_MAKEFILE := $(MPC_OBJ_DIR)/Makefile
-MPC_MAKE_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-MPC_INSTALL_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcInstallSentinel
-MPC_CHECK_SENTINEL := $(MPC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MpcCheckSentinel
+MPC_MAKE_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcMake)
+MPC_INSTALL_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcInstall)
+MPC_CHECK_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcCheck)
 
 
 # ------- GCC configuration -------
@@ -482,18 +480,18 @@ endif
 
 GCC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)
 GCC_TAR_FILE := gcc-$(GCC_VERSION).tar.xz
-GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(call sentinel_filename,GccDecompress)
 
 GCC1_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase1
 GCC1_MAKEFILE := $(GCC1_OBJ_DIR)/Makefile
-GCC1_MAKE_SENTINEL := $(GCC1_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GccPhase1MakeSentinel
-GCC1_INSTALL_SENTINEL := $(GCC1_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GccPhase1InstallSentinel
+GCC1_MAKE_SENTINEL := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Make)
+GCC1_INSTALL_SENTINEL := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Install)
 
 GCC2_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase2
 GCC2_MAKEFILE := $(GCC2_OBJ_DIR)/Makefile
-GCC2_MAKE_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GccPhase2MakeSentinel
-GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GccPhase2InstallSentinel
-GCC2_CHECK_SENTINEL := $(GCC2_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GccPhase2CheckSentinel
+GCC2_MAKE_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Make)
+GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Install)
+GCC2_CHECK_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Check)
 
 GCC_CFLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
 # GCC_CFLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
@@ -574,10 +572,10 @@ NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
 NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
 NEWLIB_NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
 
-NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(call sentinel_filename,NewlibDecompress)
 NEWLIB_NEWLIB_MAKEFILE := $(NEWLIB_NEWLIB_OBJ_DIR)/Makefile
-NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-NEWLIB_NEWLIB_INSTALL_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)NewlibNewlibInstallSentinel
+NEWLIB_NEWLIB_MAKE_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
+NEWLIB_NEWLIB_INSTALL_SENTINEL := $(NEWLIB_NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
 
 NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibUserImplementationOfAssert.patch
 
@@ -735,10 +733,10 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Nowadays, we will just link libg.a to libc.a .
   PICOLIBC_LIBC_INSTALLATION_DIR = $(CROSS_TOOLCHAIN_DIR)/$(TARGET_ARCH)/lib
 
-  PICOLIBC_UNTAR_SENTINEL := $(PICOLIBC_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
-  PICOLIBC_CONFIGURE_SENTINEL :=$(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)ConfigureSentinel
-  PICOLIBC_MAKE_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-  PICOLIBC_INSTALL_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)InstallSentinel
+  PICOLIBC_UNTAR_SENTINEL := $(PICOLIBC_SRC_DIR)/$(call sentinel_filename,PicolibcDecompress)
+  PICOLIBC_CONFIGURE_SENTINEL :=$(PICOLIBC_OBJ_DIR)/$(call sentinel_filename,PicolibcConfigure)
+  PICOLIBC_MAKE_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(call sentinel_filename,PicolibcMake)
+  PICOLIBC_INSTALL_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(call sentinel_filename,PicolibcInstall)
 
   PICOLIBC_CFG_FLAGS =
 
@@ -779,10 +777,10 @@ GDB_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gdb-$(GDB_VERSION)
 GDB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gdb-$(GDB_VERSION)-obj
 GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
 
-GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(SENTINEL_FILENAME_PREFIX)UntarSentinel
+GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(call sentinel_filename,GdbDecompress)
 GDB_MAKEFILE := $(GDB_OBJ_DIR)/Makefile
-GDB_MAKE_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)MakeSentinel
-GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(SENTINEL_FILENAME_PREFIX)GdbInstallSentinel
+GDB_MAKE_SENTINEL := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbMake)
+GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbInstall)
 
 
 # This enables building a debug version of GDB, instead of a release version,
@@ -1628,7 +1626,7 @@ $(TARGET_NAME_HELP):
 	@echo
 
 
-TARGET_ALL_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(SENTINEL_FILENAME_PREFIX)TargetAllSentinel
+TARGET_ALL_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(call sentinel_filename,TargetAll)
 
 $(TARGET_ALL_SENTINEL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
 	@echo && \

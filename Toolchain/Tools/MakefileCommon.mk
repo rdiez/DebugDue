@@ -124,3 +124,5 @@ define poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval =
 endef
 
 poison_variable_if_undef_or_empty_or_contains_whitespace = $(eval $(call poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval,$(1)))
+
+sentinel_filename = $(SENTINEL_FILENAME_PREFIX)$(1)-sentinel
