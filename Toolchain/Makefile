@@ -847,7 +847,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(BINUTILS_HELP_SENTINEL): $(BINUTILS_UNTAR_SENTINEL)
 	$(call store_recursive_help,BINUTILS_SRC_DIR,BinUtils)
 
-$(BINUTILS_MAKEFILE): $(BINUTILS_UNTAR_SENTINEL)
+$(BINUTILS_MAKEFILE): $(BINUTILS_HELP_SENTINEL)
 	echo && \
 	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)/" && \
 	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
@@ -936,7 +936,7 @@ $(GMP_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(GMP_HELP_SENTINEL): $(GMP_UNTAR_SENTINEL)
 	$(call store_recursive_help,GMP_SRC_DIR,Gmp)
 
-$(GMP_MAKEFILE): $(GMP_UNTAR_SENTINEL)
+$(GMP_MAKEFILE): $(GMP_HELP_SENTINEL)
 	echo && \
 	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)/" && \
 	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
@@ -1010,7 +1010,7 @@ $(MPFR_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(MPFR_HELP_SENTINEL): $(MPFR_UNTAR_SENTINEL)
 	$(call store_recursive_help,MPFR_SRC_DIR,Mpfr)
 
-$(MPFR_MAKEFILE): $(MPFR_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)
+$(MPFR_MAKEFILE): $(MPFR_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)/" && \
 	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
@@ -1085,7 +1085,7 @@ $(MPC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(MPC_HELP_SENTINEL): $(MPC_UNTAR_SENTINEL)
 	$(call store_recursive_help,MPC_SRC_DIR,Mpc)
 
-$(MPC_MAKEFILE): $(MPC_UNTAR_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
+$(MPC_MAKEFILE): $(MPC_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)/" && \
 	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
@@ -1177,7 +1177,7 @@ endif
 $(GCC_HELP_SENTINEL): $(GCC_UNTAR_SENTINEL)
 	$(call store_recursive_help,GCC_SRC_DIR,Gcc)
 
-$(GCC1_MAKEFILE): $(GCC_UNTAR_SENTINEL)
+$(GCC1_MAKEFILE): $(GCC_HELP_SENTINEL)
 	echo && \
 	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)/" && \
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
@@ -1249,7 +1249,7 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(NEWLIB_HELP_SENTINEL): $(NEWLIB_UNTAR_SENTINEL)
 	$(call store_recursive_help_ignore_error,NEWLIB_HELP_DIR,Newlib)
 
-$(NEWLIB_MAKEFILE): $(NEWLIB_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
+$(NEWLIB_MAKEFILE): $(NEWLIB_HELP_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
 	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_OBJ_DIR)/" && \
 	if [ -d "$(NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_OBJ_DIR)"; fi && \
@@ -1486,7 +1486,7 @@ endif
 $(GDB_HELP_SENTINEL): $(GDB_UNTAR_SENTINEL)
 	$(call store_recursive_help,GDB_SRC_DIR,Gdb)
 
-$(GDB_MAKEFILE): $(GDB_UNTAR_SENTINEL)
+$(GDB_MAKEFILE): $(GDB_HELP_SENTINEL)
 	echo && \
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)/" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \

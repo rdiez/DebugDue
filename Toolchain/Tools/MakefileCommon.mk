@@ -127,6 +127,24 @@ poison_variable_if_undef_or_empty_or_contains_whitespace = $(eval $(call poison_
 
 sentinel_filename = $(SENTINEL_FILENAME_PREFIX)$(1)-sentinel
 
+
+# Request and store the configuration help text for each component we are building.
+#
+# Storing these help texts is not actually required to build a toolchain, but it is often useful
+# if you want to troubleshoot the build later on, just look up what an option means,
+# or what other options are available.
+#
+# Many toolchain components have subcomponents with their own 'configure' script.
+# The top-level 'configure' script automatically passes all configuration options down.
+# This means that the help text for a particular configuration option may be in a subcomponent,
+# and that is the reason why we request all help texts in a recursively manner.
+#
+# We request and store the help texts in parallel across different components because it can take quite some time.
+# For example, GCC 11.2's configure script needs more a full second just to print all recursive help texts.
+#
+# Avoid running the same 'configure' script in parallel. The easiest way to prevent that
+# is to make each configuration target depend on its help target.
+
 store_recursive_help = \
 	echo && \
 	echo "Help text from the $(2) 'configure' script:" && \
@@ -134,6 +152,7 @@ store_recursive_help = \
 	echo "The $(2) help generation has finished." >"$@" && \
 	echo "The $(2) help generation has finished."
 
+# Option --help=recursive failed partially with Newlib versions before 2022.
 store_recursive_help_ignore_error = \
 	echo && \
 	echo "Help text from the $(2) 'configure' script:" && \
