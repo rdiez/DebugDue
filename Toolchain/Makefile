@@ -499,8 +499,8 @@ GCC2_MAKE_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Make)
 GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Install)
 GCC2_CHECK_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Check)
 
-GCC_CFLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
-# GCC_CFLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
+GCC_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+# GCC_C_AND_CXX_FLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
 
 COMMON_GCC_OPTIONS =
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
@@ -1421,8 +1421,8 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Make.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Make.report" \
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
-	      CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	      CFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" \
+	      CXXFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
 	echo "The GCC phase 2 build has finished."
 
@@ -1457,8 +1457,8 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.report" \
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
-	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
-	      CXXFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" && \
+	      CFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" \
+	      CXXFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
 	echo "The GCC phase 2 check has finished."
 
