@@ -592,11 +592,11 @@ NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/N
 NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibRemoveStrerrorMessages.patch
 
 # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
-NEWLIB_CFLAGS := $(COMMON_CFLAGS_FOR_TARGET)
+NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
 
 # Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
 # and we don't want that in our memory-constrained embedded environment.
-NEWLIB_CFLAGS += -DHAVE_ASSERT_FUNC
+NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
 
 
 NEWLIB_CFG_FLAGS =
@@ -1262,8 +1262,8 @@ $(NEWLIB_MAKEFILE): $(NEWLIB_HELP_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	    "Newlib Configure" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibConfigure.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibConfigure.report" \
-	    CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
-	    CXXFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS)" \
+	    CFLAGS_FOR_TARGET="$(NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET)" \
+	    CXXFLAGS_FOR_TARGET="$(NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET)" \
 	    $(NEWLIB_SRC_DIR)/configure \
 	      $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
