@@ -324,8 +324,12 @@ BINUTILS_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/binutils-$(BINUTILS_VERSION)
 BINUTILS_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/binutils-$(BINUTILS_VERSION)-obj
 BINUTILS_TAR_FILE := binutils-$(BINUTILS_VERSION).tar.xz
 
-# Option --enable-plugins is necessary for Gold to understand the --plugin command-line switch that the GCC driver passes.
-BINUTILS_GOLD_CONFIGURE_OPTIONS := --enable-gold=yes --enable-plugins
+# Option --enable-plugins is necessary for the linker to understand the '--plugin'
+# command-line option that the GCC driver passes when using LTO.
+BINUTILS_CONFIGURE_OPTIONS := --enable-plugins
+
+# We are not using the Gold linker yet.
+#   BINUTILS_CONFIGURE_OPTIONS += --enable-gold=yes
 
 BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(call sentinel_filename,BinutilsDecompress)
 BINUTILS_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,BinutilsHelp)
@@ -863,7 +867,7 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_HELP_SENTINEL)
 	    $(HOST_FLAGS_WITH_OPT_AND_LTO) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(TARGET_ARCH) \
-	    $(BINUTILS_GOLD_CONFIGURE_OPTIONS) \
+	    $(BINUTILS_CONFIGURE_OPTIONS) \
 	    --disable-nls && \
 	popd >/dev/null && \
 	echo "The Binutils configuration has finished."
