@@ -106,7 +106,7 @@ else ifeq ($(VERSION_SET),VersionSet9)
   GCC_VERSION := 11.2.0
   NEWLIB_VERSION := 4.1.0
   # PICOLIBC_VERSION := 1.7.4
-  GDB_VERSION := 11.1
+  GDB_VERSION := 11.2
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
