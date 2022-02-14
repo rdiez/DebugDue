@@ -433,7 +433,7 @@ endif
 
 ifeq ($(TARGET_LIBC), picolibc)
 
-  # Option "--enable-stdio=stdio_pure" tells libstdc++-v3 to not use 'fdopen'
+  # Option "--enable-cstdio=stdio_pure" tells libstdc++-v3 to not use 'fdopen'
   # and only use FILE* for C++ stream I/O.
   # That is the only method that Picolibc's tinystdio supports.
   # This option is only available from GCC version 11 onwards.
@@ -585,149 +585,149 @@ endif
 
 ifeq ($(TARGET_LIBC), newlib)
 
-NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
-NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
-NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
-NEWLIB_HELP_DIR := $(NEWLIB_SRC_DIR)/newlib
-NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
+  NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
+  NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
+  NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
+  NEWLIB_HELP_DIR := $(NEWLIB_SRC_DIR)/newlib
+  NEWLIB_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)-obj
 
-NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(call sentinel_filename,NewlibDecompress)
-NEWLIB_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,NewlibHelp)
-NEWLIB_MAKEFILE := $(NEWLIB_OBJ_DIR)/Makefile
-NEWLIB_MAKE_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
-NEWLIB_INSTALL_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
+  NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(call sentinel_filename,NewlibDecompress)
+  NEWLIB_HELP_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,NewlibHelp)
+  NEWLIB_MAKEFILE := $(NEWLIB_OBJ_DIR)/Makefile
+  NEWLIB_MAKE_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
+  NEWLIB_INSTALL_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
 
-NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibUserImplementationOfAssert.patch
+  NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibUserImplementationOfAssert.patch
 
-# If you are using an Newlib version from before 2018-01-17, you will have to use an older version
-# of this patch stored next to the latest one.
-NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibRemoveStrerrorMessages.patch
+  # If you are using an Newlib version from before 2018-01-17, you will have to use an older version
+  # of this patch stored next to the latest one.
+  NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibRemoveStrerrorMessages.patch
 
-# NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
-NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+  # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
+  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
 
-# Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
-# and we don't want that in our memory-constrained embedded environment.
-NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
-
-
-NEWLIB_CFG_FLAGS =
-
-NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT_AND_LTO)
-NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
-NEWLIB_CFG_FLAGS += --target=$(TARGET_ARCH)
-NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
-
-# libssp provides Stack Smashing Protection.
-NEWLIB_CFG_FLAGS += --disable-libssp
+  # Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
+  # and we don't want that in our memory-constrained embedded environment.
+  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
 
 
-# "reent small" means that sizeof(_reent) decreases from 1064 bytes to 240 bytes (tested with Newlib version 3.3.0).
-# Because we are not using multithreading, these savings are only realised once.
-# Unfortunately, "reent small" also means that some routines which need the lost space allocate it with malloc on first touch.
-# For example, the first time you call rand(), it will call malloc. That is unexpected and my not be safe in all circumstances.
-# Calling malloc inside an interrupt handler is normally unsafe.
-# Therefore, if you are not really short on memory, this option should stay disabled (which is actually the default).
-#
-# If you need to enable "reent small", keep in mind that you will need to provide __assert_func() even in release builds
-# (even if NDEBUG is defined), because Newlib calls it if malloc() fails when allocating any missing data from the _reent structure.
-# I find this implementation choice unfortunate, because __assert_func should only be meant for assertions, and because
-# of the implication that __assert_func() must always stop the firmware. I would have chosen another kind of 'abort' routine.
-# Newlib version 3.1.0 did not require __assert_func(), and did not check whether malloc() failed, but Newlib version 3.3.0 does.
-# You can disable this requirement in version 3.3.0 with --disable-newlib-reent-check-verify , but then you also lose such malloc() checks,
-# which makes it unsafe.
+  NEWLIB_CFG_FLAGS =
 
-ENABLE_NEWLIB_REENT_SMALL := 0
+  NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT_AND_LTO)
+  NEWLIB_CFG_FLAGS += --prefix="$(CROSS_TOOLCHAIN_DIR)"
+  NEWLIB_CFG_FLAGS += --target=$(TARGET_ARCH)
+  NEWLIB_CFG_FLAGS += $(CONFIG_CACHE_OPTION)
 
-ifeq ($(ENABLE_NEWLIB_REENT_SMALL),1)
-  NEWLIB_CFG_FLAGS += --enable-newlib-reent-small
-else
-  NEWLIB_CFG_FLAGS += --disable-newlib-reent-small
-endif
+  # libssp provides Stack Smashing Protection.
+  NEWLIB_CFG_FLAGS += --disable-libssp
 
 
-NEWLIB_CFG_FLAGS += --disable-newlib-multithread
+  # "reent small" means that sizeof(_reent) decreases from 1064 bytes to 240 bytes (tested with Newlib version 3.3.0).
+  # Because we are not using multithreading, these savings are only realised once.
+  # Unfortunately, "reent small" also means that some routines which need the lost space allocate it with malloc on first touch.
+  # For example, the first time you call rand(), it will call malloc. That is unexpected and my not be safe in all circumstances.
+  # Calling malloc inside an interrupt handler is normally unsafe.
+  # Therefore, if you are not really short on memory, this option should stay disabled (which is actually the default).
+  #
+  # If you need to enable "reent small", keep in mind that you will need to provide __assert_func() even in release builds
+  # (even if NDEBUG is defined), because Newlib calls it if malloc() fails when allocating any missing data from the _reent structure.
+  # I find this implementation choice unfortunate, because __assert_func should only be meant for assertions, and because
+  # of the implication that __assert_func() must always stop the firmware. I would have chosen another kind of 'abort' routine.
+  # Newlib version 3.1.0 did not require __assert_func(), and did not check whether malloc() failed, but Newlib version 3.3.0 does.
+  # You can disable this requirement in version 3.3.0 with --disable-newlib-reent-check-verify , but then you also lose such malloc() checks,
+  # which makes it unsafe.
+
+  ENABLE_NEWLIB_REENT_SMALL := 0
+
+  ifeq ($(ENABLE_NEWLIB_REENT_SMALL),1)
+    NEWLIB_CFG_FLAGS += --enable-newlib-reent-small
+  else
+    NEWLIB_CFG_FLAGS += --disable-newlib-reent-small
+  endif
 
 
-# The "nano formatted io" functions are alternative implementations of printf etc.
-# that need less program space. Wide-char routines like wprintf are not affected,
-# but chances are that you are not using those, as it's mostly ASCII or UTF-8 nowadays.
-# The trouble is, the 'nano' alternatives are missing support for many useful C99 additions like these:
-# - %z for printing the size_t type.
-# - %ll for printing "long long" integers, normally 64-bits long.
-#   PRIu64 will probably fail.
-# - %hhu for 8-bit integers, which may make PRIu8 fail, if it is not using the older "hu" definition.
-# - Positional printf arguments (actually a POSIX extension, and not C99).
-
-ENABLE_NEWLIB_NANO_FORMATTED_IO := 0
-
-ifeq ($(ENABLE_NEWLIB_NANO_FORMATTED_IO),1)
-  NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io
-else
-  # This path needs around 7 kB more for a Cortex-M3 CPU target.
-  # Note that the following flags are ignored if --enable-newlib-nano-formatted-io is used.
-  NEWLIB_CFG_FLAGS += --enable-newlib-io-pos-args
-  NEWLIB_CFG_FLAGS += --enable-newlib-io-c99-formats
-  NEWLIB_CFG_FLAGS += --enable-newlib-io-long-long
-endif
+  NEWLIB_CFG_FLAGS += --disable-newlib-multithread
 
 
-# Enabling float support in printf etc. is costly with the current Newlib implementation.
-# It uses arbitrary-precision math code which allocates a lot of RAM,
-# and has no robust failure modes when it runs out of memory.
-NEWLIB_CFG_FLAGS += --disable-newlib-io-float
-NEWLIB_CFG_FLAGS += --disable-newlib-io-long-double
+  # The "nano formatted io" functions are alternative implementations of printf etc.
+  # that need less program space. Wide-char routines like wprintf are not affected,
+  # but chances are that you are not using those, as it's mostly ASCII or UTF-8 nowadays.
+  # The trouble is, the 'nano' alternatives are missing support for many useful C99 additions like these:
+  # - %z for printing the size_t type.
+  # - %ll for printing "long long" integers, normally 64-bits long.
+  #   PRIu64 will probably fail.
+  # - %hhu for 8-bit integers, which may make PRIu8 fail, if it is not using the older "hu" definition.
+  # - Positional printf arguments (actually a POSIX extension, and not C99).
 
-NEWLIB_CFG_FLAGS += --disable-newlib-iconv
-NEWLIB_CFG_FLAGS += --disable-newlib-iconv-external-ccs
-NEWLIB_CFG_FLAGS += --disable-newlib-mb
-NEWLIB_CFG_FLAGS += --disable-shared
-NEWLIB_CFG_FLAGS += --disable-multilib
+  ENABLE_NEWLIB_NANO_FORMATTED_IO := 0
 
-# I could not find a good reason why atexit() should be in struct _reent, so make it global.
-#
-# Notes about atexit memory consumption:
-#   In Newlib, _ATEXIT_SIZE is 32 because of ANSI conformance, so each atexit block has 32 function pointers.
-#   The associated arguments consume sizeof( struct _on_exit_args ) = 264 bytes.
-#   And there is at least one, see _atexit0 and _global_atexit0.
-NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
-
-# You may wonder whether you need --disable-newlib-atexit-dynamic-alloc.
-# But we are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
-# and the firmware is checking on start-up that there are no atexit entries,
-# so it does not really matter: much of the atexit() support shold be optimised away.
+  ifeq ($(ENABLE_NEWLIB_NANO_FORMATTED_IO),1)
+    NEWLIB_CFG_FLAGS += --enable-newlib-nano-formatted-io
+  else
+    # This path needs around 7 kB more for a Cortex-M3 CPU target.
+    # Note that the following flags are ignored if --enable-newlib-nano-formatted-io is used.
+    NEWLIB_CFG_FLAGS += --enable-newlib-io-pos-args
+    NEWLIB_CFG_FLAGS += --enable-newlib-io-c99-formats
+    NEWLIB_CFG_FLAGS += --enable-newlib-io-long-long
+  endif
 
 
-# The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
-# But it starts off with an array in RAM called __malloc_av_ that weighs 1032 bytes,
-# at least for a Cortex-M3 CPU target, so it is not a good choice for very
-# constrained targets that don't do a lot of allocation.
-# The trouble is, the 'nano' version is Newlib, as of April 2021, is known to be
-# suboptimal in many normal scenarios.
-NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc
+  # Enabling float support in printf etc. is costly with the current Newlib implementation.
+  # It uses arbitrary-precision math code which allocates a lot of RAM,
+  # and has no robust failure modes when it runs out of memory.
+  NEWLIB_CFG_FLAGS += --disable-newlib-io-float
+  NEWLIB_CFG_FLAGS += --disable-newlib-io-long-double
 
-# About --disable-libgloss and --disable-newlib-supplied-syscalls:
-#
-#   Newlib can provide syscalls like _sbrk(), which are also commonly needed, and
-#   Libgloss normally provides crt0.o , which gets automatically added to the linker object file list,
-#   and _exit(), which is needed by the most simple of programs. The configuration switches
-#   below disable those features, because we are going to be providing custom versions for our board.
-#   This means that autoconf will fail to detect the cross-compiler,
-#   the error message is then: "error: C compiler cannot create executables".
-#
-#   If you enable the features above, then you will find it hard to write an Automake makefile
-#   that links the files in the right order so as to override _sbrk() and so on with your own versions.
-#
-#   The correct way to fix this problem would be to modify Libgloss in order to provide
-#   the stuff needed by our board. This way, a standard toolchain would be able to build for our board
-#   with no additional linker files, etc. However, that would mean a lot of work, especially at the beginning,
-#   when it's not clear yet what belongs in a common library and what doesn't.
-#
-#   Therefore, for the time being I am using undocumented macro AC_NO_EXECUTABLES in the autoconf project,
-#   in order to work-around the error message described above.
-#
-NEWLIB_CFG_FLAGS += --disable-libgloss
-NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
+  NEWLIB_CFG_FLAGS += --disable-newlib-iconv
+  NEWLIB_CFG_FLAGS += --disable-newlib-iconv-external-ccs
+  NEWLIB_CFG_FLAGS += --disable-newlib-mb
+  NEWLIB_CFG_FLAGS += --disable-shared
+  NEWLIB_CFG_FLAGS += --disable-multilib
+
+  # I could not find a good reason why atexit() should be in struct _reent, so make it global.
+  #
+  # Notes about atexit memory consumption:
+  #   In Newlib, _ATEXIT_SIZE is 32 because of ANSI conformance, so each atexit block has 32 function pointers.
+  #   The associated arguments consume sizeof( struct _on_exit_args ) = 264 bytes.
+  #   And there is at least one, see _atexit0 and _global_atexit0.
+  NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
+
+  # You may wonder whether you need --disable-newlib-atexit-dynamic-alloc.
+  # But we are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
+  # and the firmware is checking on start-up that there are no atexit entries,
+  # so it does not really matter: much of the atexit() support shold be optimised away.
+
+
+  # The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
+  # But it starts off with an array in RAM called __malloc_av_ that weighs 1032 bytes,
+  # at least for a Cortex-M3 CPU target, so it is not a good choice for very
+  # constrained targets that don't do a lot of allocation.
+  # The trouble is, the 'nano' version is Newlib, as of April 2021, is known to be
+  # suboptimal in many normal scenarios.
+  NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc
+
+  # About --disable-libgloss and --disable-newlib-supplied-syscalls:
+  #
+  #   Newlib can provide syscalls like _sbrk(), which are also commonly needed, and
+  #   Libgloss normally provides crt0.o , which gets automatically added to the linker object file list,
+  #   and _exit(), which is needed by the most simple of programs. The configuration switches
+  #   below disable those features, because we are going to be providing custom versions for our board.
+  #   This means that autoconf will fail to detect the cross-compiler,
+  #   the error message is then: "error: C compiler cannot create executables".
+  #
+  #   If you enable the features above, then you will find it hard to write an Automake makefile
+  #   that links the files in the right order so as to override _sbrk() and so on with your own versions.
+  #
+  #   The correct way to fix this problem would be to modify Libgloss in order to provide
+  #   the stuff needed by our board. This way, a standard toolchain would be able to build for our board
+  #   with no additional linker files, etc. However, that would mean a lot of work, especially at the beginning,
+  #   when it's not clear yet what belongs in a common library and what doesn't.
+  #
+  #   Therefore, for the time being I am using undocumented macro AC_NO_EXECUTABLES in the autoconf project,
+  #   in order to work-around the error message described above.
+  #
+  NEWLIB_CFG_FLAGS += --disable-libgloss
+  NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
 endif
 
