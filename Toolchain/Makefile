@@ -55,7 +55,7 @@ $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-VERSION_SET := VersionSet9
+VERSION_SET := VersionSet9Newlib
 
 ifeq ($(VERSION_SET),VersionSet3)
 
@@ -97,7 +97,7 @@ else ifeq ($(VERSION_SET),VersionSet8)
   NEWLIB_VERSION := 4.1.0
   GDB_VERSION := 11.1
 
-else ifeq ($(VERSION_SET),VersionSet9)
+else ifeq ($(VERSION_SET),VersionSet9Newlib)
 
   BINUTILS_VERSION := 2.37
   GMP_VERSION := 6.2.1
@@ -105,7 +105,16 @@ else ifeq ($(VERSION_SET),VersionSet9)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
   NEWLIB_VERSION := 4.1.0
-  # PICOLIBC_VERSION := 1.7.4
+  GDB_VERSION := 11.2
+
+else ifeq ($(VERSION_SET),VersionSet9Picolibc)
+
+  BINUTILS_VERSION := 2.37
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.1
+  GCC_VERSION := 11.2.0
+  PICOLIBC_VERSION := 1.7.4
   GDB_VERSION := 11.2
 
 else
@@ -122,7 +131,6 @@ ifdef NEWLIB_VERSION
 else
   ifdef PICOLIBC_VERSION
     TARGET_LIBC := picolibc
-    $(error Support for Picolibc is not ready yet)
   else
     $(error Either NEWLIB_VERSION or PICOLIBC_VERSION must be set)
   endif
@@ -780,6 +788,13 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   PICOLIBC_CFG_FLAGS += -Dthread-local-storage=false
 
+  # The Meson build system documents all supported CPU family names.
+  PICOLIBC_CPU_FAMILY := arm
+  PICOLIBC_CPU_ENDIANNESS := little
+
+  PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+  PICOLIBC_C_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
+
 endif
 
 
@@ -1323,7 +1338,14 @@ $(PICOLIBC_CONFIGURE_SENTINEL): $(PICOLIBC_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTIN
 	echo "About to configure Picolibc from $(PICOLIBC_SRC_DIR)/ to $(PICOLIBC_OBJ_DIR)/" && \
 	if [ -d "$(PICOLIBC_OBJ_DIR)" ]; then rm -rf -- "$(PICOLIBC_OBJ_DIR)"; fi && \
 	mkdir --parents -- "$(PICOLIBC_OBJ_DIR)" && \
-	cp -- "$(MAKEFILE_TOOLS_DIR)/$(PICOLIBC_TARGET_FLAGS_FILENAME)" "$(PICOLIBC_OBJ_DIR)/$(PICOLIBC_TARGET_FLAGS_FILENAME)" && \
+	echo "Generating $(PICOLIBC_TARGET_FLAGS_FILENAME) ..." && \
+	"$(MAKEFILE_TOOLS_DIR)/GeneratePicolibcCrossFile.sh" \
+	  --target-arch="$(TARGET_ARCH)"          \
+	  --cpu-family="$(PICOLIBC_CPU_FAMILY)"   \
+	  --cpu="$(TOOLCHAIN_TARGET_CPU)"         \
+	  --endianness=$(PICOLIBC_CPU_ENDIANNESS) \
+	  $(patsubst %,--cflag=%,$(PICOLIBC_C_FLAGS_FOR_TARGET)) \
+	  >"$(PICOLIBC_OBJ_DIR)/$(PICOLIBC_TARGET_FLAGS_FILENAME)" && \
 	pushd "$(PICOLIBC_OBJ_DIR)" >/dev/null && \
 	echo "Configuring Picolibc:" && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \

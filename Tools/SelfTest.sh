@@ -104,11 +104,14 @@ set_make_parallel_jobs_flag ()
 
 # ----- Entry point -----
 
+declare -r VERSION_SET_FOR_PICOBLIC="VersionSet9Picolibc"
 
-declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS=false
-declare -r SKIP_TOOLCHAIN_BUILD=false
-declare -r SKIP_TOOLCHAIN_CHECK=false
-declare -r SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC=false
+declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS_NEWLIB=false
+declare -r SKIP_TOOLCHAIN_TARBALL_DOWNLOADS_PICOLIBC=false
+declare -r SKIP_TOOLCHAIN_BUILD_NEWLIB=false
+declare -r SKIP_TOOLCHAIN_CHECK_NEWLIB=false
+declare -r SKIP_TOOLCHAIN_BUILD_WITHOUT_GMP_MPFR_MPC=false
+declare -r SKIP_TOOLCHAIN_BUILD_PICOLIBC=false
 
 # We want all build messages to be in English, regardless of the current operating system language.
 export LANG=C
@@ -193,7 +196,7 @@ run_cmd "Testing 'make clean' with nothing to clean..."  "make clean"  "$LOG_FIL
 printf -v CMD "make %s  clean"  "$USUAL_ARGS"
 run_cmd "Testing 'make clean' with nothing to clean and the usual arguments..."  "$CMD" "$LOG_FILES_DIRNAME/toolchain-make-usual-clean.txt"  stdout
 
-if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS; then
+if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS_NEWLIB; then
 
   printf -v CMD \
          "make %s  TARBALLS_DOWNLOAD_DIR=%q  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
@@ -201,27 +204,44 @@ if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS; then
          "$DOWNLOADED_TARBALLS_DIRNAME" \
          "$TOOLCHAIN_DIR/Tarballs"
 
-  run_cmd "Testing downloading tarballs from a file server to a different directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-to-specific-dir.txt" both
+  run_cmd "Testing downloading tarballs with Newlib from a file server to a different directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-newlib-to-specific-dir.txt" both
 
+
+  # These are the tarballs that will be used when building the toolchain.
 
   printf -v CMD \
          "make %s  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
          "$USUAL_ARGS" \
          "$TOOLCHAIN_DIR/Tarballs"
 
-  run_cmd "Testing downloading tarballs from a file server to the default directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-to-default-dir.txt" both
+  run_cmd "Testing downloading tarballs with Newlib from a file server to the default directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-newlib-to-default-dir.txt" both
+
+fi
+
+if ! $SKIP_TOOLCHAIN_TARBALL_DOWNLOADS_PICOLIBC; then
+
+
+  printf -v CMD \
+         "make %s  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  VERSION_SET=%q  download-tarballs-from-file-server" \
+         "$USUAL_ARGS" \
+         "$TOOLCHAIN_DIR/Tarballs" \
+         "$VERSION_SET_FOR_PICOBLIC"
+
+  run_cmd "Testing downloading tarballs with Picolibc from a file server to the default directory..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-download-picolibc-to-default-dir.txt" both
 
 fi
 
 
 declare -r BUILD_DIR="$ROTATED_DIR/Toolchain-Build"
+declare -r BUILD_DIR_PICOLIBC="$ROTATED_DIR/Toolchain-Picolibc-Build"
 declare -r BUILD_DIR_WITHOUT_GMP_MPFR_MPC="$ROTATED_DIR/Toolchain-WithoutGmpMpfrMpc-Build"
 declare -r INSTALLATION_DIR="$ROTATED_DIR/Toolchain-Bin"
+declare -r INSTALLATION_DIR_PICOLIBC="$ROTATED_DIR/Toolchain-Picolibc-Bin"
 declare -r INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC="$ROTATED_DIR/Toolchain-WithoutGmpMpfrMpc-Bin"
 
 TOOLCHAIN_BIN_DIR=""
 
-if ! $SKIP_TOOLCHAIN_BUILD; then
+if ! $SKIP_TOOLCHAIN_BUILD_NEWLIB; then
 
   printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  all" \
        "$USUAL_ARGS" \
@@ -229,16 +249,16 @@ if ! $SKIP_TOOLCHAIN_BUILD; then
        "$INSTALLATION_DIR" \
        "$BUILD_DIR"
 
-  run_cmd "Testing building the toolchain..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all.txt"  both
+  run_cmd "Testing building the toolchain..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all-newlib.txt"  both
 
 
-  # LANG="C" is to make sure that the tools print messages in English,
+  # If environment variable LANG="C" were not set beforehand, we would need to do it here,
   # because we will be searching for an English text later on in the output.
-  CMD="LANG=\"C\"  $CMD"
+  #   CMD="LANG=\"C\"  $CMD"
 
-  run_cmd "Testing running the toolchain building makefile a second time..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all-2.txt"  both
+  run_cmd "Testing running the toolchain building makefile a second time..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all-newlib-2.txt"  both
 
-  OUTPUT_FILE_CONTENTS=$(<"$LOG_FILES_DIRNAME/toolchain-make-build-all-2.txt")
+  OUTPUT_FILE_CONTENTS=$(<"$LOG_FILES_DIRNAME/toolchain-make-build-all-newlib-2.txt")
 
   declare -r NOTHING_TO_DO_REGEX=".*Nothing to be done for.*"
 
@@ -253,7 +273,7 @@ if ! $SKIP_TOOLCHAIN_BUILD; then
 fi
 
 
-if ! $SKIP_TOOLCHAIN_CHECK; then
+if ! $SKIP_TOOLCHAIN_CHECK_NEWLIB; then
 
   printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  check" \
        "$USUAL_ARGS" \
@@ -266,7 +286,7 @@ if ! $SKIP_TOOLCHAIN_CHECK; then
 fi
 
 
-if ! $SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC; then
+if ! $SKIP_TOOLCHAIN_BUILD_WITHOUT_GMP_MPFR_MPC; then
 
   printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  all" \
        "$USUAL_ARGS" \
@@ -280,6 +300,25 @@ if ! $SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC; then
     TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC"
   fi
 fi
+
+
+if ! $SKIP_TOOLCHAIN_BUILD_PICOLIBC; then
+
+  printf -v CMD  "make %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  VERSION_SET=%q  all" \
+       "$USUAL_ARGS" \
+       "$PARALLEL_ARGS" \
+       "$INSTALLATION_DIR_PICOLIBC" \
+       "$BUILD_DIR_PICOLIBC" \
+       "$VERSION_SET_FOR_PICOBLIC"
+
+  run_cmd "Testing building the toolchain with Picolibc..."  "$CMD"  "$LOG_FILES_DIRNAME/toolchain-make-build-all-picolibc.txt"  both
+
+  if [ -z "$TOOLCHAIN_BIN_DIR" ]; then
+    TOOLCHAIN_BIN_DIR="$INSTALLATION_DIR_PICOLIBC"
+  fi
+
+fi
+
 
 if [ -z "$TOOLCHAIN_BIN_DIR" ]; then
 
