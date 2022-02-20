@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 declare -r SCRIPT_NAME="GeneratePicolibcCrossFile.sh"
-declare -r VERSION_NUMBER="1.00"
+declare -r VERSION_NUMBER="1.01"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -45,6 +45,10 @@ Options:
                           Example CPU name: cortex-m3
  --endianness=little/big  The CPU endianness. Example: 'little'.
  --cflag=xxx              Add a C compiler flag for the target. Example: --cflag="-O2"
+ --lflag=xxx              Add a linker     flag for the target. Example: --lflag="-L/target/libs"
+ --exewrap=xxx            The first time, add the 'exe_wrapper' setting with the given
+                          argument, and add setting "needs_exe_wrapper = true".
+                          Subsequent --exewrap=xxx options add further arguments to 'exe_wrapper'.
  --meson-compat=0.55      Provides compability with Meson versions up to 0.55.
 
 Usage example:
@@ -147,6 +151,20 @@ process_command_line_argument ()
           abort "Option --cflag has an empty value.";
         fi
         CFLAGS_FOR_TARGET+=("$OPTARG")
+        ;;
+
+    lflag)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --lflag has an empty value.";
+        fi
+        LINKER_FLAGS_FOR_TARGET+=("$OPTARG")
+        ;;
+
+    exewrap)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --exewrap has an empty value.";
+        fi
+        EXE_WRAPPER+=("$OPTARG")
         ;;
 
     meson-compat)
@@ -288,6 +306,67 @@ escape_for_meson_string ()
 }
 
 
+# Examples of the 3 types of output:
+#
+# c_args = []
+#
+# c_args = [ '-O2' ]
+#
+# c_args = [
+#            '-g',
+#            '-O2'
+#          ]
+
+generate_setting_as_meson_array ()
+{
+  local SETTING_NAME="$1"
+  local -n ARRAY="$2"  # Create a reference to the array passed by name.
+
+  local -i ARRAY_LEN="${#ARRAY[@]}"
+
+  SETTING_AS_MESON_ARRAY="$SETTING_NAME = ["
+
+  if (( ARRAY_LEN == 0 )); then
+    SETTING_AS_MESON_ARRAY+="]"$'\n'
+    return
+  fi
+
+  local ESCAPED_ARG
+
+  if (( ARRAY_LEN == 1 )); then
+    escape_for_meson_string "${ARRAY[0]}" "ESCAPED_ARG"
+    SETTING_AS_MESON_ARRAY+=" '${ESCAPED_ARG}' ]"$'\n'
+    return
+  fi
+
+  SETTING_AS_MESON_ARRAY+=$'\n'
+
+  local -i BASE_INDENTATION_LEN="$(( ${#SETTING_NAME} + 3 ))"
+  local BASE_INDENTATION
+  printf -v BASE_INDENTATION "%*s" "$BASE_INDENTATION_LEN" ""
+
+  local -r EXTRA_INDENTATION="  "
+
+  local -i INDEX
+
+  for ((INDEX=0; INDEX < ARRAY_LEN; INDEX++)); do
+
+    escape_for_meson_string "${ARRAY[$INDEX]}" "ESCAPED_ARG"
+
+    SETTING_AS_MESON_ARRAY+="${BASE_INDENTATION}${EXTRA_INDENTATION}'$ESCAPED_ARG'"
+
+    if (( INDEX != ARRAY_LEN - 1 )); then
+      SETTING_AS_MESON_ARRAY+=","
+    fi
+
+    SETTING_AS_MESON_ARRAY+=$'\n'
+
+  done
+
+  SETTING_AS_MESON_ARRAY+="${BASE_INDENTATION}]"$'\n'
+}
+
+
 # ----- Entry point -----
 
 USER_SHORT_OPTIONS_SPEC=""
@@ -304,9 +383,13 @@ USER_LONG_OPTIONS_SPEC+=( [cpu]=1 )
 USER_LONG_OPTIONS_SPEC+=( [system]=1 )
 USER_LONG_OPTIONS_SPEC+=( [endianness]=1 )
 USER_LONG_OPTIONS_SPEC+=( [cflag]=1 )
+USER_LONG_OPTIONS_SPEC+=( [lflag]=1 )
+USER_LONG_OPTIONS_SPEC+=( [exewrap]=1 )
 USER_LONG_OPTIONS_SPEC+=( [meson-compat]=1 )
 
 declare -a CFLAGS_FOR_TARGET=()
+declare -a LINKER_FLAGS_FOR_TARGET=()
+declare -a EXE_WRAPPER=()
 
 TARGET_ARCH=""
 CPU_FAMILY_NAME=""
@@ -327,15 +410,15 @@ if (( ${#ARGS[@]} != 0 )); then
 fi
 
 if [[ $TARGET_ARCH = "" ]]; then
-  abort "Option  --target-arch is required."
+  abort "Option --target-arch is required."
 fi
 
 if [[ $CPU_FAMILY_NAME = "" ]]; then
-  abort "Option  --cpu-family is required."
+  abort "Option --cpu-family is required."
 fi
 
 if [[ $ENDIANNESS = "" ]]; then
-  abort "Option  --endianness is required."
+  abort "Option --endianness is required."
 fi
 
 
@@ -346,52 +429,45 @@ escape_for_meson_string "$CPU_NAME"        "ESCAPED_CPU_NAME"
 escape_for_meson_string "$ENDIANNESS"      "ESCAPED_ENDIANNESS"
 
 
-C_ARGS=""
-
-declare -r ARG_BASE_INDENTATION="         "
-declare -r ARG_EXTRA_INDENTATION="  "
-
-for ARG in "${CFLAGS_FOR_TARGET[@]}"
-do
-
-  if [[ $C_ARGS != "" ]]; then
-    C_ARGS+=","
-  fi
-
-  C_ARGS+=$'\n'"$ARG_BASE_INDENTATION$ARG_EXTRA_INDENTATION"
-
-  escape_for_meson_string "$ARG" "ESCAPED_ARG"
-
-  C_ARGS+="'$ESCAPED_ARG'"
-
-done
-
-if [[ $C_ARGS != "" ]]; then
-  C_ARGS+=$'\n'"$ARG_BASE_INDENTATION"
-fi
-
-case "$MESON_COMPATIBILITY" in
-  '') SECTION_HEADER_FOR_FLAGS=$'\n'"[built-in options]";;
-
-  0.55)  # Since Meson version 0.56.0, released on 2020-10-30, you get the following warning:
-         # DEPRECATION: c_args in the [properties] section of the machine file is deprecated, use the [built-in options] section.
-         # See this commit: https://github.com/mesonbuild/meson/pull/6597
-         SECTION_HEADER_FOR_FLAGS="";;
-
-  *) abort "Unsupported value of --meson-compat: $MESON_COMPATIBILITY";;
-esac
-
+FILE_CONTENTS=""
 
 set +o errexit  # When 'read' reaches end of file, a non-zero status code is returned.
 
-read -r -d '' FILE_CONTENTS <<EOF
+read -r -d '' PART_1 <<EOF
 [binaries]
 c = '$ESCAPED_TARGET_ARCH-gcc'
 ar = '$ESCAPED_TARGET_ARCH-ar'
 as = '$ESCAPED_TARGET_ARCH-as'
 nm = '$ESCAPED_TARGET_ARCH-nm'
 strip = '$ESCAPED_TARGET_ARCH-strip'
+EOF
 
+set -o errexit
+
+FILE_CONTENTS+="$PART_1"$'\n'
+
+
+if (( ${#EXE_WRAPPER[@]} == 1 )); then
+
+  # We could generate an array with just 1 element, but a single entry looks nicer,
+  # as it tends to be a path like settings 'ar' etc.
+
+  escape_for_meson_string "${EXE_WRAPPER[0]}"  "ESCAPED_EXE_WRAPPER"
+
+  FILE_CONTENTS+="exe_wrapper = '${ESCAPED_EXE_WRAPPER}'"$'\n'
+
+elif (( ${#EXE_WRAPPER[@]} > 1 )); then
+
+  generate_setting_as_meson_array "exe_wrapper" "EXE_WRAPPER"
+
+  FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+
+fi
+
+
+set +o errexit  # When 'read' reaches end of file, a non-zero status code is returned.
+
+read -r -d '' PART_2 <<EOF
 [host_machine]
 system = '$ESCAPED_SYSTEM_NAME'
 cpu_family = '$ESCAPED_CPU_FAMILY_NAME'
@@ -400,10 +476,42 @@ endian = '$ESCAPED_ENDIANNESS'
 
 [properties]
 skip_sanity_check = true
-$SECTION_HEADER_FOR_FLAGS
-c_args = [$C_ARGS]
 EOF
 
 set -o errexit
 
-echo "$FILE_CONTENTS"
+FILE_CONTENTS+=$'\n'"$PART_2"$'\n'
+
+
+if (( ${#EXE_WRAPPER[@]} > 0 )); then
+  FILE_CONTENTS+="needs_exe_wrapper = true"$'\n'
+fi
+
+
+case "$MESON_COMPATIBILITY" in
+
+  '') FILE_CONTENTS+=$'\n'"[built-in options]"$'\n';;
+
+  0.55)  # Since Meson version 0.56.0, released on 2020-10-30, you get the following warning:
+         # DEPRECATION: c_args in the [properties] section of the machine file is deprecated, use the [built-in options] section.
+         # See this commit: https://github.com/mesonbuild/meson/pull/6597
+         ;;
+
+  *) abort "Unsupported value of --meson-compat: $MESON_COMPATIBILITY";;
+esac
+
+
+generate_setting_as_meson_array "c_args" "CFLAGS_FOR_TARGET"
+
+FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+
+
+if (( ${#LINKER_FLAGS_FOR_TARGET[@]} > 0 )); then
+
+  generate_setting_as_meson_array "c_link_args" "LINKER_FLAGS_FOR_TARGET"
+
+  FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+
+fi
+
+echo -n "$FILE_CONTENTS"
