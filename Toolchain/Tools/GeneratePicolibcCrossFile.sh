@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 declare -r SCRIPT_NAME="GeneratePicolibcCrossFile.sh"
-declare -r VERSION_NUMBER="1.01"
+declare -r VERSION_NUMBER="1.02"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -44,10 +44,17 @@ Options:
  --cpu=name               The CPU name does not really matter. The default is 'unknown-cpu'.
                           Example CPU name: cortex-m3
  --endianness=little/big  The CPU endianness. Example: 'little'.
+ --c-compiler=xxx         The default value of Meson setting 'c' is <triplet>-gcc.
+                          This option allows you to override it. Specify --c-compiler=xxx multiple
+                          times to add further compiler arguments.
+ --linker=xxxx            Add Meson setting 'c_ld'. Specify --linker=xxx multiple times
+                          to add further linker arguments.
  --cflag=xxx              Add a C compiler flag for the target. Example: --cflag="-O2"
+                          These flags land in Meson setting 'c_args'.
  --lflag=xxx              Add a linker     flag for the target. Example: --lflag="-L/target/libs"
- --exewrap=xxx            The first time, add the 'exe_wrapper' setting with the given
-                          argument, and add setting "needs_exe_wrapper = true".
+                          These flags land in Meson setting 'c_link_args'.
+ --exewrap=xxx            The first time, add Meson setting 'exe_wrapper' with the given
+                          argument, and add Meson setting "needs_exe_wrapper = true".
                           Subsequent --exewrap=xxx options add further arguments to 'exe_wrapper'.
  --meson-compat=0.55      Provides compability with Meson versions up to 0.55.
 
@@ -137,6 +144,20 @@ process_command_line_argument ()
           abort "Option --system has an empty value.";
         fi
         SYSTEM_NAME="$OPTARG"
+        ;;
+
+    c-compiler)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --c-compiler has an empty value.";
+        fi
+        C_COMPILER+=("$OPTARG")
+        ;;
+
+    linker)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --linker has an empty value.";
+        fi
+        LINKER+=("$OPTARG")
         ;;
 
     endianness)
@@ -367,6 +388,42 @@ generate_setting_as_meson_array ()
 }
 
 
+# If the command argument array is empty, no setting is generated.
+
+generate_command_setting ()
+{
+  local SETTING_NAME="$1"
+  local ARRAY_NAME="$2"
+
+  local -n ARRAY="$ARRAY_NAME"  # Create a reference to the array passed by name.
+
+  local -i ARRAY_LEN="${#ARRAY[@]}"
+
+  if (( ARRAY_LEN == 0 )); then
+    COMMAND_SETTING=""
+    return
+  fi
+
+  if (( ARRAY_LEN == 1 )); then
+
+    # We could generate an array with just one element, but a string looks nicer.
+    # Other sibling settings like 'ar' or 'strip' are usually given as strings too.
+
+    local ESCAPED_ARG
+    escape_for_meson_string "${ARRAY[0]}" "ESCAPED_ARG"
+
+    COMMAND_SETTING="$SETTING_NAME = '${ESCAPED_ARG}'"$'\n'
+    return
+  fi
+
+  local SETTING_AS_MESON_ARRAY
+
+  generate_setting_as_meson_array "$SETTING_NAME" "$ARRAY_NAME"
+
+  COMMAND_SETTING="$SETTING_AS_MESON_ARRAY"
+}
+
+
 # ----- Entry point -----
 
 USER_SHORT_OPTIONS_SPEC=""
@@ -382,11 +439,15 @@ USER_LONG_OPTIONS_SPEC+=( [cpu-family]=1 )
 USER_LONG_OPTIONS_SPEC+=( [cpu]=1 )
 USER_LONG_OPTIONS_SPEC+=( [system]=1 )
 USER_LONG_OPTIONS_SPEC+=( [endianness]=1 )
+USER_LONG_OPTIONS_SPEC+=( [c-compiler]=1 )
+USER_LONG_OPTIONS_SPEC+=( [linker]=1 )
 USER_LONG_OPTIONS_SPEC+=( [cflag]=1 )
 USER_LONG_OPTIONS_SPEC+=( [lflag]=1 )
 USER_LONG_OPTIONS_SPEC+=( [exewrap]=1 )
 USER_LONG_OPTIONS_SPEC+=( [meson-compat]=1 )
 
+declare -a C_COMPILER=()
+declare -a LINKER=()
 declare -a CFLAGS_FOR_TARGET=()
 declare -a LINKER_FLAGS_FOR_TARGET=()
 declare -a EXE_WRAPPER=()
@@ -421,6 +482,10 @@ if [[ $ENDIANNESS = "" ]]; then
   abort "Option --endianness is required."
 fi
 
+if (( ${#C_COMPILER[@]} == 0)); then
+  C_COMPILER+=("$TARGET_ARCH-gcc")
+fi
+
 
 escape_for_meson_string "$TARGET_ARCH"     "ESCAPED_TARGET_ARCH"
 escape_for_meson_string "$SYSTEM_NAME"     "ESCAPED_SYSTEM_NAME"
@@ -431,11 +496,22 @@ escape_for_meson_string "$ENDIANNESS"      "ESCAPED_ENDIANNESS"
 
 FILE_CONTENTS=""
 
+FILE_CONTENTS+="[binaries]"$'\n'
+
+
+generate_command_setting "c" "C_COMPILER"
+
+FILE_CONTENTS+="$COMMAND_SETTING"
+
+
+generate_command_setting "c_ld" "LINKER"
+
+FILE_CONTENTS+="$COMMAND_SETTING"
+
+
 set +o errexit  # When 'read' reaches end of file, a non-zero status code is returned.
 
 read -r -d '' PART_1 <<EOF
-[binaries]
-c = '$ESCAPED_TARGET_ARCH-gcc'
 ar = '$ESCAPED_TARGET_ARCH-ar'
 as = '$ESCAPED_TARGET_ARCH-as'
 nm = '$ESCAPED_TARGET_ARCH-nm'
@@ -447,22 +523,9 @@ set -o errexit
 FILE_CONTENTS+="$PART_1"$'\n'
 
 
-if (( ${#EXE_WRAPPER[@]} == 1 )); then
+generate_command_setting "exe_wrapper" "EXE_WRAPPER"
 
-  # We could generate an array with just 1 element, but a single entry looks nicer,
-  # as it tends to be a path like settings 'ar' etc.
-
-  escape_for_meson_string "${EXE_WRAPPER[0]}"  "ESCAPED_EXE_WRAPPER"
-
-  FILE_CONTENTS+="exe_wrapper = '${ESCAPED_EXE_WRAPPER}'"$'\n'
-
-elif (( ${#EXE_WRAPPER[@]} > 1 )); then
-
-  generate_setting_as_meson_array "exe_wrapper" "EXE_WRAPPER"
-
-  FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
-
-fi
+FILE_CONTENTS+="$COMMAND_SETTING"
 
 
 set +o errexit  # When 'read' reaches end of file, a non-zero status code is returned.
@@ -501,9 +564,13 @@ case "$MESON_COMPATIBILITY" in
 esac
 
 
-generate_setting_as_meson_array "c_args" "CFLAGS_FOR_TARGET"
+if (( ${#CFLAGS_FOR_TARGET[@]} > 0 )); then
 
-FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+  generate_setting_as_meson_array "c_args" "CFLAGS_FOR_TARGET"
+
+  FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+
+fi
 
 
 if (( ${#LINKER_FLAGS_FOR_TARGET[@]} > 0 )); then
