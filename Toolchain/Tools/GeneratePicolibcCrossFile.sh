@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 declare -r SCRIPT_NAME="GeneratePicolibcCrossFile.sh"
-declare -r VERSION_NUMBER="1.03"
+declare -r VERSION_NUMBER="1.04"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -41,7 +41,7 @@ Options:
  --system=name            The system name does not really matter. The default is 'unknown-system'.
  --cpu-family=name        The Meson build system documents all supported CPU family names.
                           Example CPU family name: arm
- --cpu=name               The CPU name does not really matter. The default is 'unknown-cpu'.
+ --cpu=name               The CPU name does not really matter. The default is the CPU family name.
                           Example CPU name: cortex-m3
  --endianness=little/big  The CPU endianness. Example: 'little'.
                           There is a default value for some CPU families.
@@ -455,15 +455,12 @@ declare -a EXE_WRAPPER=()
 
 TARGET_ARCH=""
 CPU_FAMILY_NAME=""
+CPU_NAME=""
 ENDIANNESS=""
 MESON_COMPATIBILITY=""
 
 # The system name is not really used by Meson.
 SYSTEM_NAME="unknown-system"
-
-# The CPU name is not really used by Meson, see:
-#   https://github.com/mesonbuild/meson/issues/7037
-CPU_NAME="unknown-cpu"
 
 parse_command_line_arguments "$@"
 
@@ -489,6 +486,16 @@ if [[ $ENDIANNESS = "" ]]; then
       ENDIANNESS=big;;
     *) abort "Option --endianness is required for CPU family \"$CPU_FAMILY_NAME\".";;
   esac
+
+fi
+
+if [[ $CPU_NAME = "" ]]; then
+
+  # The CPU name is not really used by Meson, see:
+  #   https://github.com/mesonbuild/meson/issues/7037
+  #
+  # Provide a default if the user did not specify a CPU name.
+  CPU_NAME="$CPU_FAMILY_NAME"
 
 fi
 
