@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 declare -r SCRIPT_NAME="GeneratePicolibcCrossFile.sh"
-declare -r VERSION_NUMBER="1.02"
+declare -r VERSION_NUMBER="1.03"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -44,6 +44,7 @@ Options:
  --cpu=name               The CPU name does not really matter. The default is 'unknown-cpu'.
                           Example CPU name: cortex-m3
  --endianness=little/big  The CPU endianness. Example: 'little'.
+                          There is a default value for some CPU families.
  --c-compiler=xxx         The default value of Meson setting 'c' is <triplet>-gcc.
                           This option allows you to override it. Specify --c-compiler=xxx multiple
                           times to add further compiler arguments.
@@ -479,7 +480,16 @@ if [[ $CPU_FAMILY_NAME = "" ]]; then
 fi
 
 if [[ $ENDIANNESS = "" ]]; then
-  abort "Option --endianness is required."
+
+  # Provide a default endianness for some CPU families.
+  case "$CPU_FAMILY_NAME" in
+    arm*|aarch*|x86*|riscv*)
+      ENDIANNESS=little;;
+    68*|sparc*)
+      ENDIANNESS=big;;
+    *) abort "Option --endianness is required for CPU family \"$CPU_FAMILY_NAME\".";;
+  esac
+
 fi
 
 if (( ${#C_COMPILER[@]} == 0)); then
