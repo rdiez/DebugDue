@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 declare -r SCRIPT_NAME="GeneratePicolibcCrossFile.sh"
-declare -r VERSION_NUMBER="1.04"
+declare -r VERSION_NUMBER="1.05"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -40,6 +40,7 @@ Options:
  --target-arch=triplet    The GCC cross-compilation triplet. Example: arm-none-eabi
  --system=name            The system name does not really matter. The default is 'unknown-system'.
  --cpu-family=name        The Meson build system documents all supported CPU family names.
+                          Defaults to the first component of the target arch triplet.
                           Example CPU family name: arm
  --cpu=name               The CPU name does not really matter. The default is the CPU family name.
                           Example CPU name: cortex-m3
@@ -64,7 +65,6 @@ Usage example:
     --target-arch=arm-none-eabi \\
     --cpu-family=arm            \\
     --cpu=cortex-m3             \\
-    --endianness=little         \\
     --cflag="-g"                \\
     --cflag="-O2"               \\
     >cross-build-settings.txt
@@ -473,7 +473,20 @@ if [[ $TARGET_ARCH = "" ]]; then
 fi
 
 if [[ $CPU_FAMILY_NAME = "" ]]; then
-  abort "Option --cpu-family is required."
+
+  # Provide a default family name.
+
+  # Capture the first component of the target arch triplet.
+  # That is the fragment before the first hyphen ('-').
+  # Make sure that at least the first part of the triplet looks plausible.
+  declare -r EXTRACT_FIRST_COMPONENT_REGEX='^([^-]+)-[^-]+'
+
+  if ! [[ $TARGET_ARCH =~ $EXTRACT_FIRST_COMPONENT_REGEX ]]; then
+    abort "Could not extract the CPU family name from target arch triplet \"$TARGET_ARCH\". Consider using option '--cpu-family'."
+  fi
+
+  CPU_FAMILY_NAME="${BASH_REMATCH[1]}"
+
 fi
 
 if [[ $ENDIANNESS = "" ]]; then
