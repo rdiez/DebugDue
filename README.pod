@@ -623,7 +623,7 @@ The project's official web site is L<< https://github.com/rdiez/JtagDue >>
 
 =head1 License
 
-Copyright (C) R. Diez 2012-2020,  rdiezmail-arduino at yahoo.de
+Copyright (C) R. Diez 2012-2022,  rdiezmail-arduino at yahoo.de
 
 The source code is released under the AGPL 3 license.
 
