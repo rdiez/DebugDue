@@ -6,8 +6,8 @@ set -o pipefail
 
 # set -x  # Enable tracing of this script.
 
-declare -r SCRIPT_NAME="GeneratePicolibcCrossFile.sh"
-declare -r VERSION_NUMBER="1.05"
+declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
+declare -r VERSION_NUMBER="1.06"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -15,7 +15,7 @@ declare -r -i EXIT_CODE_ERROR=1
 
 abort ()
 {
-  echo >&2 && echo "Error in script \"$0\": $*" >&2
+  echo >&2 && echo "Error in script \"$SCRIPT_NAME\": $*" >&2
   exit $EXIT_CODE_ERROR
 }
 
@@ -24,7 +24,11 @@ display_help ()
 {
 cat - <<EOF
 
-This script generates a file with the cross-compilation settings needed to build Picolibc.
+This script generates a cross-file for the Meson Build system with settings for the compiler,
+linker, etc. See Meson's option '--cross-file' for more information.
+
+I am using this script to build Picolibc, but there is nothing specific to that library,
+so this script will probably be useful for other projects too.
 
 Copyright (c) 2022 R. Diez - Licensed under the GNU AGPLv3
 
@@ -71,7 +75,7 @@ Usage example:
 
 If you are calling this script from a GNU Make makefile, and you have a variable with all compiler flags,
 you can generate the corresponding --cflags=xxx options like this:
-  \$(patsubst %,--cflag=%,\$(PICOLIBC_C_FLAGS_FOR_TARGET))
+  \$(patsubst %,--cflag=%,\$(CFLAGS_FOR_TARGET))
 
 Exit status: 0 means success. Any other value means error.
 
@@ -469,7 +473,7 @@ if (( ${#ARGS[@]} != 0 )); then
 fi
 
 if [[ $TARGET_ARCH = "" ]]; then
-  abort "Option --target-arch is required."
+  abort "Option --target-arch is required. Run this tool with the --help option for usage information."
 fi
 
 if [[ $CPU_FAMILY_NAME = "" ]]; then
@@ -581,9 +585,31 @@ if (( ${#EXE_WRAPPER[@]} > 0 )); then
 fi
 
 
+BUILT_IN_OPTIONS_CONTENTS=""
+
+if (( ${#CFLAGS_FOR_TARGET[@]} > 0 )); then
+
+  generate_setting_as_meson_array "c_args" "CFLAGS_FOR_TARGET"
+
+  BUILT_IN_OPTIONS_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+
+fi
+
+
+if (( ${#LINKER_FLAGS_FOR_TARGET[@]} > 0 )); then
+
+  generate_setting_as_meson_array "c_link_args" "LINKER_FLAGS_FOR_TARGET"
+
+  BUILT_IN_OPTIONS_CONTENTS+="$SETTING_AS_MESON_ARRAY"
+
+fi
+
 case "$MESON_COMPATIBILITY" in
 
-  '') FILE_CONTENTS+=$'\n'"[built-in options]"$'\n';;
+  '')  # Do not generate the section header if the section will be empty.
+       if [[ -n "$BUILT_IN_OPTIONS_CONTENTS" ]]; then
+        FILE_CONTENTS+=$'\n'"[built-in options]"$'\n'
+      fi;;
 
   0.55)  # Since Meson version 0.56.0, released on 2020-10-30, you get the following warning:
          # DEPRECATION: c_args in the [properties] section of the machine file is deprecated, use the [built-in options] section.
@@ -593,22 +619,7 @@ case "$MESON_COMPATIBILITY" in
   *) abort "Unsupported value of --meson-compat: $MESON_COMPATIBILITY";;
 esac
 
+FILE_CONTENTS+="$BUILT_IN_OPTIONS_CONTENTS"
 
-if (( ${#CFLAGS_FOR_TARGET[@]} > 0 )); then
-
-  generate_setting_as_meson_array "c_args" "CFLAGS_FOR_TARGET"
-
-  FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
-
-fi
-
-
-if (( ${#LINKER_FLAGS_FOR_TARGET[@]} > 0 )); then
-
-  generate_setting_as_meson_array "c_link_args" "LINKER_FLAGS_FOR_TARGET"
-
-  FILE_CONTENTS+="$SETTING_AS_MESON_ARRAY"
-
-fi
 
 echo -n "$FILE_CONTENTS"
