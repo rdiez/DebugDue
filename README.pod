@@ -12,11 +12,11 @@ Run the following Perl commands to convert it to HTML or to plain text for easy 
 The main goal of this project is to provide an up-to-date, comfortable but fully-featured
 B<bare-metal C++ programming environment> for the Arduino Due. However, most of the
 techniques used are generic and can be applied to other Cortex-Mx microcontrollers,
-or even to other bare-metal embedded architectures. This project already supports
-building and debugging a minimal firmware running on a Qemu-emulated Stellaris board.
+or even to other bare-metal embedded environments. This project already supports
+building and debugging a minimal firmware running on a B<simulator> (Qemu-emulated Stellaris board).
 
 The makefile that builds the B<GCC-based toolchain> is completely generic (it knows nothing about the Arduino Due),
-so that you can use it to create toolchains for other ARM Cortex microcontrollers, like the STM32 family.
+so that you can use it to create bare-metal toolchains for other ARM Cortex microcontrollers, like the STM32 family.
 In fact, the toolchain builder makefile is probably the most valuable outcome of this project.
 
 A secondary goal of this project is to convert the Arduino Due into a B<JTAG adapter>
@@ -41,6 +41,8 @@ The developer must manually call every library function and has therefore full c
 There are no OS background tasks or threads to worry about.
 
 =item * L<< C++17|https://en.wikipedia.org/wiki/C%2B%2B17 >> support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
+
+Which version of the C++ standard you can use actually depends on the selected GCC version.
 
 =item * C++ exceptions.
 
@@ -68,7 +70,7 @@ while the message characters are sent to the USB virtual serial port in the back
 If the background console output buffer overflows, console text will be lost, but the user will always see
 an indication that some text was lost at the position where the overflow occurred.
 
-=item * Library of common functions for embedded development.
+=item * Small library of common functions for embedded development.
 
 Most basic functions you need to get started have been implemented: Busy wait loop helpers, basic text parsing, I/O utilities, stack usage tools, uptime calculation, a template-based circular buffer implementation, etc.
 
@@ -80,7 +82,7 @@ JTAG probes that do not support the RCLK (adaptive clock speed) signal
 cannot connect to the board and stop the firmware early enough after reset,
 which can make debugging from the start difficult.
 
-=item * Firmware cross-compiled with the standard GCC and autotools.
+=item * Firmware cross-compiled with the standard GCC and S<< L<< GNU Autotools|https://en.wikipedia.org/wiki/GNU_Autotools >> . >>
 
 The F<< configure.ac >> and F<< Makefile.am >> files are clean and properly commented.
 
@@ -111,7 +113,7 @@ See the installation instructions below for more information on how to build one
 
 Instead of building your own, you could download a pre-built toolchain for ARM Cortex microcontrollers. Popular toolchains are:
 
-L<< https://developer.arm.com/open-source/gnu-toolchain/gnu-rm >>
+L<< https://developer.arm.com/tools-and-software/open-source-software/developer-tools/gnu-toolchain >>
 
 L<< https://launchpad.net/gcc-arm-embedded >>
 
