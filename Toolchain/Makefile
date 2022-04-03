@@ -55,7 +55,7 @@ $(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
 
-VERSION_SET := VersionSet9Newlib
+VERSION_SET := VersionSet9
 
 ifeq ($(VERSION_SET),VersionSet3)
 
@@ -97,7 +97,7 @@ else ifeq ($(VERSION_SET),VersionSet8)
   NEWLIB_VERSION := 4.1.0
   GDB_VERSION := 11.1
 
-else ifeq ($(VERSION_SET),VersionSet9Newlib)
+else ifeq ($(VERSION_SET),VersionSet9)
 
   BINUTILS_VERSION := 2.37
   GMP_VERSION := 6.2.1
@@ -107,14 +107,17 @@ else ifeq ($(VERSION_SET),VersionSet9Newlib)
   NEWLIB_VERSION := 4.1.0
   GDB_VERSION := 11.2
 
-else ifeq ($(VERSION_SET),VersionSet9Picolibc)
+else ifeq ($(VERSION_SET),VersionSet10)
 
-  BINUTILS_VERSION := 2.37
+  # This version set is still experimental.
+
+  BINUTILS_VERSION := 2.38
   GMP_VERSION := 6.2.1
   MPFR_VERSION := 4.1.0
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
-  PICOLIBC_VERSION := 1.7.4
+  NEWLIB_VERSION := 4.1.0
+  PICOLIBC_VERSION := 1.7.6
   GDB_VERSION := 11.2
 
 else
@@ -122,17 +125,11 @@ else
 endif
 
 
-ifdef NEWLIB_VERSION
-  ifdef PICOLIBC_VERSION
-    $(error Both NEWLIB_VERSION and PICOLIBC_VERSION are set)
-  else
-    TARGET_LIBC := newlib
-  endif
-else
-  ifdef PICOLIBC_VERSION
-    TARGET_LIBC := picolibc
-  else
-    $(error Either NEWLIB_VERSION or PICOLIBC_VERSION must be set)
+TARGET_LIBC := newlib
+
+ifneq "$(TARGET_LIBC)" "newlib"
+  ifneq "$(TARGET_LIBC)" "picolibc"
+    $(error Invalid value of TARGET_LIBC: $(TARGET_LIBC))
   endif
 endif
 
@@ -729,6 +726,12 @@ ifeq ($(TARGET_LIBC), newlib)
   NEWLIB_CFG_FLAGS += --disable-libgloss
   NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
+  # Newlib adds to the compiler flags option '-fno-builtin', which can incur a significant performance penalty.
+  # You can disable it with '--disable-newlib-fno-builtin'.
+  # However, it is not clear whether that is going to cause problems when compiling the libc routines that
+  # are usually replaced with such built-ins, like memset(). There are reports that leaving '-fno-builtin' out
+  # cause problems with LTO too. Other people say it should be OK nowadays.
+
 endif
 
 
@@ -741,6 +744,7 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
   PICOLIBC_SRC_DIR := $(PICOLIBC_UNTAR_DIR)
   PICOLIBC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)-obj
+  PICOLIBC_SPECS_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)-specs
 
   # This file will be automatically generated in the future.
   PICOLIBC_TARGET_FLAGS_FILENAME := ToolchainBuilder-cross-$(TARGET_ARCH).txt
@@ -763,8 +767,25 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dincludedir="$(TARGET_ARCH)/include"
   PICOLIBC_CFG_FLAGS += -Dlibdir="$(TARGET_ARCH)/lib"
 
-  # 'picocrt' provides crt0.o, which initialises the C environment.
-  # Our embedded application will be doing the initialisation itself.
+  # Instead of using option --cflag=xxx with GeneratePicolibcCrossFile.sh,
+  # we could use the following:
+  #   PICOLIBC_CFG_FLAGS += -Dc_args=xxx
+  # I have tested it with Meson 0.62.0.
+
+  # Normally, Picolibc asks the current GCC what multilib it supports, and then it builds Picolibc for them.
+  # But we are using a GCC phase 1 compiler which has no multilib support and even no libc at all.
+  PICOLIBC_CFG_FLAGS += -Dmultilib=false
+
+  # Where to place files picolibc.specs and picolibcpp.specs.
+  # The directory does not need to exist, for it will be created automatically.
+  # We will not be using those .specs files, but we need to specify a directory where to place them.
+  # Otherwise, Picolibc will place them where GCC lives, but that would be the GCC phase 1 compiler
+  # used to build Picolibc, and we will discard that GCC phase 1 compiler at the end anyway.
+  # We could use 'none' to disable creating the .spec files, but you may want to look at them for reference.
+  PICOLIBC_CFG_FLAGS += -Dspecsdir="$(PICOLIBC_SPECS_DIR)"
+
+  # 'picocrt' provides crt0.o, which initialises the C environment. Disable it,
+  # because our embedded application will be doing the initialisation itself.
   PICOLIBC_CFG_FLAGS += -Dpicocrt=false
 
   # 'picolib' provides startup helpers like the ARM interrupt vector, TLS support and sbrk.
@@ -773,20 +794,37 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dpicolib=false
 
   # The tinystdio library has a much smaller memory footprint than Newlib's stdio library.
-  # Drawbacks are:
-  # - Reduced I/O performance. But a bare-metal application will probably not use
-  #   much file-based I/O or C++ stream I/O, if at all.
-  # - No support for positional arguments like "%1$" (a POSIX extension) in printf,
-  #   as of Picolibc version 1.7.4 from November 2021.
+  # Drawbacks is a reduced I/O performance. But a bare-metal application will probably not use
+  # much file-based I/O or C++ stream I/O, if at all.
   PICOLIBC_CFG_FLAGS += -Dtinystdio=true
 
-  # Enable C99 support in IO functions like printf/scanf.
+  # Our bare-metal firmware does not use anything like fopen/fdopen.
+  PICOLIBC_CFG_FLAGS += -Dposix-io=false
+
+  # Enable C99 support in I/O functions like printf/scanf.
   PICOLIBC_CFG_FLAGS += -Dio-c99-formats=true
 
-  # Enable long long (normally 64-bits) type support in IO functions like printf/scanf.
+  # Enable long long (normally 64-bits) type support in I/O functions like printf/scanf.
   PICOLIBC_CFG_FLAGS += -Dio-long-long=true
 
+  PICOLIBC_CFG_FLAGS += -Dnewlib-multithread=false
+
   PICOLIBC_CFG_FLAGS += -Dthread-local-storage=false
+
+  # We haven't got any threading that errno should worry about.
+  PICOLIBC_CFG_FLAGS += -Dnewlib-global-errno=true
+
+  # Setting 'atomic-ungetc' makes getc/ungetc re-entrant using atomic operations.
+  # But we do not have threading, and we will not be using FILE routines anyway.
+  PICOLIBC_CFG_FLAGS += -Datomic-ungetc=false
+
+  # See --enable-newlib-nano-malloc in the Newlib section for more information.
+  PICOLIBC_CFG_FLAGS += -Dnewlib-nano-malloc=true
+
+  PICOLIBC_CFG_FLAGS += -Dsemihost=false
+
+  # We will not be using any iconv support.
+  PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
 
   # The Meson build system documents all supported CPU family names.
   PICOLIBC_CPU_FAMILY := arm
@@ -1316,6 +1354,9 @@ $(NEWLIB_INSTALL_SENTINEL): $(NEWLIB_MAKE_SENTINEL)
 	echo "The Newlib installation has finished." >"$(NEWLIB_INSTALL_SENTINEL)" && \
 	echo "The Newlib installation has finished."
 
+# This target provides a friendly name useful when testing this makefile.
+libc-install: $(NEWLIB_INSTALL_SENTINEL)
+
 endif
 
 
@@ -1393,6 +1434,9 @@ $(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
 	ln --symbolic --force -- "$(PICOLIBC_LIBC_INSTALLATION_DIR)/libc.a"  "$(PICOLIBC_LIBC_INSTALLATION_DIR)/libg.a" && \
 	echo "The Picolibc installation has finished." >"$(PICOLIBC_INSTALL_SENTINEL)" && \
 	echo "The Picolibc installation has finished."
+
+# This target provides a friendly name useful when testing this makefile.
+libc-install: $(PICOLIBC_INSTALL_SENTINEL)
 
 endif
 
