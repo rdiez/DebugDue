@@ -23,8 +23,11 @@
 # But that only happens for the Makefile itself and it does not really matter.
 MAKEFLAGS += --no-builtin-rules
 
-# This makefile defines all variables that its recipes needs. Turning on the following warning
+# This makefile defines all variables that it needs. Turning on the following warning
 # makes the makefile easier to debug.
+# Unfortunately, setting this flag inside the makefile is not enough, as of GNU Make 4.3.
+# It does work for undefined variables inside recipies, but not inside prerequisites or globally,
+# like "$(info $(UNDEFINED_VARIABLE))" at top level.
 MAKEFLAGS += --warn-undefined-variables
 
 # Unfortunately, option "--output-sync" leads to long periods of time with no output, followed by large bursts of output.
@@ -102,30 +105,26 @@ check_variable_non_empty_and_contains_no_whitespace = $(eval $(call check_variab
 #
 # If we only needed the "is defined" condition (and not the "is empty" too), we could use VAR ?= ... below.
 
-define poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval =
+define poison_variable_if_empty_or_contains_whitespace_needs_eval =
 
-  ifeq ($(origin $(1)),undefined)
-    $(1)=$$(error Variable '$(1)' is not defined, but it should be at this point)
+  ifeq ($($1),)
+    override $(1)=$$(error Variable '$(1)' is empty, but it should not be at this point)
   else
-    ifeq ($($1),)
-      override $(1)=$$(error Variable '$(1)' is empty, but it should not be at this point)
-    else
-      # GNU Make does not support spaces inside filenames, but I keep forgetting, so check.
-      # Adding 'pre' and 'post' checks for leading and trailing whitespace too,
-      # because otherwise it is automatically removed.
-      # It is hard to pass leading whitespace on the 'make' command line, as it tends to be discarded.
-      # Use the escape character ('\') to test leading whitespace.
-      ifneq (1,$(words pre$($(1))post))
-        override $(1)=$$(error Variable '$(1)' contains whitespace, but that is disallowed)
-      endif
+    # GNU Make does not support spaces inside filenames, but I keep forgetting, so check.
+    # Adding 'pre' and 'post' checks for leading and trailing whitespace too,
+    # because otherwise it is automatically removed.
+    # It is hard to pass leading whitespace on the 'make' command line, as it tends to be discarded.
+    # Use the escape character ('\') to test leading whitespace.
+    ifneq (1,$(words pre$($(1))post))
+      override $(1)=$$(error Variable '$(1)' contains whitespace, but that is disallowed)
     endif
   endif
 
 endef
 
-poison_variable_if_undef_or_empty_or_contains_whitespace = $(eval $(call poison_variable_if_undef_or_empty_or_contains_whitespace_needs_eval,$(1)))
+poison_variable_if_empty_or_contains_whitespace = $(eval $(call poison_variable_if_empty_or_contains_whitespace_needs_eval,$(1)))
 
-sentinel_filename = $(SENTINEL_FILENAME_PREFIX)$(1)-sentinel
+sentinel_filename = ToolchainBuilder-sentinel-$(1)
 
 
 # Request and store the configuration help text for each component we are building.

@@ -32,8 +32,12 @@ TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-se
 TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
 
 
-$(call poison_variable_if_undef_or_empty_or_contains_whitespace,CROSS_TOOLCHAIN_DIR)
-$(call poison_variable_if_undef_or_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_SERVER)
+# These paths are normally supplied by the user (when needed) as command-line arguments,
+# so the following empty values will often be overriden from outside:
+CROSS_TOOLCHAIN_DIR:=
+PATH_TO_TARBALLS_ON_FILE_SERVER:=
+$(call poison_variable_if_empty_or_contains_whitespace,CROSS_TOOLCHAIN_DIR)
+$(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_SERVER)
 
 
 # ------- User Configuration -------
@@ -318,7 +322,6 @@ COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data s
 COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
 
-
 # ------- Binutils configuration -------
 
 BINUTILS_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/binutils-$(BINUTILS_VERSION)
@@ -576,9 +579,10 @@ endif
 
 # ------- Newlib configuration -------
 
+NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
+
 ifeq ($(TARGET_LIBC), newlib)
 
-  NEWLIB_TAR_FILE := newlib-$(NEWLIB_VERSION).tar.gz
   NEWLIB_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/newlib-$(NEWLIB_VERSION)
   NEWLIB_SRC_DIR := $(NEWLIB_UNTAR_DIR)
   NEWLIB_HELP_DIR := $(NEWLIB_SRC_DIR)/newlib
@@ -733,9 +737,9 @@ endif
 
 # ------- Picolibc configuration -------
 
-ifeq ($(TARGET_LIBC), picolibc)
+PICOLIBC_TAR_FILE := picolibc-$(PICOLIBC_VERSION).tar.xz
 
-  PICOLIBC_TAR_FILE := picolibc-$(PICOLIBC_VERSION).tar.xz
+ifeq ($(TARGET_LIBC), picolibc)
 
   PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
   PICOLIBC_SRC_DIR := $(PICOLIBC_UNTAR_DIR)
@@ -1726,7 +1730,7 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "   make CROSS_TOOLCHAIN_DIR=\"\$$HOME/my-new-toolchain-14-bin\" \\"
 	@echo "        CROSS_TOOLCHAIN_BUILD_DIR=\"\$$HOME/my-new-toolchain-14-build\" \\"
-	@echo "        --no-builtin-variables \\"
+	@echo "        --no-builtin-variables --warn-undefined-variables \\"
 	@echo "        -j \"\$$(( \$$(getconf _NPROCESSORS_ONLN) + 1 ))\" --output-sync=recurse \\"
 	@echo "        $(TARGET_NAME_ALL)"
 	@echo
