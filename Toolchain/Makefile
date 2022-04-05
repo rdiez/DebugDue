@@ -317,10 +317,6 @@ COMMON_CFLAGS_FOR_TARGET += -fno-omit-frame-pointer
 COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
 COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
-# I did one quick test, and enabling exceptions here did not add any code when building the toolchain with -Os
-# and the application without exceptions enabled. Therefore, I am leaving exceptions enabled here
-# even though the application might never not use them.
-#   COMMON_CFLAGS_FOR_TARGET += -fno-exceptions
 
 
 # ------- Binutils configuration -------
@@ -767,6 +763,12 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dincludedir="$(TARGET_ARCH)/include"
   PICOLIBC_CFG_FLAGS += -Dlibdir="$(TARGET_ARCH)/lib"
 
+  # Note that we will be overriding these optimisation flags anyway
+  # with the -Ox and -g flags in COMMON_CFLAGS_FOR_TARGET.
+  # The reasons for the override is too share those flags with the Newlib counterpart.
+  PICOLIBC_CFG_FLAGS += -Doptimization=s  # This is equivalent to '-Os'.
+  PICOLIBC_CFG_FLAGS += -Ddebug=true      # Generate debug information, equivalent to '-g'.
+
   # Instead of using option --cflag=xxx with GeneratePicolibcCrossFile.sh,
   # we could use the following:
   #   PICOLIBC_CFG_FLAGS += -Dc_args=xxx
@@ -804,10 +806,17 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Enable C99 support in I/O functions like printf/scanf.
   PICOLIBC_CFG_FLAGS += -Dio-c99-formats=true
 
+  # Disable floating-point support in printf and scanf.
+  PICOLIBC_CFG_FLAGS += -Dformat-default=integer
+
   # Enable long long (normally 64-bits) type support in I/O functions like printf/scanf.
   PICOLIBC_CFG_FLAGS += -Dio-long-long=true
 
   PICOLIBC_CFG_FLAGS += -Dnewlib-multithread=false
+
+  # You can actually enable newlib-retargetable-locking even if there is no threading support,
+  # but then your firmware has to provide routines like __retarget_lock_acquire_recursive().
+  PICOLIBC_CFG_FLAGS += -Dnewlib-retargetable-locking=false
 
   PICOLIBC_CFG_FLAGS += -Dthread-local-storage=false
 
@@ -821,6 +830,8 @@ ifeq ($(TARGET_LIBC), picolibc)
   # See --enable-newlib-nano-malloc in the Newlib section for more information.
   PICOLIBC_CFG_FLAGS += -Dnewlib-nano-malloc=true
 
+  # Semihosting is useful when running under a debugger or a simulator.
+  # Picolibc offers semihosting support, but this project has its own simplified semihost routines.
   PICOLIBC_CFG_FLAGS += -Dsemihost=false
 
   # We will not be using any iconv support.
@@ -832,6 +843,36 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
   PICOLIBC_C_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
+
+  # Meson unconditionally adds compiler flag -D_FILE_OFFSET_BITS=64,
+  # which is wrong for our bare-meta, 32-bit platform
+  # This is a work-around to cancel it.
+  # I do not think we are using this constant, but who knows.
+  PICOLIBC_C_FLAGS_FOR_TARGET += -U_FILE_OFFSET_BITS
+
+  # Unlike Newlib, the Picolibc build system automatically adds a variety of compiler flags.
+  # This is unfortunately not documented. Some flags are added only if the compiler supports them.
+  # Furthermore, some of the flags are appended after the user-supplied flags, which means
+  # that the user no longer has the final word (a rule you should always strive for).
+  # Therefore, you should check the build log and/or the meson.build script, and verify
+  # that those flags are compatible with the ones you are using on the rest of your embedded system.
+  # And you will probably need to check again with each new version of Picolibc.
+  # Here are the flags I saw in Picolibc 1.7.6:
+  #
+  # -Os -g: These flags come from Meson setting 'buildtype', or from settings 'optimization' and 'debug'.
+  #
+  # -ffunction-sections: This is just a size optimisation. This makefile enables this optimisation and others too.
+  #
+  # -nostdlib: This flag is not needed, because the GCC phase 1 compiler we are using has no built-in libc.
+  #
+  # -fno-common: This is the default anyway and seems reasonable.
+  #
+  # -frounding-math and -fsignaling-nans: These affect the way floating-point calculations behave.
+  #
+  # -fno-stack-protector: Picolibc does not support yet disabling the stack protector
+  #                       only for those files where it would cause problems.
+  #
+  # Some -Wxxx and -Wno-xxx flags that control compilation warnings. They should not pose any compatibilty problems.
 
 endif
 
