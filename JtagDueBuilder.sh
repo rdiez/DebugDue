@@ -36,7 +36,8 @@ user_config ()
 
   DEFAULT_DEBUGGER_TYPE="gdb"
 
-  OUTPUT_DIR="$(readlink --verbose --canonicalize -- "BuildOutput")"
+  DEFAULT_BUILD_OUTPUT_BASE_SUBDIR="BuildOutput"
+  DEFAULT_BUILD_OUTPUT_BASE_DIR="$(readlink --verbose --canonicalize -- "$DEFAULT_BUILD_OUTPUT_BASE_SUBDIR")"
 }
 
 
@@ -328,6 +329,8 @@ Step 2, build operations:
   --make-arg=ARG  Pass an extra argument to 'make'. This is primarily intended
                   for make variables. For example: --make-arg CPPFLAGS=-Dmysymbol=1
                   You can specify --make-arg several times.
+  --build-output-base-dir="<path>"  Where the build output will land.
+                                    Defaults to '$DEFAULT_BUILD_OUTPUT_BASE_SUBDIR'.
 
   The default is not to build anything. If you then debug your firmware,
   make sure that the existing binary matches the code on the target.
@@ -622,6 +625,13 @@ process_command_line_argument ()
           abort "The --toolchain-dir option has an empty value."
         fi
         TOOLCHAIN_DIR="$OPTARG"
+        ;;
+
+    build-output-base-dir)
+        if [[ $OPTARG = "" ]]; then
+          abort "The --build-output-base-dir option has an empty value."
+        fi
+        BUILD_OUTPUT_BASE_DIR="$OPTARG"
         ;;
 
     atmel-software-framework)
@@ -1650,6 +1660,7 @@ PATH_TO_OPENOCD="$DEFAULT_PATH_TO_OPENOCD"
 BUILD_TYPE="$DEFAULT_BUILD_TYPE"
 DEBUGGER_TYPE="$DEFAULT_DEBUGGER_TYPE"
 PATH_TO_BOSSAC="$DEFAULT_PATH_TO_BOSSAC"
+BUILD_OUTPUT_BASE_DIR="$DEFAULT_BUILD_OUTPUT_BASE_DIR"
 
 
 USER_SHORT_OPTIONS_SPEC=""
@@ -1682,6 +1693,7 @@ USER_LONG_OPTIONS_SPEC+=( [path-to-bossac]=1 )
 USER_LONG_OPTIONS_SPEC+=( [configure-cache-filename]=1 )
 USER_LONG_OPTIONS_SPEC+=( [project]=1 )
 USER_LONG_OPTIONS_SPEC+=( [make-arg]=1 )
+USER_LONG_OPTIONS_SPEC+=( [build-output-base-dir]=1 )
 
 
 CLEAN_SPECIFIED=false
@@ -1743,12 +1755,12 @@ case "${PROJECT_NAME_LOWERCASE}" in
 esac
 
 
-PROJECT_OBJ_DIR="$OUTPUT_DIR/$PROJECT_NAME-obj-$PROJECT_OBJ_DIR_SUFFIX"
-PROJECT_BIN_DIR="$OUTPUT_DIR/$PROJECT_NAME-bin-$PROJECT_OBJ_DIR_SUFFIX"
+PROJECT_OBJ_DIR="$BUILD_OUTPUT_BASE_DIR/$PROJECT_NAME-obj-$PROJECT_OBJ_DIR_SUFFIX"
+PROJECT_BIN_DIR="$BUILD_OUTPUT_BASE_DIR/$PROJECT_NAME-bin-$PROJECT_OBJ_DIR_SUFFIX"
 
-CACHED_PROGRAMMED_FILE_FILENAME="$OUTPUT_DIR/CachedProgrammedFile.bin"
+CACHED_PROGRAMMED_FILE_FILENAME="$BUILD_OUTPUT_BASE_DIR/CachedProgrammedFile.bin"
 
-DEFAULT_CONFIGURE_CACHE_FILENAME="$OUTPUT_DIR/config.cache"
+DEFAULT_CONFIGURE_CACHE_FILENAME="$BUILD_OUTPUT_BASE_DIR/config.cache"
 
 if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
   if [[ $CONFIGURE_CACHE_FILENAME = "" ]]; then
