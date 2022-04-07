@@ -7,8 +7,8 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 
-declare -r SCRIPT_NAME="DownloadTarball.sh"
-declare -r VERSION_NUMBER="1.08"
+declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
+declare -r VERSION_NUMBER="1.09"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -21,7 +21,7 @@ declare -r DOWNLOAD_IN_PROGRESS_SUBDIRNAME="download-in-progress"
 
 abort ()
 {
-  echo >&2 && echo "Error in script \"$0\": $*" >&2
+  echo >&2 && echo "Error in script \"$SCRIPT_NAME\": $*" >&2
   exit $EXIT_CODE_ERROR
 }
 
@@ -63,7 +63,7 @@ display_help ()
 cat - <<EOF
 
 $SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014-2019 R. Diez - Licensed under the GNU AGPLv3
+Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3
 
 This script reliably downloads a tarball by testing its integrity before
 committing the downloaded file to the destination directory.
@@ -129,7 +129,7 @@ display_license()
 {
 cat - <<EOF
 
-Copyright (c) 2014-2017 R. Diez
+Copyright (c) 2014-2022 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
@@ -345,7 +345,12 @@ TEMP_FILENAME="$DOWNLOAD_IN_PROGRESS_PATH/$NAME_ONLY"
 echo "Downloading URL \"$URL\"..."
 
 # Optional flags: --silent, --ftp-pasv, --ftp-method nocwd
-curl --location --show-error --url "$URL" --output "$TEMP_FILENAME"
+#
+# About option '--stderr -': Some users consider anything written to stderr to be a warning
+# or an error that needs the user's attention. Curl writes its progress indication to stderr,
+# but that is not warning or error to worry about, so redirect the progress indication to stdout.
+
+curl --location --show-error --stderr - --url "$URL" --output "$TEMP_FILENAME"
 
 if [[ ${UNPACK_TO_DIR:-} != "" ]]; then
 
