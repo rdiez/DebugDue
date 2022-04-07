@@ -44,6 +44,8 @@ There are no OS background tasks or threads to worry about.
 
 Which version of the C++ standard you can use actually depends on the selected GCC version.
 
+C++ is not actually a must for your firmware, you can still take the toolchain and most of the example code and write in plain C if you like.
+
 =item * C++ exceptions.
 
 Contrary to popular belief, C++ exception handling does not need many resources. I have been generating
@@ -55,6 +57,8 @@ or you will lose 2 KiB RAM, or maybe more, depending on your target.
 See the toolchain builder makefile for more information.
 
 =item * L<< Newlib|https://sourceware.org/newlib/ >> with malloc support.
+
+The Newlib distribution includes Libgloss, but this project does not use it.
 
 =item * Assertions.
 
@@ -98,11 +102,11 @@ The build script can also start Qemu and attach GDB in order to debug the emulat
 
 =item * In order to help trim the firmware size, the build script can optionally generate a readelf dump, and objdump with code disassembly, a list of ELF objects sorted by size, and a list of all text strings found in the final binary.
 
-=item * The build script can optionally use L<< ccache|https://en.wikipedia.org/wiki/Ccache >>, which can possibly reduce compilation times.
+=item * The build script can optionally use L<< ccache|https://en.wikipedia.org/wiki/Ccache >>, which usually shortens recompilation times.
 
 =item * The build script can skip reprogramming the target if the binary has not changed.
 
-Restarting the firmware under the debugger is almost instantaneous.
+Restarting the same firmware under the debugger is almost instantaneous.
 
 =back
 
@@ -264,7 +268,7 @@ without any hardware whatsoever. There is no programming (flashing) time, the fi
 
 =head1 Installation Instructions
 
-=head2 Installing a binary file
+=head2 Installing a Binary File
 
 Pre-built binary files for the Arduino Due are available in a separate repository at S<< L<< https://github.com/rdiez/JtagDueBinaries >> . >>
 These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
