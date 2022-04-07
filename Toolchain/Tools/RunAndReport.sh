@@ -4,16 +4,16 @@ set -o errexit
 set -o nounset
 set -o pipefail
 
-declare -r EXIT_CODE_SUCCESS=0
-declare -r EXIT_CODE_ERROR=1
+declare -r -i EXIT_CODE_SUCCESS=0
+declare -r -i EXIT_CODE_ERROR=1
 
-declare -r VERSION_NUMBER="1.03"
-declare -r SCRIPT_NAME="RunAndReport.sh"
+declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
+declare -r VERSION_NUMBER="1.06"
 
 
 abort ()
 {
-  echo >&2 && echo "Error in script \"$0\": $*" >&2
+  echo >&2 && echo "Error in script \"$SCRIPT_NAME\": $*" >&2
   exit $EXIT_CODE_ERROR
 }
 
@@ -75,7 +75,7 @@ display_help ()
 {
   echo
   echo "$SCRIPT_NAME version $VERSION_NUMBER"
-  echo "Copyright (c) 2011-2019 R. Diez - Licensed under the GNU AGPLv3"
+  echo "Copyright (c) 2011-2022 R. Diez - Licensed under the GNU AGPLv3"
   echo
   echo "This tool runs a command with Bash, saves its stdout and stderr output and generates a report file."
   echo
@@ -88,7 +88,12 @@ display_help ()
   echo " --help     displays this help text"
   echo " --version  displays the tool's version number (currently $VERSION_NUMBER)"
   echo " --license  prints license information"
+  echo " --quiet    Suppress printing command banner, exit code and elapsed time."
   echo " --hide-from-report-if-successful  Sometimes, a task is only worth reporting when it fails."
+  echo " --copy-stderr=filename  Copies stderr to a separate file."
+  echo "                         This uses a separate 'tee' process for stderr, so the order of"
+  echo "                         stdout and stderr mixing in the final log file may change a little."
+  echo "                         This separate file does not appear in the report (no yet implemented)."
   echo
   echo "Usage examples:"
   echo "  ./$SCRIPT_NAME -- test1  \"Test 1\"  test1.log  test1.report  echo \"Test 1 output.\""
@@ -104,7 +109,7 @@ display_license ()
 {
 cat - <<EOF
 
-Copyright (c) 2011-2019 R. Diez
+Copyright (c) 2011-2022 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
@@ -140,6 +145,16 @@ process_command_line_argument ()
     hide-from-report-if-successful)
         HIDE_FROM_REPORT_IF_SUCCESSFUL=true
         ;;
+    quiet)
+        QUIET=true
+        ;;
+    copy-stderr)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --copy-stderr has an empty value.";
+        fi
+        STDERR_COPY_FILENAME="$OPTARG"
+        ;;
+
     *)  # We should actually never land here, because parse_command_line_arguments() already checks if an option is known.
         abort "Unknown command-line option \"--${OPTION_NAME}\".";;
   esac
@@ -267,8 +282,12 @@ USER_LONG_OPTIONS_SPEC+=( [help]=0 )
 USER_LONG_OPTIONS_SPEC+=( [version]=0 )
 USER_LONG_OPTIONS_SPEC+=( [license]=0 )
 USER_LONG_OPTIONS_SPEC+=( [hide-from-report-if-successful]=0 )
+USER_LONG_OPTIONS_SPEC+=( [quiet]=0 )
+USER_LONG_OPTIONS_SPEC+=( [copy-stderr]=1 )
 
 HIDE_FROM_REPORT_IF_SUCCESSFUL=false
+QUIET=false
+STDERR_COPY_FILENAME=""
 
 parse_command_line_arguments "$@"
 
@@ -290,8 +309,9 @@ USER_CMD="${USER_CMD:1}"  # Remove the leading space.
 read_uptime_as_integer
 declare -r START_UPTIME="$UPTIME"
 
-START_TIME_LOCAL="$(date +"%Y-%m-%d %T %z")"
-START_TIME_UTC="$(date +"%Y-%m-%d %T %z" --utc)"
+START_TIME="$(date '+%s')"
+START_TIME_LOCAL="$(date --date=@"$START_TIME" '+%Y-%m-%d %T %z')"
+START_TIME_UTC="$(date --date=@"$START_TIME" '+%Y-%m-%d %T %z' --utc)"
 
 {
   # Print the executed command with proper quoting, so that the user can
@@ -308,17 +328,35 @@ START_TIME_UTC="$(date +"%Y-%m-%d %T %z" --utc)"
   echo
 } >"$LOG_FILENAME"
 
-printf 'Running command: %s\n\n' "$USER_CMD"
+if ! $QUIET; then
+  printf 'Running command: %s\n\n' "$USER_CMD"
+fi
 
 set +o errexit
 
-{
-  eval "$USER_CMD"
-} 2>&1 | tee --append "$LOG_FILENAME"
+if [ -z "$STDERR_COPY_FILENAME" ]; then
+
+  {
+    eval "$USER_CMD"
+  } 2>&1 | tee --append -- "$LOG_FILENAME"
+
+else
+
+  # Bash makes it hard to determine whether the child process from a 'process substitution' fails.
+  # The most common cause of failure with 'tee' is not being able to create or write to the
+  # separate stderr file, so doing it once beforehand should catch most errors.
+  # This command creates the file, or truncates it if it already exists.
+  echo -n "" >"$STDERR_COPY_FILENAME"
+
+  {
+    eval "$USER_CMD"
+  } 2> >(tee -- "$STDERR_COPY_FILENAME") | tee --append -- "$LOG_FILENAME"
+
+fi
 
 declare -a -r CAPTURED_PIPESTATUS=( "${PIPESTATUS[@]}" )
 
-echo
+set -o errexit
 
 declare -i -r EXPECTED_PIPE_ELEM_COUNT=2
 
@@ -326,17 +364,15 @@ if (( ${#CAPTURED_PIPESTATUS[*]} != EXPECTED_PIPE_ELEM_COUNT )); then
   abort "Internal error: Pipeline status element count of ${#CAPTURED_PIPESTATUS[*]} instead of the expected $EXPECTED_PIPE_ELEM_COUNT."
 fi
 
-
-set -o errexit
-
 if (( CAPTURED_PIPESTATUS[1] != 0 )); then
   abort "tee failed with exit code ${CAPTURED_PIPESTATUS[1]}"
 fi
 
 declare -r -i CMD_EXIT_CODE="${CAPTURED_PIPESTATUS[0]}"
 
-FINISH_TIME_LOCAL="$(date +"%Y-%m-%d %T %z")"
-FINISH_TIME_UTC="$(date +"%Y-%m-%d %T %z" --utc)"
+FINISH_TIME="$(date '+%s')"
+FINISH_TIME_LOCAL="$(date --date=@"$FINISH_TIME" '+%Y-%m-%d %T %z')"
+FINISH_TIME_UTC="$(date --date=@"$FINISH_TIME" '+%Y-%m-%d %T %z' --utc)"
 
 read_uptime_as_integer
 declare -r FINISH_UPTIME="$UPTIME"
@@ -382,12 +418,14 @@ fi
   echo "ElapsedSeconds=$ELAPSED_SECONDS"
 } >"$REPORT_FILENAME"
 
-echo "$FINISHED_MSG"
+if ! $QUIET; then
+  echo
+  echo "$FINISHED_MSG"
+  echo "Elapsed time: $ELAPSED_TIME_STR"
 
-echo "Elapsed time: $ELAPSED_TIME_STR"
-
-if false; then
-  echo "Note that log file \"$LOG_FILENAME\" has been created."
+  if false; then
+    echo "Note that log file \"$LOG_FILENAME\" has been created."
+  fi
 fi
 
 exit "$CMD_EXIT_CODE"
