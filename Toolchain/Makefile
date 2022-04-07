@@ -321,6 +321,31 @@ COMMON_CFLAGS_FOR_TARGET += -fno-omit-frame-pointer
 COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
 COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
+# GCC options '-flto -ffat-lto-objects' makes static libraries optimal for both LTO and non-LTO builds.
+# In a small test firmware that barely uses any libc routines, I saw a reduction in size of around 200 bytes,
+# so these LTO settings do have an effect.
+#
+# You would normally place the LTO flags in COMMON_CFLAGS_FOR_TARGET, in order to build GCC's libstdc++
+# in the same way, but I started just by building Newlib and Picolibc with those flags like this:
+#
+#   COMMON_CFLAGS_FOR_LIBC := -flto -ffat-lto-objects
+#
+# However, as soon as the firmware grew a little, I started getting "undefined reference" linker errors for
+# 'toupper', 'vsnprintf', 'strchr' and so on. I was testing with GCC 11.2.
+#
+# I suspect these errors have to do with the lack of "-fno-builtin", because adding it to the project often
+# fixed the problems. But not always. Both Newlib and Picolibc were built with -fno-builtin too.
+# This happened mostly with release builds, but sometimes with debug builds too, which are not actually using LTO,
+# so they shouldn't have this issue. It is not clear what is wrong.
+COMMON_CFLAGS_FOR_LIBC :=
+
+# I then tried building GCC's libstdc++ too with the same LTO flags like this:
+#
+#   COMMON_CFLAGS_FOR_TARGET += -flto -ffat-lto-objects
+#
+# But I got "undefined reference" linker errors too for 'malloc', 'free', 'abort'
+# and a bunch of weird C++ symbols like 'unwind_phase2', 'class_type_info.cc.825a3992' or 'eh_arm.cc.87ac54f2'.
+
 
 # ------- Binutils configuration -------
 
@@ -601,7 +626,7 @@ ifeq ($(TARGET_LIBC), newlib)
   NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibRemoveStrerrorMessages.patch
 
   # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
-  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET) $(COMMON_CFLAGS_FOR_LIBC)
 
   # Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
   # and we don't want that in our memory-constrained embedded environment.
@@ -845,7 +870,7 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CPU_FAMILY := arm
   PICOLIBC_CPU_ENDIANNESS := little
 
-  PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+  PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET) $(COMMON_CFLAGS_FOR_LIBC)
   PICOLIBC_C_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
 
   # Meson unconditionally adds compiler flag -D_FILE_OFFSET_BITS=64,
