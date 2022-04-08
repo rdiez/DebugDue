@@ -178,6 +178,9 @@ endif
 # that the linker tries to find crt0.o in any user-supplied libraries. Secondly,
 # we need to ensure that the object file is called exactly "crt0.o", without any
 # automatically added prefix or suffix. This is why the following rule compiles crt0.cpp by hand.
+# I asked the GCC developers to get rid of this nuisance to no avail:
+#   Add -mno-crt0 to disable automatic crt0 injection
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=68605
 
 CRT0_SRC_FILENAME := $(BARE_METAL_SUPPORT_DIR)/crt0.cpp
 CRT0_O_FILENAME := crt0.o

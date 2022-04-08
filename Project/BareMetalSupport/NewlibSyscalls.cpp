@@ -23,6 +23,7 @@
 
 #include <assert.h>  // For the function prototype of Newlib's __assert_func().
 #include <stdio.h>
+#include <stdlib.h>  // For abort().
 
 #include <BareMetalSupport/LinkScriptSymbols.h>
 
@@ -190,6 +191,13 @@ pid_t
 {
     Panic("_getpid() called.");
     return -1 ;
+}
+
+
+__attribute__ ((__noreturn__))
+void abort ( void )
+{
+  Panic("abort() called.");
 }
 
 

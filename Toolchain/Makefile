@@ -58,6 +58,8 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 # We could also download and build the isl (Integer Set Library),
 # availabe under http://isl.gforge.inria.fr/, in order to enable Graphite optimisations in GCC.
 # See GCC's configuration option '--with-isl'.
+#
+# If you want to use Picolibc, you need Meson version 0.56 or later.
 
 VERSION_SET := VersionSet10
 
@@ -321,6 +323,8 @@ COMMON_CFLAGS_FOR_TARGET += -fno-omit-frame-pointer
 COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
 COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
+COMMON_CFLAGS_FOR_LIBC :=
+
 # GCC options '-flto -ffat-lto-objects' makes static libraries optimal for both LTO and non-LTO builds.
 # In a small test firmware that barely uses any libc routines, I saw a reduction in size of around 200 bytes,
 # so these LTO settings do have an effect.
@@ -337,14 +341,25 @@ COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate d
 # fixed the problems. But not always. Both Newlib and Picolibc were built with -fno-builtin too.
 # This happened mostly with release builds, but sometimes with debug builds too, which are not actually using LTO,
 # so they shouldn't have this issue. It is not clear what is wrong.
-COMMON_CFLAGS_FOR_LIBC :=
-
+# This problem is probably described in the following bug report:
+#   Building with -flto in CFLAGS_FOR_TARGET / CXXFLAGS_FOR_TARGET
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60160
+#
 # I then tried building GCC's libstdc++ too with the same LTO flags like this:
 #
 #   COMMON_CFLAGS_FOR_TARGET += -flto -ffat-lto-objects
 #
 # But I got "undefined reference" linker errors too for 'malloc', 'free', 'abort'
 # and a bunch of weird C++ symbols like 'unwind_phase2', 'class_type_info.cc.825a3992' or 'eh_arm.cc.87ac54f2'.
+
+# Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
+# and we don't want that in our memory-constrained embedded environment.
+COMMON_CFLAGS_FOR_LIBC += -DHAVE_ASSERT_FUNC
+
+# Newlib's standard abort() implementation calls raise(), which pulls some signal-handling code
+# that is useless in our embedded environment. GCC's C++ exception handling support library calls abort(),
+# so we should provide our own space-saving implementation.
+COMMON_CFLAGS_FOR_LIBC += -DABORT_PROVIDED
 
 
 # ------- Binutils configuration -------
@@ -628,11 +643,6 @@ ifeq ($(TARGET_LIBC), newlib)
   # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
   NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET) $(COMMON_CFLAGS_FOR_LIBC)
 
-  # Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
-  # and we don't want that in our memory-constrained embedded environment.
-  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
-
-
   NEWLIB_CFG_FLAGS =
 
   NEWLIB_CFG_FLAGS += $(HOST_FLAGS_WITH_OPT_AND_LTO)
@@ -871,7 +881,6 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CPU_ENDIANNESS := little
 
   PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET) $(COMMON_CFLAGS_FOR_LIBC)
-  PICOLIBC_C_FLAGS_FOR_TARGET += -DHAVE_ASSERT_FUNC
 
   # Meson unconditionally adds compiler flag -D_FILE_OFFSET_BITS=64,
   # which is wrong for our bare-meta, 32-bit platform
