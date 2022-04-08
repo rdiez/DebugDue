@@ -60,6 +60,17 @@ See the toolchain builder makefile for more information.
 
 The Newlib distribution includes Libgloss, but this project does not use it.
 
+In this project configuration, there is no support for a filesystem or file descriptors.
+Syscalls like I<< isatty >> or I<< lseek >> are not available. If you need such features,
+you should probably look for an S<< L<< RTOS|https://en.wikipedia.org/wiki/Real-time_operating_system >> . >>
+
+You can use I<< sprintf >> and the like in your code, but no I<< printf >> to I<< stdout >>
+or any other I<< FILE >>-based routines like I<< fgetc >>. It is not hard to implement
+basic support for I<< FILE >>-based stdout for logging purposes, but it is usually not worth the trouble.
+
+Note that you can get a long way without such file features. With a library like S<< L<< lwIP|https://www.nongnu.org/lwip/ >> , >>
+you can build a device with TCP/IP support and even with an embedded web server and still not miss those syscalls.
+
 =item * Assertions.
 
 Assertions can increase the binary size considerably. There is a way to make debug binaries smaller
