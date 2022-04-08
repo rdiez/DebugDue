@@ -42,21 +42,18 @@ There are no OS background tasks or threads to worry about.
 
 =item * L<< C++17|https://en.wikipedia.org/wiki/C%2B%2B17 >> support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
 
+I regularly use the L<< Standard Template Library|https://en.wikipedia.org/wiki/Standard_Template_Library >>, which is small and fast.
+I wouldn't recommend using the huge I<< iostream >> library though.
+
 Which version of the C++ standard you can use actually depends on the selected GCC version.
 
 C++ is not actually a must for your firmware, you can still take the toolchain and most of the example code and write in plain C if you like.
 
 =item * C++ exceptions.
 
-Contrary to popular belief, C++ exception handling does not need many resources. I have been generating
-dynamic error messages in readable English using C++ exceptions on microcontrollers with
-as little as 16 KiB SRAM for years, with 'plenty' of memory to spare.
+See separate section below for more information.
 
-You do need to patch GCC though in order to disable the C++ exception emergency buffer,
-or you will lose 2 KiB RAM, or maybe more, depending on your target.
-See the toolchain builder makefile for more information.
-
-=item * L<< Newlib|https://sourceware.org/newlib/ >> with malloc support.
+=item * L<< Newlib|https://sourceware.org/newlib/ >> or L<< Picolibc|https://github.com/picolibc/picolibc >> with malloc support.
 
 The Newlib distribution includes Libgloss, but this project does not use it.
 
@@ -118,6 +115,52 @@ The build script can also start Qemu and attach GDB in order to debug the emulat
 =item * The build script can skip reprogramming the target if the binary has not changed.
 
 Restarting the same firmware under the debugger is almost instantaneous.
+
+=back
+
+=head2 About C++ Exceptions
+
+Contrary to popular belief, C++ exception handling does not need many resources. I have been generating
+dynamic error messages in readable English using C++ exceptions on microcontrollers with
+as little as 16 KiB SRAM for years, with 'plenty' of memory to spare.
+
+You do need to patch GCC though in order to disable the C++ exception emergency buffer,
+or you will lose 2 KiB RAM, or maybe more, depending on your target.
+The toolchain builder makefile that comes with this project does that for you.
+
+There is this persistent prejudice that support for C++ exceptions "doubles the code size",
+but that is not true, unless you are comparing with the traditional C language approach of not checking for errors at all!
+
+There is an initial penalty to pay for the code that handles stack unwinding. On an 32-bit ARM Cortex-M3 microcontroller,
+that adds around 8 kB of code size, 8 bytes of initialised data size and 28 bytes of BSS size (tested on GCC 11.2).
+
+C++ exceptions use I<< malloc >>, but the 'nano' allocator needs only around 1.5 kB of code size.
+
+The compiler automatically generates exception unwinding tables, which are optimised for space. Such tables tend to be similar
+across routines, so that the linker should collapse many duplicates.
+
+If you handle errors the traditional way, with C<< if ( failed ) then... >> statements, then both C and C++ normally end up needing
+more Flash/ROM space than the C++ exception way. Most C++ compilers use a technique called "zero cost exception handling"
+which replaces such C<< if ( failed ) >> checks with exception unwinding tables. That is the reason why the resulting code is
+usually smaller, and even faster in the normal case (no errors/exceptions).
+
+The drawback is that throwing an exception is slow and uses malloc, but exceptions should be the exception!
+
+=head2 Limitations of the Interrupt Context
+
+The 'bare metal' environment has no operating system with thread management and concurrency protection.
+There is nothing standing between a CPU interrupt and your interrupt handler.
+You get low latency and full control, but you cannot use any C runtime library routines that could break on reentrancy.
+
+Forbidden items are:
+
+=over
+
+=item * Anything that could touch I<< errno >>, since there is only one global instance.
+
+=item * Dynamic memory management with I<< malloc >>, I<< free >> and the like.
+
+=item * C++ exceptions, mainly because the use I<< malloc >>.
 
 =back
 
