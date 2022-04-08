@@ -156,7 +156,6 @@ extern "C" int _write ( int file, char *ptr, int len )
     Panic("_write() called.");
     return -1;
 }
-*/
 
 
 extern "C" void _exit ( int status )
@@ -192,6 +191,8 @@ pid_t
     Panic("_getpid() called.");
     return -1 ;
 }
+
+*/
 
 
 __attribute__ ((__noreturn__))
