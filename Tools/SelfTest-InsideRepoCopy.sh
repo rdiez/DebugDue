@@ -438,6 +438,12 @@ build_firmwares ()
   echo
   echo "Building firmwares with $L_LIBC_NAME, toolchain \"$L_TOOLCHAIN_BIN_DIR\"..."
 
+  local -r OUTPUT_BASE_DIR="$ROTATED_DIR/$L_LIBC_NAME/Firmwares"
+
+  # In case we are reusing an output directory, delete any existing firmwares,
+  # so that we rebuild all of them from scratch.
+  rm -rf -- "$OUTPUT_BASE_DIR"
+
   pushd "$COPY_OF_REPOSITORY" >/dev/null
 
   # About option '--show-build-commands': Sometimes it is useful to look at the compiler flags used when building the projects.
@@ -446,7 +452,7 @@ build_firmwares ()
          "%q  --show-build-commands  --toolchain-dir=%q  --build-output-base-dir=%q" \
          "./JtagDueBuilder.sh" \
          "$L_TOOLCHAIN_BIN_DIR" \
-         "$ROTATED_DIR/$L_LIBC_NAME/Firmwares"
+         "$OUTPUT_BASE_DIR"
 
   local BUILD_BASE_ASF_CMD
   printf -v BUILD_BASE_ASF_CMD \
@@ -530,15 +536,38 @@ if $SHOULD_BUILD_TOOLCHAINS; then
 
     test_building_toolchain "$LIBC_NAME"
 
-    TOOLCHAIN_BIN_DIR_ARRAY+=( "$TOOLCHAIN_BIN_DIR" )
+    # Sometimes building of the actual toolchains is skipped.
+    if [ -n "$TOOLCHAIN_BIN_DIR" ]; then
+      TOOLCHAIN_BIN_DIR_ARRAY+=( "$TOOLCHAIN_BIN_DIR" )
+    fi
 
   done
 
   popd >/dev/null
 
-else
+fi
 
-  abort "Not implemented yet. You need to fill TOOLCHAIN_BIN_DIR_ARRAY here."
+
+if (( ${#TOOLCHAIN_BIN_DIR_ARRAY[@]} == 0 )); then
+
+  # Environment variable JTAGDUE_TOOLCHAIN_PATHS should contain a space-separated list of
+  # paths to the toolchain bin directories.
+  declare -r TOOLCHAIN_PATHS="${JTAGDUE_TOOLCHAIN_PATHS:-}"
+
+  read -r -a TOOLCHAIN_PATHS_ARRAY <<< "$TOOLCHAIN_PATHS"
+
+  if false; then
+    echo "Libcs: ${LIBC_VARIANTS_ARRAY[*]}"
+    echo "Toolchains: ${TOOLCHAIN_PATHS_ARRAY[*]}"
+  fi
+
+  declare -r -i TOOLCHAIN_PATHS_ARRAY_COUNT="${#TOOLCHAIN_PATHS_ARRAY[@]}"
+
+  if (( TOOLCHAIN_PATHS_ARRAY_COUNT != LIBC_VARIANTS_ARRAY_COUNT )); then
+    abort "$TOOLCHAIN_PATHS_ARRAY_COUNT toolchain path(s) were supplied, but $LIBC_VARIANTS_ARRAY_COUNT libc variant(s) were given."
+  fi
+
+  TOOLCHAIN_BIN_DIR_ARRAY=( "${TOOLCHAIN_PATHS_ARRAY[@]}" )
 
 fi
 
