@@ -6,4 +6,4 @@
 /aclocal.m4
 
 # Symbolic link that gets created automatically.
-/AsfSrc
+/src/AsfSrc

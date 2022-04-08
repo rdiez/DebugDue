@@ -42,38 +42,38 @@ firmware_elf_SOURCES :=
 
 if IS_QEMU_FIRMWARE
 
-  firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/AngelInterface.cpp
+  firmware_elf_SOURCES += src/$(BOARD_SUPPORT_DIR)/AngelInterface.cpp
 
 endif
 
 if NEEDS_BARE_METAL
 
   firmware_elf_SOURCES += \
-    BareMetalSupport/Miscellaneous.cpp \
-    BareMetalSupport/MiscellaneousAsm.S \
-    BareMetalSupport/IoUtils.cpp \
-    BareMetalSupport/SerialPrint.cpp \
-    BareMetalSupport/SerialPortAsyncTx.cpp \
-    BareMetalSupport/TextParsingUtils.cpp \
-    BareMetalSupport/GenericSerialConsole.cpp \
-    BareMetalSupport/Uptime.cpp \
-    BareMetalSupport/SysTickUtils.cpp \
-    BareMetalSupport/BusyWait.cpp \
-    BareMetalSupport/MainLoopSleep.cpp
+    src/BareMetalSupport/Miscellaneous.cpp \
+    src/BareMetalSupport/MiscellaneousAsm.S \
+    src/BareMetalSupport/IoUtils.cpp \
+    src/BareMetalSupport/SerialPrint.cpp \
+    src/BareMetalSupport/SerialPortAsyncTx.cpp \
+    src/BareMetalSupport/TextParsingUtils.cpp \
+    src/BareMetalSupport/GenericSerialConsole.cpp \
+    src/BareMetalSupport/Uptime.cpp \
+    src/BareMetalSupport/SysTickUtils.cpp \
+    src/BareMetalSupport/BusyWait.cpp \
+    src/BareMetalSupport/MainLoopSleep.cpp
 
   firmware_elf_SOURCES += \
-    ArduinoDueUtils/ArduinoDueUtils.cpp
+    src/ArduinoDueUtils/ArduinoDueUtils.cpp
 
 endif
 
-firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/BoardInit.cpp
-firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/AssertionUtils.cpp
-firmware_elf_SOURCES += $(BOARD_SUPPORT_DIR)/DebugConsoleSupport.cpp
+firmware_elf_SOURCES += src/$(BOARD_SUPPORT_DIR)/BoardInit.cpp
+firmware_elf_SOURCES += src/$(BOARD_SUPPORT_DIR)/AssertionUtils.cpp
+firmware_elf_SOURCES += src/$(BOARD_SUPPORT_DIR)/DebugConsoleSupport.cpp
 
-firmware_elf_SOURCES += BareMetalSupport/BoardInitUtils.cpp
-firmware_elf_SOURCES += BareMetalSupport/DebugConsoleSerialSyncCommon.cpp
-firmware_elf_SOURCES += BareMetalSupport/StackCheck.cpp
-firmware_elf_SOURCES += BareMetalSupport/IntegerPrintUtils.cpp
+firmware_elf_SOURCES += src/BareMetalSupport/BoardInitUtils.cpp
+firmware_elf_SOURCES += src/BareMetalSupport/DebugConsoleSerialSyncCommon.cpp
+firmware_elf_SOURCES += src/BareMetalSupport/StackCheck.cpp
+firmware_elf_SOURCES += src/BareMetalSupport/IntegerPrintUtils.cpp
 
 
 if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
@@ -107,27 +107,27 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   # ----- CMSIS library.
 
   libAtmelSoftwareFramework_a_SOURCES += \
-    $(srcdir)/AsfSrc/sam/utils/cmsis/sam3x/source/templates/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
+    src/AsfSrc/sam/utils/cmsis/sam3x/source/templates/system_sam3x.c  # Only needed for SystemCoreClockUpdate().
 
   # ----- The ASF library comes from Atmel and has a very liberal license.
 
   libAtmelSoftwareFramework_a_SOURCES += \
-     AsfSrc/sam/drivers/pmc/pmc.c \
-     AsfSrc/sam/drivers/pio/pio.c \
-     AsfSrc/sam/drivers/wdt/wdt.c \
-     AsfSrc/sam/drivers/rstc/rstc.c \
-     AsfSrc/sam/drivers/uart/uart.c \
-     AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
-     AsfSrc/common/services/clock/sam3x/sysclk.c
+     src/AsfSrc/sam/drivers/pmc/pmc.c \
+     src/AsfSrc/sam/drivers/pio/pio.c \
+     src/AsfSrc/sam/drivers/wdt/wdt.c \
+     src/AsfSrc/sam/drivers/rstc/rstc.c \
+     src/AsfSrc/sam/drivers/uart/uart.c \
+     src/AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
+     src/AsfSrc/common/services/clock/sam3x/sysclk.c
 
 if IS_JTAG_DUE
   libAtmelSoftwareFramework_a_SOURCES += \
-     AsfSrc/sam/drivers/pmc/sleep.c \
-     AsfSrc/sam/drivers/adc/adc.c \
-     AsfSrc/sam/drivers/uotghs/uotghs_device.c \
-     AsfSrc/common/services/usb/class/cdc/device/udi_cdc.c \
-     AsfSrc/common/services/usb/class/cdc/device/udi_cdc_desc.c \
-     AsfSrc/common/services/usb/udc/udc.c
+     src/AsfSrc/sam/drivers/pmc/sleep.c \
+     src/AsfSrc/sam/drivers/adc/adc.c \
+     src/AsfSrc/sam/drivers/uotghs/uotghs_device.c \
+     src/AsfSrc/common/services/usb/class/cdc/device/udi_cdc.c \
+     src/AsfSrc/common/services/usb/class/cdc/device/udi_cdc_desc.c \
+     src/AsfSrc/common/services/usb/udc/udc.c
 endif
 
 endif
@@ -139,33 +139,33 @@ endif
 if IS_EMPTY_FIRMWARE
 
   firmware_elf_SOURCES += \
-    EmptyFirmware/Main.cpp \
-    EmptyFirmware/InterruptHandlers.cpp
+    src/EmptyFirmware/Main.cpp \
+    src/EmptyFirmware/InterruptHandlers.cpp
 
 endif
 
 if IS_QEMU_FIRMWARE
 
-  firmware_elf_SOURCES += QemuFirmware/Main.cpp
-  firmware_elf_SOURCES += QemuFirmware/InterruptHandlers.cpp
+  firmware_elf_SOURCES += src/QemuFirmware/Main.cpp
+  firmware_elf_SOURCES += src/QemuFirmware/InterruptHandlers.cpp
 
 endif
 
 if IS_JTAG_DUE
 
   firmware_elf_SOURCES += \
-    JtagFirmware/Main.cpp \
-    JtagFirmware/UsbSupport.cpp \
-    JtagFirmware/Led.cpp \
-    JtagFirmware/UsbConnection.cpp \
-    JtagFirmware/UsbBuffers.cpp \
-    JtagFirmware/BusPirateConnection.cpp \
-    JtagFirmware/BusPirateConsole.cpp \
-    JtagFirmware/BusPirateBinaryMode.cpp \
-    JtagFirmware/BusPirateOpenOcdMode.cpp \
-    JtagFirmware/CommandProcessor.cpp \
-    JtagFirmware/SerialPortConsole.cpp \
-    JtagFirmware/InterruptHandlers.cpp
+    src/JtagFirmware/Main.cpp \
+    src/JtagFirmware/UsbSupport.cpp \
+    src/JtagFirmware/Led.cpp \
+    src/JtagFirmware/UsbConnection.cpp \
+    src/JtagFirmware/UsbBuffers.cpp \
+    src/JtagFirmware/BusPirateConnection.cpp \
+    src/JtagFirmware/BusPirateConsole.cpp \
+    src/JtagFirmware/BusPirateBinaryMode.cpp \
+    src/JtagFirmware/BusPirateOpenOcdMode.cpp \
+    src/JtagFirmware/CommandProcessor.cpp \
+    src/JtagFirmware/SerialPortConsole.cpp \
+    src/JtagFirmware/InterruptHandlers.cpp
 
 endif
 
@@ -212,7 +212,7 @@ $(CRT0_O_FILENAME):
 # Therefore, your main project must compile NewlibSyscalls.cpp itself,
 # instead of compiling it into some other library.
 
-firmware_elf_SOURCES += BareMetalSupport/NewlibSyscalls.cpp
+firmware_elf_SOURCES += src/BareMetalSupport/NewlibSyscalls.cpp
 
 
 # ------------------------------------
@@ -224,7 +224,7 @@ firmware_elf_SOURCES += BareMetalSupport/NewlibSyscalls.cpp
 # and check that a new firmware binary with the new version number gets built automatically.
 $(firmware_elf_OBJECTS): Makefile
 
-LINKER_SCRIPT_FILENAME := $(abs_srcdir)/$(BOARD_SUPPORT_DIR)/flash.ld
+LINKER_SCRIPT_FILENAME := $(abs_srcdir)/src/$(BOARD_SUPPORT_DIR)/flash.ld
 
 # Note that the linking order specified in xxx_LDADD is important: if library libfoo.a has an undefined symbol,
 # and that symbol is in libbar.a, you need to put libfoo.a before libbar.a on the command line.
