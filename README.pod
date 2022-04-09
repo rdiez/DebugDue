@@ -146,23 +146,36 @@ usually smaller, and even faster in the normal case (no errors/exceptions).
 
 The drawback is that throwing an exception is slow and uses malloc, but exceptions should be the exception!
 
+You can use C<< -fno-exceptions >> to disable C++ exception support and drop all the overhead listed above.
+
 =head2 Limitations of the Interrupt Context
 
 The 'bare metal' environment has no operating system with thread management and concurrency protection.
 There is nothing standing between a CPU interrupt and your interrupt handler.
 You get low latency and full control, but you cannot use any C runtime library routines that could break on reentrancy.
 
-Forbidden items are:
+Items forbidden in interrupt context are:
 
 =over
-
-=item * Anything that could touch I<< errno >>, since there is only one global instance.
 
 =item * Dynamic memory management with I<< malloc >>, I<< free >> and the like.
 
 =item * C++ exceptions, mainly because the use I<< malloc >>.
 
+=item * C library functions that use timezones like I<< localtime >>.
+
+=item * Any file I/O using a I<< FILE >> structure is at least suspect.
+
+=item * Anything that could touch I<< errno >>, since there is only one global instance.
+
+=item * Many other innocent-looking C library functions. Some are listed below.
+
 =back
+
+I<< rand >> maintains hidden state and is generally not reentrant.
+
+Newlib's I<< sprintf >> can suddently call I<< malloc >> for floating-point arguments. Picolibc does not have this problem.
+You will find more information on this S<< L<< here|https://nadler.com/embedded/newlibAndFreeRTOS.html >> . >>
 
 =head1 Toolchain Builder Makefile
 
