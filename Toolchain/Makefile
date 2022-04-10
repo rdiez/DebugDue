@@ -698,6 +698,12 @@ ifeq ($(TARGET_LIBC), newlib)
   else
     # This path needs around 7 kB more for a Cortex-M3 CPU target.
     # Note that the following flags are ignored if --enable-newlib-nano-formatted-io is used.
+    #
+    # Thousands separators, as in printf( "%'d" ), are supported, but you need to set
+    # 'thousands_sep' and 'grouping' first, see localeconv(). Note that setlocale() has no effect,
+    # because we have disable multibyte support with --disable-newlib-mb, but modifying
+    # those 2 members directly on the structure returned by localeconv() seems to work
+    # (even though it is normally discouraged).
     NEWLIB_CFG_FLAGS += --enable-newlib-io-pos-args
     NEWLIB_CFG_FLAGS += --enable-newlib-io-c99-formats
     NEWLIB_CFG_FLAGS += --enable-newlib-io-long-long
@@ -766,6 +772,9 @@ ifeq ($(TARGET_LIBC), newlib)
   # However, it is not clear whether that is going to cause problems when compiling the libc routines that
   # are usually replaced with such built-ins, like memset(). There are reports that leaving '-fno-builtin' out
   # cause problems with LTO too. Other people say it should be OK nowadays.
+  # See this bug report for more information:
+  #   memcpy implementation optimized as a call to memcpy
+  #   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=56888
 
 endif
 
@@ -835,14 +844,20 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dpicolib=false
 
   # The tinystdio library has a much smaller memory footprint than Newlib's stdio library.
-  # Drawbacks is a reduced I/O performance. But a bare-metal application will probably not use
+  # The main drawback is a reduced I/O performance, but a bare-metal application will probably not use
   # much file-based I/O or C++ stream I/O, if at all.
+  # However, expect a drastic performance drop in routines like sprintf() too, even if they apparently
+  # do not use any FILE-based I/O. Internally, those routines use a virtual, in-memory FILE,
+  # and tinystdio processes data on a byte-by-byte basis (one function call per byte),
+  # at least as of Picolib 1.7.6 (March 2022).
   PICOLIBC_CFG_FLAGS += -Dtinystdio=true
 
   # Our bare-metal firmware does not use anything like fopen/fdopen.
   PICOLIBC_CFG_FLAGS += -Dposix-io=false
 
   # Enable C99 support in I/O functions like printf/scanf.
+  # Note that tinystdio does not support thousands separators, as in printf( "%'d" ),
+  # as of Picolib 1.7.6 (March 2022).
   PICOLIBC_CFG_FLAGS += -Dio-c99-formats=true
 
   # Disable floating-point support in printf and scanf.
