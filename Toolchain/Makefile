@@ -736,6 +736,9 @@ ifeq ($(TARGET_LIBC), newlib)
   # so much of the atexit() support shold be optimised away in any case.
   NEWLIB_CFG_FLAGS += --disable-newlib-atexit-dynamic-alloc
 
+  # We will be calling __libc_init_array() and __libc_fini_array() ourselves.
+  # Therefore, we do not want Newlib automatically registering a call to __libc_fini_array() with atexit().
+  NEWLIB_CFG_FLAGS += --disable-newlib-register-fini
 
   # The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
   # But it starts off with an array in RAM called __malloc_av_ that weighs 1032 bytes,
@@ -876,6 +879,10 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   # We will not be using any iconv support.
   PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
+
+  # We will be calling __libc_init_array() and __libc_fini_array() ourselves.
+  # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().
+  PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
 
   # Without thread support, this option does not really matter. Picolibc does not have a struct _reent,
   # so the atexit() data will be global anyway.
