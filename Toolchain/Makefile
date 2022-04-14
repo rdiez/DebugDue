@@ -728,6 +728,8 @@ ifeq ($(TARGET_LIBC), newlib)
   #   In Newlib, _ATEXIT_SIZE is 32 because of ANSI conformance, so each atexit block has 32 function pointers.
   #   The associated arguments for those function calls consume sizeof( struct _on_exit_args ) = 264 bytes.
   #   And there is at least one, see _atexit0 and _global_atexit0.
+  #   However, if nobody is actually registering any atexit() calls, then even this static atexit block
+  #   will be optimised away.
   NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
 
   # We are trying to completely eliminate the need for atexit(), so we will not be needed dynamic allocation for it anyway.
