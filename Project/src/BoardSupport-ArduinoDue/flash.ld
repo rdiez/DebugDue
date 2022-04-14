@@ -42,7 +42,6 @@ MEMORY
 	ram (rwx)   : ORIGIN = 0x20070000, LENGTH = 0x00018000 /* sram, 96K */
 }
 
-/* Section Definitions */
 SECTIONS
 {
     .text :
@@ -55,10 +54,32 @@ SECTIONS
         *(.rodata .rodata* .gnu.linkonce.r.*)
         *(.ARM.extab* .gnu.linkonce.armextab.*)
 
-        /* Support C constructors, and C destructors in both user code
-           and the C library. This also provides support for C++ code. */
-        . = ALIGN(4);
+
+        /* Support C constructors and destructors in both user code and the C runtime library.
+           This also provides support for C++ constructors and destructors. */
+
+        _section_init_start = .;
         KEEP(*(.init))
+        _section_init_end = .;
+
+        _section_fini_start = .;
+        KEEP(*(.fini))
+        _section_fini_end = .;
+
+        /* Sections .init and .fini are used to dynamically build functions _init() and _fini().
+           We are not calling these functions, and they should not be initialising anything.
+           Such empty routines look like this for the Thumb instruction set:
+             push    {r3, r4, r5, r6, r7, lr}
+             nop
+             pop     {r3, r4, r5, r6, r7}
+             pop     {r3}
+             mov     lr, r3
+             bx      lr
+             That code needs 12 bytes.
+        */
+        ASSERT( _section_init_end - _section_init_start == 12, "The .init section is not (almost) empty." );
+        ASSERT( _section_fini_end - _section_fini_start == 12, "The .fini section is not (almost) empty." );
+
 
         . = ALIGN(4);
         __preinit_array_start = .;
@@ -77,9 +98,6 @@ SECTIONS
         /* Objects with a priority are constructed before objects without priority. */
         KEEP (*(.init_array))
         __init_array_end = .;
-
-        . = ALIGN(4);
-        KEEP(*(.fini))
 
         . = ALIGN(4);
         __fini_array_start = .;

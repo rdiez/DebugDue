@@ -21,7 +21,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * With some changes by rdiez in 2021.
+ * With some changes by rdiez.
  */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
@@ -32,8 +32,6 @@ MEMORY
   FLASH (rx)  : ORIGIN = 0x00000000, LENGTH = 256K
   RAM   (rwx) : ORIGIN = 0x20000000, LENGTH =  64K
 }
-
-ENTRY(Reset_Handler)
 
 SECTIONS
 {
@@ -46,8 +44,32 @@ SECTIONS
 
     *(.ARM.extab* .gnu.linkonce.armextab.*)
 
+
+    /* Support C constructors and destructors in both user code and the C runtime library.
+       This also provides support for C++ constructors and destructors. */
+
+    _section_init_start = .;
     KEEP(*(.init))
+    _section_init_end = .;
+
+    _section_fini_start = .;
     KEEP(*(.fini))
+    _section_fini_end = .;
+
+    /* Sections .init and .fini are used to dynamically build functions _init() and _fini().
+       We are not calling these functions, and they should not be initialising anything.
+       Such empty routines look like this for the Thumb instruction set:
+         push    {r3, r4, r5, r6, r7, lr}
+         nop
+         pop     {r3, r4, r5, r6, r7}
+         pop     {r3}
+         mov     lr, r3
+         bx      lr
+         That code needs 12 bytes.
+    */
+    ASSERT( _section_init_end - _section_init_start == 12, "The .init section is not (almost) empty." );
+    ASSERT( _section_fini_end - _section_fini_start == 12, "The .fini section is not (almost) empty." );
+
 
     . = ALIGN(4);
     __preinit_array_start = .;
@@ -117,9 +139,9 @@ SECTIONS
 
 
   /**
-   * Location counter can end up 2byte aligned with narrow Thumb code but
+   * Location counter can end up 2-byte aligned with narrow Thumb code but
    * __etext is assumed by startup code to be the LMA of a section in RAM
-   * which must be 4byte aligned 
+   * which must be 4-byte aligned
    */
 
   .relocate : AT (__etext)
