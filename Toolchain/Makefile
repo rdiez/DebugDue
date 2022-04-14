@@ -889,6 +889,12 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Newlib auto-detects this setting by looking in the compilation result for a section header called INIT_ARRAY
   PICOLIBC_CFG_FLAGS += -Dnewlib-initfini-array=true
 
+  # _init() and _fini() are special functions generated dynamically during linking and associated with
+  # sections .init and .fini defined in the linker script file.
+  # We are not using _init() and _fini(), but only the tables defined by __init_array_start etc.
+  # _init() and _fini() are deprecated anyway. The linker script file checks that these routines are (almost) empty.
+  PICOLIBC_CFG_FLAGS += -Dnewlib-initfini=false
+
   # We will be calling __libc_init_array() and __libc_fini_array() ourselves.
   # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().
   PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
