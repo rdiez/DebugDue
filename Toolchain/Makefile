@@ -884,6 +884,12 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().
   PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
 
+  # We are trying to completely eliminate the need for atexit(), so we will not be needed dynamic allocation for it anyway.
+  # We are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
+  # and the firmware is checking on start-up that there are no atexit entries,
+  # so much of the atexit() support shold be optimised away in any case.
+  PICOLIBC_CFG_FLAGS += -Dnewlib-atexit-dynamic-alloc=false
+
   # Without thread support, this option does not really matter. Picolibc does not have a struct _reent,
   # so the atexit() data will be global anyway.
   PICOLIBC_CFG_FLAGS += -Dnewlib-global-atexit=true
