@@ -177,6 +177,23 @@ I<< rand >> maintains hidden state and is generally not reentrant.
 Newlib's I<< sprintf >> can suddently call I<< malloc >> for floating-point arguments. Picolibc does not have this problem.
 You will find more information on this S<< L<< here|https://nadler.com/embedded/newlibAndFreeRTOS.html >> . >>
 
+=head2 Initialisation and Termination
+
+You should generally refrain from using I<< atexit >> or I<< __cxa_atexit >> in your software.
+
+Do not define global or static C++ object instances that need constructor or destructor calls.
+Such destructor calls will generate hidden calls to S<< I<< atexit >> . >> Instead, initialise everything manually.
+
+Otherwise, you'll have a hard time trying to control the initialisation and destruction order in a portable manner,
+as the initialisation order of such objects is not guaranteed in the language standard.
+
+I<< atexit >> destructors will make it harder to detect memory leaks on termination, and I<< atexit >> will always waste memory,
+because it is hard to know in advance how many I<< atexit >> slots the firmware will need, so Newlib will normally overallocate.
+
+In case you are wondering, you should implement clean termination even on firmware that is never supposed to terminate.
+You can implement termination as part of a debug or test routine that restarts the firmware.
+It will help you design cleaner code. Without proper termination, it will be very hard to identify eventual memory or resource leaks.
+
 =head1 Toolchain Builder Makefile
 
 You will find a makefile to build your own GCC-based, cross-compiling toolchain in the F<< Toolchain >> subdirectory.
