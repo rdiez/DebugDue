@@ -148,8 +148,8 @@ static void SetupCpuClock ( void )
 }
 
 
-extern "C" void __libc_init_array ( void );  // Provided by some GCC library.
-
+extern "C" void __libc_init_array ( void );  // Provided by Newlib or Picolibc.
+extern "C" void __libc_fini_array ( void );  // Provided by Newlib or Picolibc.
 
 extern "C" void BareMetalSupport_Reset_Handler ( void );  // Prevent "no previous declaration" warning.
 
@@ -210,8 +210,12 @@ void BareMetalSupport_Reset_Handler ( void )
 
     RunUserCode();
 
-    // If you want to check for memory leaks and so on, you may need to call the destructors here:
-    //   __libc_fini_array();
+    // If your firmware never terminates, you can remove this call and save some program space.
+    // But at some point in time, you may want to implement memory leak detection,
+    // so it probably is a good idea to implement proper termination from the beginning.
+    __libc_fini_array();
+
+    // Here you could check for memory leaks, or restart your firmware.
 
     Panic("RunUserCode() returned unexpectedly.");
 }
