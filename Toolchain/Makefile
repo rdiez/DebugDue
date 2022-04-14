@@ -880,6 +880,15 @@ ifeq ($(TARGET_LIBC), picolibc)
   # We will not be using any iconv support.
   PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
 
+  # We will be using these tables defined in the linker script file:
+  #   __preinit_array_start/__preinit_array_end  (there is no postfini array)
+  #   __init_array_start / __init_array_end
+  #   __fini_array_start / __fini_array_end
+  # Rather than using those tables directly, we will be calling __libc_init_array() and __libc_fini_array().
+  # This option makes __libc_init_array() and __libc_fini_array() available in Picolibc.
+  # Newlib auto-detects this setting by looking in the compilation result for a section header called INIT_ARRAY
+  PICOLIBC_CFG_FLAGS += -Dnewlib-initfini-array=true
+
   # We will be calling __libc_init_array() and __libc_fini_array() ourselves.
   # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().
   PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
