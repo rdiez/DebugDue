@@ -726,14 +726,15 @@ ifeq ($(TARGET_LIBC), newlib)
   #
   # Notes about atexit memory consumption:
   #   In Newlib, _ATEXIT_SIZE is 32 because of ANSI conformance, so each atexit block has 32 function pointers.
-  #   The associated arguments consume sizeof( struct _on_exit_args ) = 264 bytes.
+  #   The associated arguments for those function calls consume sizeof( struct _on_exit_args ) = 264 bytes.
   #   And there is at least one, see _atexit0 and _global_atexit0.
   NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
 
-  # You may wonder whether you need --disable-newlib-atexit-dynamic-alloc.
-  # But we are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
+  # We are trying to completely eliminate the need for atexit(), so we will not be needed dynamic allocation for it anyway.
+  # We are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
   # and the firmware is checking on start-up that there are no atexit entries,
-  # so it does not really matter: much of the atexit() support shold be optimised away.
+  # so much of the atexit() support shold be optimised away in any case.
+  NEWLIB_CFG_FLAGS += --disable-newlib-atexit-dynamic-alloc
 
 
   # The full version of malloc uses 'bins' and is meant to be a good all-round allocator.
@@ -875,6 +876,10 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   # We will not be using any iconv support.
   PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
+
+  # Without thread support, this option does not really matter. Picolibc does not have a struct _reent,
+  # so the atexit() data will be global anyway.
+  PICOLIBC_CFG_FLAGS += -Dnewlib-global-atexit=true
 
   # The Meson build system documents all supported CPU family names.
   PICOLIBC_CPU_FAMILY := arm
