@@ -14,9 +14,11 @@ AC_PREREQ([2.69])  # Anything older may not work properly.
 # in ../ and ../../ , possibly finding older versions or incompatible tools with the same name.
 AC_CONFIG_AUX_DIR([build-aux])
 
-AC_NO_EXECUTABLES  # This undocumented hack prevents error message "error: C compiler cannot create executables",
-                   # see the toolchain makefile for more information about why this is needed. Short version:
-                   # libgloss was not adapted for our board, so the toolchain alone cannot build executables.
+AC_NO_EXECUTABLES  # This undocumented macro prevents error message "error: C compiler cannot create executables".
+                   # We are using a custom cross-compiler toolchain which cannot build normal executables by default.
+                   # We will be providing the right start-up routines and the right compiler flags when building
+                   # our firmware, but the 'configure' script that Autoconf generates wants to probe
+                   # the compiler etc. beforehand, so tell it that it cannot expect to build executables successfully.
 
 AM_INIT_AUTOMAKE([-Wall])
 

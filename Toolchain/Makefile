@@ -744,27 +744,12 @@ ifeq ($(TARGET_LIBC), newlib)
   # suboptimal in many normal scenarios.
   NEWLIB_CFG_FLAGS += --enable-newlib-nano-malloc
 
-  # About --disable-libgloss and --disable-newlib-supplied-syscalls:
-  #
-  #   Newlib can provide syscalls like _sbrk(), which are also commonly needed, and
-  #   Libgloss normally provides crt0.o , which gets automatically added to the linker object file list,
-  #   and _exit(), which is needed by the most simple of programs. The configuration switches
-  #   below disable those features, because we are going to be providing custom versions for our board.
-  #   This means that autoconf will fail to detect the cross-compiler,
-  #   the error message is then: "error: C compiler cannot create executables".
-  #
-  #   If you enable the features above, then you will find it hard to write an Automake makefile
-  #   that links the files in the right order so as to override _sbrk() and so on with your own versions.
-  #
-  #   The correct way to fix this problem would be to modify Libgloss in order to provide
-  #   the stuff needed by our board. This way, a standard toolchain would be able to build for our board
-  #   with no additional linker files, etc. However, that would mean a lot of work, especially at the beginning,
-  #   when it's not clear yet what belongs in a common library and what doesn't.
-  #
-  #   Therefore, for the time being I am using undocumented macro AC_NO_EXECUTABLES in the autoconf project,
-  #   in order to work-around the error message described above.
-  #
+  # Libgloss can provide crt0.o and other initialisation stuff, but we would need to modify it,
+  # for it does not know our particular board or environment. Modifying Libgloss is not worth the trouble,
+  # we can provide our own start-up code with less effort.
   NEWLIB_CFG_FLAGS += --disable-libgloss
+
+  # We will provide sbrk() and any other necessary board support routines (what Newlib calls 'syscalls') ourselves.
   NEWLIB_CFG_FLAGS += --disable-newlib-supplied-syscalls
 
   # Newlib adds to the compiler flags option '-fno-builtin', which can incur a significant performance penalty.
