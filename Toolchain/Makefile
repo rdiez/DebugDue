@@ -835,12 +835,16 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dpicolib=false
 
   # The tinystdio library has a much smaller memory footprint than Newlib's stdio library.
+  #
   # The main drawback is a reduced I/O performance, but a bare-metal application will probably not use
   # much file-based I/O or C++ stream I/O, if at all.
   # However, expect a drastic performance drop in routines like sprintf() too, even if they apparently
   # do not use any FILE-based I/O. Internally, those routines use a virtual, in-memory FILE,
   # and tinystdio processes data on a byte-by-byte basis (one function call per byte),
   # at least as of Picolib 1.7.6 (March 2022).
+  #
+  # Another shortcoming is the lack of locale support, so routines like strfmon() are not really useful anymore.
+  # There aren't even thousands separators as in printf( "%'d" ), as of Picolib 1.7.6 (March 2022).
   PICOLIBC_CFG_FLAGS += -Dtinystdio=true
 
   # Our bare-metal firmware does not use anything like fopen/fdopen.
