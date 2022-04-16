@@ -722,14 +722,14 @@ ifeq ($(TARGET_LIBC), newlib)
   NEWLIB_CFG_FLAGS += --disable-shared
   NEWLIB_CFG_FLAGS += --disable-multilib
 
-  # I could not find a good reason why atexit() should be in struct _reent, so make it global.
+  # If the atexit data block is placed inside struct _reent, it will never be optimised away.
+  # However, if it is global and nobody is actually registering any atexit() calls, then
+  # the whole atexit block will be optimised away.
   #
   # Notes about atexit memory consumption:
   #   In Newlib, _ATEXIT_SIZE is 32 because of ANSI conformance, so each atexit block has 32 function pointers.
   #   The associated arguments for those function calls consume sizeof( struct _on_exit_args ) = 264 bytes.
-  #   And there is at least one, see _atexit0 and _global_atexit0.
-  #   However, if nobody is actually registering any atexit() calls, then even this static atexit block
-  #   will be optimised away.
+  #   There is at least one, see _atexit0 and _global_atexit0.
   NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
 
   # We are trying to completely eliminate the need for atexit(), so we will not be needed dynamic allocation for it anyway.
