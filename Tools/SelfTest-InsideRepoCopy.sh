@@ -493,6 +493,117 @@ build_firmwares ()
 }
 
 
+quote_and_append_args ()
+{
+  local -n VAR="$1"
+  shift
+
+  local STR
+
+  # Shell-quote all arguments before joining them into a single string.
+  printf -v STR  "%q "  "$@"
+
+  # Remove the last character, which is one space too much.
+  STR="${STR::-1}"
+
+  if [ -z "$VAR" ]; then
+    VAR="$STR"
+  else
+    VAR+="  $STR"
+  fi
+}
+
+
+collect_filenames ()
+{
+  local -r DIRNAME="$1"
+  local -r CMD="$2"
+
+  pushd "$DIRNAME" >/dev/null
+
+  COLLECTED_FILENAMES=()
+
+  local FILENAME
+  while IFS='' read -r -d '' FILENAME; do
+
+    if false; then
+      echo "Filename: $FILENAME"
+    fi
+
+    COLLECTED_FILENAMES+=( "$FILENAME" )
+
+  done < <( eval "$CMD" )
+
+  popd >/dev/null
+
+  local -i COLLECTED_FILENAMES_COUNT="${#COLLECTED_FILENAMES[@]}"
+
+  if (( COLLECTED_FILENAMES_COUNT == 0 )); then
+    abort "No files found in \"$DIRNAME\" with the given command."
+  fi
+}
+
+
+lint_sources ()
+{
+  pushd "$COPY_OF_REPOSITORY" >/dev/null
+
+  echo
+  echo "Linting the files with a plain text linter..."
+
+  local CMD=""
+
+  quote_and_append_args CMD "find" "."
+
+  # Skip some directories.
+
+  quote_and_append_args CMD "-type" "d" "("
+
+  quote_and_append_args CMD "-name" ".git"
+  quote_and_append_args CMD "-o"
+  quote_and_append_args CMD "-name" "BuildOutput"
+  quote_and_append_args CMD "-o"
+  quote_and_append_args CMD "-name" "SelfTestOutput"
+  quote_and_append_args CMD "-o"
+  quote_and_append_args CMD "-name" "Tarballs"
+  quote_and_append_args CMD "-o"
+  quote_and_append_args CMD "-name" "autom4te.cache"
+  quote_and_append_args CMD "-o"
+  quote_and_append_args CMD "-name" "build-aux"
+
+  quote_and_append_args CMD ")" "-prune" "-false"
+
+
+  quote_and_append_args CMD "-o" "-type" "f"
+
+  # Skip some files, like Makefile and patches, because they have tabs, trailing spaces
+  # or are otherwise not worth linting.
+
+  quote_and_append_args CMD "-not" "-name" "Makefile*"
+  quote_and_append_args CMD "-not" "-name" "*.mk"
+  quote_and_append_args CMD "-not" "-name" "*.m4"
+  quote_and_append_args CMD "-not" "-name" "*.patch"
+  quote_and_append_args CMD "-not" "-name" "configure"
+
+  quote_and_append_args CMD "-printf" '%P\0'
+
+  collect_filenames "." "$CMD"
+
+  if false; then
+    echo "${#COLLECTED_FILENAMES[@]} array elements:"
+    printf -- '- %s\n' "${COLLECTED_FILENAMES[@]}"
+  fi
+
+  # We do not need xarg's '--no-run-if-empty', because the array will never be empty.
+
+  printf -- '%s\0' "${COLLECTED_FILENAMES[@]}" | xargs --null ptlint.pl --no-trailing-whitespace --no-tabs --eol=only-lf --only-ascii --no-control-codes --
+
+  echo "${#COLLECTED_FILENAMES[@]} files linted."
+
+  popd >/dev/null
+}
+
+
 # ----- Entry point -----
 
 if (( $# != 1 )); then
@@ -508,6 +619,8 @@ declare -r LOG_FILES_DIRNAME="$ROTATED_DIR/BuildLogs"
 echo "Creating \"$LOG_FILES_DIRNAME\" ..."
 mkdir --parents -- "$LOG_FILES_DIRNAME"
 
+
+declare -r SHOULD_LINT="${JTAGDUE_SHOULD_LINT:-true}"
 declare -r SHOULD_BUILD_TOOLCHAINS="${JTAGDUE_SHOULD_BUILD_TOOLCHAINS:-true}"
 declare -r SHOULD_BUILD_FIRMWARES="${JTAGDUE_SHOULD_BUILD_FIRMWARES:-true}"
 
@@ -519,6 +632,9 @@ read -r -a LIBC_VARIANTS_ARRAY <<< "$LIBC_VARIANTS"
 
 declare -r -i LIBC_VARIANTS_ARRAY_COUNT="${#LIBC_VARIANTS_ARRAY[@]}"
 
+if $SHOULD_LINT; then
+  lint_sources
+fi
 
 declare -a TOOLCHAIN_BIN_DIR_ARRAY=()
 
@@ -548,31 +664,30 @@ if $SHOULD_BUILD_TOOLCHAINS; then
 fi
 
 
-if (( ${#TOOLCHAIN_BIN_DIR_ARRAY[@]} == 0 )); then
-
-  # Environment variable JTAGDUE_TOOLCHAIN_PATHS should contain a space-separated list of
-  # paths to the toolchain bin directories.
-  declare -r TOOLCHAIN_PATHS="${JTAGDUE_TOOLCHAIN_PATHS:-}"
-
-  read -r -a TOOLCHAIN_PATHS_ARRAY <<< "$TOOLCHAIN_PATHS"
-
-  if false; then
-    echo "Libcs: ${LIBC_VARIANTS_ARRAY[*]}"
-    echo "Toolchains: ${TOOLCHAIN_PATHS_ARRAY[*]}"
-  fi
-
-  declare -r -i TOOLCHAIN_PATHS_ARRAY_COUNT="${#TOOLCHAIN_PATHS_ARRAY[@]}"
-
-  if (( TOOLCHAIN_PATHS_ARRAY_COUNT != LIBC_VARIANTS_ARRAY_COUNT )); then
-    abort "$TOOLCHAIN_PATHS_ARRAY_COUNT toolchain path(s) were supplied, but $LIBC_VARIANTS_ARRAY_COUNT libc variant(s) were given."
-  fi
-
-  TOOLCHAIN_BIN_DIR_ARRAY=( "${TOOLCHAIN_PATHS_ARRAY[@]}" )
-
-fi
-
-
 if $SHOULD_BUILD_FIRMWARES; then
+
+  if (( ${#TOOLCHAIN_BIN_DIR_ARRAY[@]} == 0 )); then
+
+    # Environment variable JTAGDUE_TOOLCHAIN_PATHS should contain a space-separated list of
+    # paths to the toolchain bin directories.
+    declare -r TOOLCHAIN_PATHS="${JTAGDUE_TOOLCHAIN_PATHS:-}"
+
+    read -r -a TOOLCHAIN_PATHS_ARRAY <<< "$TOOLCHAIN_PATHS"
+
+    if false; then
+      echo "Libcs: ${LIBC_VARIANTS_ARRAY[*]}"
+      echo "Toolchains: ${TOOLCHAIN_PATHS_ARRAY[*]}"
+    fi
+
+    declare -r -i TOOLCHAIN_PATHS_ARRAY_COUNT="${#TOOLCHAIN_PATHS_ARRAY[@]}"
+
+    if (( TOOLCHAIN_PATHS_ARRAY_COUNT != LIBC_VARIANTS_ARRAY_COUNT )); then
+      abort "$TOOLCHAIN_PATHS_ARRAY_COUNT toolchain path(s) were supplied, but $LIBC_VARIANTS_ARRAY_COUNT libc variant(s) were given."
+    fi
+
+    TOOLCHAIN_BIN_DIR_ARRAY=( "${TOOLCHAIN_PATHS_ARRAY[@]}" )
+
+  fi
 
   test_basic_functions_of_firmware_build_script
 

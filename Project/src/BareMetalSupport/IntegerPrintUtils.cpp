@@ -53,7 +53,7 @@ char * convert_unsigned_to_dec_th ( uint64_t val,
                                     const char thousandSepChar ) throw()
 {
   static_assert( sizeof(val) <= 8, "" );
-  // Sonst brauchen wir eine höhere Anzahl an Zeichen hier:
+  // Otherwise, we need a higher character count here:
   static_assert( CONVERT_TO_DEC_BUF_SIZE == 28, "" );
 
 
