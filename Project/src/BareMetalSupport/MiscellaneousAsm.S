@@ -19,7 +19,7 @@
     .text
     .syntax unified
     // We do not need to specify here .cpu cortex-m3 or .thumb, as they are passed from above as command-line arguments.
-      
+
 
     // Function prototype:
     //   extern "C" void BusyWaitAsmLoop ( uint32_t iterationCount );

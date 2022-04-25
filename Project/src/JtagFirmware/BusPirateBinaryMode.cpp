@@ -47,7 +47,7 @@ void BusPirateBinaryMode_ProcessData ( CUsbRxBuffer * const rxBuffer, CUsbTxBuff
 
   if ( rxBuffer->IsEmpty() || !txBuffer->IsEmpty() )
     return;
-    
+
   const uint8_t byte = rxBuffer->ReadElement();
 
   switch ( byte )
@@ -63,7 +63,7 @@ void BusPirateBinaryMode_ProcessData ( CUsbRxBuffer * const rxBuffer, CUsbTxBuff
   case 0x0F:
     ChangeBusPirateMode( bpConsoleMode, txBuffer );
     break;
-    
+
   default:
     // The protocol does not allow for any better error indication.
     SendBinaryModeWelcome( txBuffer );
@@ -75,7 +75,7 @@ void BusPirateBinaryMode_ProcessData ( CUsbRxBuffer * const rxBuffer, CUsbTxBuff
 void BusPirateBinaryMode_Init ( CUsbTxBuffer * const txBuffer )
 {
   assert( !s_wasInitialised );
-  
+
   #ifndef NDEBUG
     s_wasInitialised = true;
   #endif

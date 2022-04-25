@@ -290,7 +290,7 @@ BUILD_FLAGS+=" -fno-common"  # Should be the default, but just in case.
 
 AC_ARG_WITH(project,
 [AS_HELP_STRING([--with-project=project-name],
-		[see the --project option in the top-level build script.])])
+                [see the --project option in the top-level build script.])])
 
 if test "x$with_project" == x; then
   AC_MSG_ERROR([Please specify the --with-project=project-name configuration switch.])
@@ -342,7 +342,7 @@ AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/src"
 
 AC_ARG_WITH(atmel-software-framework,
 [AS_HELP_STRING([--with-atmel-software-framework=PATH],
-		[specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.14.0.86".])])
+                [specify directory for the installed Atmel Software Framework, for example "$HOME/asf-3.14.0.86".])])
 
 if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
 
@@ -375,7 +375,7 @@ fi
 
 AC_ARG_WITH(target-arch,
 [AS_HELP_STRING([--with-target-arch=arch],
-		[specify the same architecture as argument -host.])])
+                [specify the same architecture as argument -host.])])
 
 if test "x$with_target_arch" == x; then
   AC_MSG_ERROR([Please specify the --with-target-arch=arch configuration switch.])
