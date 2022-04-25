@@ -90,9 +90,6 @@ echo "Copying the Git repository..."
 echo "$CMD"
 eval "$CMD"
 
-# TODO: remove
-cp "Tools/SelfTest-InsideRepoCopy.sh"  "$COPY_OF_REPOSITORY/Tools"
-
 popd >/dev/null
 
 
