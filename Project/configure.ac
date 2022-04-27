@@ -74,6 +74,9 @@ AC_PROG_CC
 AC_PROG_CXX
 AM_PROG_AS
 AC_PROG_RANLIB
+
+# Whether macro AC_PROG_INSTALL is present makes no difference: the generated 'configure' script still looks
+# for a "BSD-compatible install" program, and variable INSTALL is still set accordingly.
 AC_PROG_INSTALL
 
 AM_EXTRA_RECURSIVE_TARGETS([disassemble])
