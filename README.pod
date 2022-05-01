@@ -26,7 +26,7 @@ so that it is compatible with S<< L<< OpenOCD|http://openocd.sourceforge.net/ >>
 This means that you can use an Arduino Due (acting as a JTAG adapter) in order to debug with GDB
 your own code running on a second Arduino Due.
 
-You will find more information about the Arduino Due on my wiki page at S<< L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >> . >>
+You will find more information about the Arduino Due on my website at S<< L<< https://rdiez.miraheze.org/wiki/Hacking_with_the_Arduino_Due >> . >>
 
 =head1 Bare Metal C++ Environment
 
@@ -299,7 +299,7 @@ The lowest-level JTAG bit shifting routine should be rewritten in assembly. Help
 
 =back
 
-You will find more information about my experience with the Arduino Due on my wiki page at S<< L<< http://rdiez.shoutwiki.com/wiki/Hacking_with_the_Arduino_Due >> . >>
+You will find more information about my experience with the Arduino Due on my website at S<< L<< https://rdiez.miraheze.org/wiki/Hacking_with_the_Arduino_Due >> . >>
 
 =head1 Empty Firmware
 
