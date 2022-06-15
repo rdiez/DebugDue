@@ -1,8 +1,12 @@
 #!/usr/bin/perl
 
+# The following POD section contains placeholders, so it has to be preprocessed by this script first.
+#
+# HelpBeginMarker
+
 =head1 OVERVIEW
 
-RotateDir version 2.09
+PROGRAM_NAME version SCRIPT_VERSION
 
 This tool makes room for a new slot, deleting older slots if necessary. Each slot is just a directory on disk.
 
@@ -19,13 +23,18 @@ as any foreign contents are always at risk of being elected
 for automatic deletion during rotation. Even if that could never happen in a given configuration,
 a future human error modifiying that configuration might lead to unpleasant surprises.
 
+If you are using this script to do rotating backups, and you have a monitoring system,
+see script CheckIfAnyFilesModifiedRecently/SanityCheckRotatingBackup.sh for an example
+on how to check that backups are still being performed regularly
+and the number of slots falls within expectation.
+
 =head1 HOW SLOTS ARE ROTATED
 
 This is what a rotating directory set looks like, in slot age order:
 
   basedir/rotated-dir-9
-  basedir/rotated-dir-10
-  basedir/rotated-dir-11
+  basedir/rotated-dir-10-optional-comment
+  basedir/rotated-dir-11 some manual comment
   basedir/rotated-dir-200
 
 If the maximum slot count is 4, then the next time around directory 'rotated-dir-9' will
@@ -35,8 +44,10 @@ Alternatively, directory names can be made of timestamps like this:
 
   basedir/rotated-dir-2010-12-31
   basedir/rotated-dir-2011-01-01
-  basedir/rotated-dir-2011-01-01-2
-  basedir/rotated-dir-2011-01-02
+  basedir/rotated-dir-2011-01-01~2
+  basedir/rotated-dir-2011-01-01~3-optional-comment
+  basedir/rotated-dir-2011-01-01~4 some manual comment
+  basedir/rotated-dir-2011-05-10
 
 Note that, because date "2011-01-01" is duplicated, a sequence number has been automatically appended.
 
@@ -54,7 +65,7 @@ for all slots together.
 
 =head1 USAGE
 
-S<perl RotateDir.pl [options] E<lt>containing directory nameE<gt>>
+S<perl PROGRAM_NAME [options] E<lt>containing directory nameE<gt>>
 
 =head1 OPTIONS
 
@@ -62,9 +73,35 @@ S<perl RotateDir.pl [options] E<lt>containing directory nameE<gt>>
 
 =item *
 
-B<-h, --help>
+B<-h, --OPT_NAME_HELP>
 
 Print this help text.
+
+=item *
+
+B<--version>
+
+Print this tool's name and version number (SCRIPT_VERSION).
+
+=item *
+
+B<--license>
+
+Print the license.
+
+=item *
+
+B<< --OPT_NAME_SELF_TEST >>
+
+Run the built-in self-tests.
+
+=item *
+
+B<-->
+
+Terminate options processing. Useful to avoid confusion between options and a directory name
+that begins with a hyphen ('-'). Recommended when calling this script from another script,
+where the directory name comes from a variable or from user input.
 
 =item *
 
@@ -123,7 +160,7 @@ zero-fill the date fields, therefore "2010-01-02" is better than "2010-1-2".
 The new timestamp must be the equal to or greater than the ones already present in the containing directory.
 If that is not the case, an error will be generated.
 
-If the same timestamp is already on disk, a sequence number is appended, like "2010-12-31-2".
+If the same timestamp is already on disk, a sequence number is appended, like "2010-12-31~2".
 The first sequence number for timestamp-based naming is 2, but it's best not to
 rely on this and always look at RotateDir's output. Further sequence numbers
 are calculated as "the highest value I see on disk at the moment + 1".
@@ -136,6 +173,24 @@ if the perl environment cannot handle years after 2038,
 even if that date has not been reached yet.
 
 This option is incompatible with --no-slot-creation .
+
+=item *
+
+B<--dir-name-suffix E<lt>suffixE<gt>>
+
+An optional suffix for the newly-created directory name. This is intended to be used
+as a reminder of why the slot was created, that is, it is only a comment.
+A hyphen is always inserted before the given suffix.
+
+The following illustrates why such a suffix can be useful:
+
+  basedir/rotated-dir-22-KnownToFail
+  basedir/rotated-dir-23-FirstWithGccVersion10
+  basedir/rotated-dir-24
+  basedir/rotated-dir-25-SameAsBefore
+
+You can manually add or change the suffix after the directory has been created.
+In this case, you can use a space as a separator (instead of a hyphen).
 
 =item *
 
@@ -181,12 +236,6 @@ The default is 5 seconds. A value of 0 disables the waiting and the second check
 
 This option is incompatible with --no-slot-deletion .
 
-=item *
-
-B<--license>
-
-Print the license.
-
 =back
 
 =head1 EXIT CODE
@@ -199,7 +248,7 @@ Please send feedback to rdiezmail-tools at yahoo.de
 
 =head1 LICENSE
 
-Copyright (C) 2011-2017 R. Diez
+Copyright (C) 2011-2022 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
@@ -215,20 +264,23 @@ along with this program.  If not, see L<http://www.gnu.org/licenses/>.
 
 =cut
 
+# HelpEndMarker
 
 use strict;
 use warnings;
 
 use FindBin qw( $Bin $Script );
-use Getopt::Long;
+use Getopt::Long qw( GetOptionsFromString );
 use File::Glob;
-use File::Spec;
+use File::Spec qw();
 use File::Path;
 use IO::Handle;
-use Pod::Usage;
-use Class::Struct;
+use Pod::Usage qw();
+use Class::Struct qw();
 
-use constant SCRIPT_VERSION => "2.09";  # If you update it, update also the perldoc text above.
+use constant PROGRAM_NAME => "RotateDir.pl";
+
+use constant SCRIPT_VERSION => "2.15";
 
 use constant EXIT_CODE_SUCCESS       => 0;
 use constant EXIT_CODE_FAILURE_ARGS  => 1;
@@ -245,16 +297,25 @@ use constant FIRST_TIMESTAMP_SEQUENCE_NUMBER => 2;
 
 use constant DATE_SEPARATOR => "-";
 
+# Up until version 2.14 this script used a hyphen ('-'), but from version 2.15 it changed
+# to a tilde ('~'), in order to accomodate an optional suffix.
+use constant SEQUENCE_NUMBER_SEPARATOR_FOR_DATES     => "~";
+use constant SEQUENCE_NUMBER_SEPARATOR_FOR_DATES_OLD => "-";
+
+use constant OPT_NAME_HELP =>'help';
+use constant OPT_NAME_SELF_TEST => "self-test";
+
+
 # This is important: if the sequence numbers overflow, we don't want Perl
 # to resort to floating-point numbers.
 use integer;
 
 
-struct( CSlotInfo =>
+Class::Struct::struct( CSlotInfo =>
         {
           dirName        => '$',
           slotSubdirName => '$',
-          slotId         => '$',  # slotSubdirName minus the prefix
+          afterPrefix    => '$',  # slotSubdirName minus the prefix
 
           year           => '$',
           month          => '$',
@@ -269,29 +330,37 @@ struct( CSlotInfo =>
 
 sub main ()
 {
-  my $arg_help             = 0;
-  my $arg_h                = 0;
-  my $arg_version          = 0;
-  my $arg_license          = 0;
+  my $arg_help             = FALSE;
+  my $arg_h                = FALSE;
+  my $arg_help_pod         = FALSE;
+  my $arg_version          = FALSE;
+  my $arg_license          = FALSE;
+  my $arg_self_test        = FALSE;
+
   my $arg_slotCount;
   my $arg_deletionDelay;
   my $arg_dirNamePrefix    = "rotated-dir-";
+  my $arg_dirNameSuffix;
   my $arg_dirNamingScheme  = NS_SEQUENCE;
   my $arg_timestamp;
-  my $arg_outputOnlyNewDir = 0;
-  my $arg_noSlotDeletion   = 0;
-  my $arg_noSlotCreation   = 0;
+  my $arg_outputOnlyNewDir = FALSE;
+  my $arg_noSlotDeletion   = FALSE;
+  my $arg_noSlotCreation   = FALSE;
 
-  Getopt::Long::Configure( "no_auto_abbrev", "prefix_pattern=(--|-)", "no_ignore_case" );
+  Getopt::Long::Configure( "no_auto_abbrev", "prefix_pattern=(--|-)", "no_ignore_case", "require_order" );
 
   my $result = GetOptions(
-                 'help'                =>  \$arg_help,
-                 'h'                   =>  \$arg_h,
-                 'version'             =>  \$arg_version,
-                 'license'             =>  \$arg_license,
+                 OPT_NAME_HELP()       => \$arg_help,
+                 'h'                   => \$arg_h,
+                 'help-pod'            => \$arg_help_pod,
+                 'version'             => \$arg_version,
+                 'license'             => \$arg_license,
+                 OPT_NAME_SELF_TEST()  => \$arg_self_test,
+
                  'slot-count=s'        =>  \$arg_slotCount,
                  'deletion-delay=s'    =>  \$arg_deletionDelay,
                  'dir-name-prefix=s'   =>  \$arg_dirNamePrefix,
+                 'dir-name-suffix=s'   =>  \$arg_dirNameSuffix,
                  'dir-naming-scheme=s' =>  \$arg_dirNamingScheme,
                  'timestamp=s'         =>  \$arg_timestamp,
                  'no-slot-deletion'    =>  \$arg_noSlotDeletion,
@@ -307,7 +376,21 @@ sub main ()
 
   if ( $arg_help || $arg_h )
   {
-    write_stdout( "\n" . get_cmdline_help_from_pod( "$Bin/$Script" ) );
+    print_help_text();
+    return EXIT_CODE_SUCCESS;
+  }
+
+  if ( $arg_help_pod )
+  {
+    write_stdout( "This file is written in Perl's Plain Old Documentation (POD) format\n" );
+    write_stdout( "and has been generated with option --help-pod .\n" );
+    write_stdout( "Run the following Perl commands to convert it to HTML or to plain text for easy reading:\n" );
+    write_stdout( "\n" );
+    write_stdout( "  pod2html README.pod >README.html\n" );
+    write_stdout( "  pod2text README.pod >README.txt\n" );
+    write_stdout( "\n\n" );
+    write_stdout( get_pod_from_this_script() );
+    write_stdout( "\n" );
     return EXIT_CODE_SUCCESS;
   }
 
@@ -322,6 +405,15 @@ sub main ()
     write_stdout( get_license_text() );
     return EXIT_CODE_SUCCESS;
   }
+
+  if ( $arg_self_test )
+  {
+    write_stdout( "Running the self-tests...\n" );
+    self_test();
+    write_stdout( "\nSelf-tests finished.\n" );
+    exit EXIT_CODE_SUCCESS;
+  }
+
 
   if ( $arg_noSlotDeletion && ( defined( $arg_slotCount ) || $arg_noSlotCreation || defined( $arg_deletionDelay ) ) )
   {
@@ -423,12 +515,35 @@ sub main ()
 
   if ( not $arg_noSlotCreation )
   {
-    create_new_slot( cat_path( $baseDir,
-                               $arg_dirNamePrefix . $newSlotName ),
+    my $newSubdirname = $arg_dirNamePrefix . $newSlotName;
+
+    if ( defined( $arg_dirNameSuffix ) )
+    {
+      $newSubdirname .= "-" . $arg_dirNameSuffix;
+    }
+
+    create_new_slot( $baseDir,
+                     $newSubdirname,
                      $arg_outputOnlyNewDir );
   }
 
   return EXIT_CODE_SUCCESS;
+}
+
+
+sub replace_script_specific_help_placeholders ( $ )
+{
+  my $podAsStr = shift;
+
+  $podAsStr =~ s/OPT_NAME_SELF_TEST/@{[ OPT_NAME_SELF_TEST ]}/gs;
+
+  return $podAsStr;
+}
+
+
+sub self_test ()
+{
+  self_test_parse_timestamp();
 }
 
 
@@ -468,15 +583,15 @@ sub scan_slots ( $ $ )
 
     next if !str_starts_with( $fileName, $prefix );
 
-    my $slotId = substr( $fileName, length $prefix );
+    my $afterPrefix = substr( $fileName, length $prefix );
 
     my $slotFound = CSlotInfo->new( dirName        => $dirName ,
                                     slotSubdirName => $fileName,
-                                    slotId         => $slotId  );
+                                    afterPrefix    => $afterPrefix );
 
     if ( FALSE )
     {
-      write_stderr( "Dirname: $dirName, slot subdir name: $fileName, slot ID: $slotId\n" );
+      write_stderr( "Dirname: $dirName, slot subdir name: $fileName, after prefix: $afterPrefix\n" );
     }
 
     push @allSlots, $slotFound;
@@ -516,28 +631,50 @@ sub process_sequence_slots ( $ )
 {
   my $allSlots = shift;
 
+
+  my $parseSeqNumRegex  =  "\\A";        # Start of string.
+     $parseSeqNumRegex .=  "(\\d+)";     # Capture the sequence number.
+     $parseSeqNumRegex .=  "([- ].*)?";  # An optional suffix that begins with a '-' or a space and extends until the end of the string.
+                                         # The suffix can be empty, but that probably does not make much sense.
+                                         # We do not actually need to capture the suffix, but I could not find a way to
+                                         # specify a non-capturing group in Perl.
+     $parseSeqNumRegex .=  "\\z";        # End of string.
+
+  my $compiledParseSeqNumRegex = qr/$parseSeqNumRegex/as;
+
+
   my $nextSequenceNumber = FIRST_SEQUENCE_SEQUENCE_NUMBER;
 
   foreach my $slotFound ( @$allSlots )
   {
-    if ( length( $slotFound->slotId ) == 0 or has_non_digits( $slotFound->slotId ) )
+    my @seqNumParts = $slotFound->afterPrefix =~ m/$compiledParseSeqNumRegex/;
+
+    if ( scalar( @seqNumParts ) < 1 )
     {
       die "Cannot extract the slot number from directory name \"" . $slotFound->slotSubdirName . "\".\n";
     }
 
-    # If the number is too big, apparently it gets internally converted to zero,
-    # which will make this test fail.
-    if ( $slotFound->slotId < FIRST_SEQUENCE_SEQUENCE_NUMBER )
+    my $sequenceNumber = $seqNumParts[ 0 ];
+
+    if ( FALSE )
     {
-      die "Invalid sequence number \"" . $slotFound->slotId . "\".\n";
+      write_stdout( "After prefix: <" . $slotFound->afterPrefix . ">\n" );
+      write_stdout( "Seq number  : <" . $sequenceNumber . ">\n" );
     }
 
-    $slotFound->sequenceNumber( $slotFound->slotId );
-
-    if ( $slotFound->slotId >= $nextSequenceNumber )
+    # If the number is too big, apparently it gets internally converted to zero,
+    # which will make this test fail.
+    if ( $sequenceNumber < FIRST_SEQUENCE_SEQUENCE_NUMBER )
     {
-        $nextSequenceNumber = $slotFound->slotId + 1;
-        check_valid_sequence_number( $nextSequenceNumber );
+      die "Invalid sequence number \"" . $sequenceNumber . "\".\n";
+    }
+
+    $slotFound->sequenceNumber( $sequenceNumber );
+
+    if ( $sequenceNumber >= $nextSequenceNumber )
+    {
+      $nextSequenceNumber = $sequenceNumber + 1;
+      check_valid_sequence_number( $nextSequenceNumber );
     }
   }
 
@@ -556,7 +693,7 @@ sub process_timestamp_slots ( $ $ )
   {
     eval
     {
-      parse_timestamp( $slotFound->slotId, TRUE, $slotFound );
+      parse_timestamp( $slotFound->afterPrefix, TRUE, $slotFound );
     };
 
     my $errorMessage = $@;
@@ -572,7 +709,7 @@ sub process_timestamp_slots ( $ $ )
 
       if ( $cmp >= 1 )
       {
-        die "The given timestamp \"" .
+        die "The given or current timestamp \"" .
             format_timestamp( $nextTimestamp->year,
                               $nextTimestamp->month,
                               $nextTimestamp->day ) .
@@ -595,7 +732,7 @@ sub process_timestamp_slots ( $ $ )
   {
     my $suffix = $nextSequenceNumber < FIRST_TIMESTAMP_SEQUENCE_NUMBER
                      ? ""
-                     : DATE_SEPARATOR . "$nextSequenceNumber";
+                     : SEQUENCE_NUMBER_SEPARATOR_FOR_DATES . "$nextSequenceNumber";
 
     return format_timestamp( $nextTimestamp->year,
                              $nextTimestamp->month,
@@ -624,10 +761,10 @@ sub check_valid_sequence_number ( $ )
 
 sub delete_old_slots ( $ $ $ )
 {
-  my $allSlots             = shift;
-  my $arg_slotCount        = shift;
-  my $arg_outputOnlyNewDir = shift;
-  my $arg_deletionDelay    = shift;
+  my $allSlots         = shift;
+  my $slotCount        = shift;
+  my $outputOnlyNewDir = shift;
+  my $deletionDelay    = shift;
 
   my $currentSlotCount = scalar @$allSlots;
 
@@ -636,31 +773,29 @@ sub delete_old_slots ( $ $ $ )
     write_stderr( $currentSlotCount . " slots:\n" . join( "\n", @$allSlots ) . "\n" );
   }
 
-  return if ( $currentSlotCount < $arg_slotCount );
+  return if ( $currentSlotCount < $slotCount );
 
   my @toDelete = sort compare_slots @$allSlots;
 
   # Shorten the array, leave only the slots to delete.
-  $#toDelete -= $arg_slotCount - 1;
+  $#toDelete -= $slotCount - 1;
 
   foreach my $del ( @toDelete )
   {
-    my $delPath = $del->dirName;
-
-    if ( !$arg_outputOnlyNewDir )
+    if ( !$outputOnlyNewDir )
     {
-      write_stdout( "Deleting old slot \"$delPath\" ... ");
+      write_stdout( "Deleting old slot \"" . $del->slotSubdirName . "\" ... ");
     }
 
     # Under Linux, rmtree has the bad habit of printing error messages to stderr
     # when it cannot delete a directory due to insufficient permissions.
     # If we don't flush stdout at this point, the error message may
     # come before the progress message.
-    STDOUT->flush();
+    flush_stdout();
 
-    delete_folder( $delPath, FALSE, $arg_deletionDelay );
+    delete_folder( $del->dirName, FALSE, $deletionDelay );
 
-    if ( !$arg_outputOnlyNewDir )
+    if ( !$outputOnlyNewDir )
     {
       write_stdout( "\n" );
     }
@@ -668,32 +803,35 @@ sub delete_old_slots ( $ $ $ )
 }
 
 
-sub create_new_slot ( $ $ )
+sub create_new_slot ( $ $ $ )
 {
-  my $newDirName           = shift;
-  my $arg_outputOnlyNewDir = shift;
+  my $baseDir          = shift;
+  my $newSubdirName    = shift;
+  my $outputOnlyNewDir = shift;
 
-  if ( !$arg_outputOnlyNewDir )
+  if ( ! $outputOnlyNewDir )
   {
-    write_stdout( "Creating new slot \"" . $newDirName . "\" ... " );
+    write_stdout( "Creating new slot \"" . $newSubdirName . "\" ... " );
   }
 
-  if ( -e $newDirName )
+  my $fullpath = cat_path( $baseDir, $newSubdirName );
+
+  if ( -e $fullpath )
   {
-    die "Unexpected error: filename \"$newDirName\" already exists.\n";
+    die "Unexpected error: filename \"$fullpath\" already exists.\n";
   }
 
-  # Note that mkpath() raises an error if it fails.
-  File::Path::mkpath( $newDirName );
+  mkdir( $fullpath ) or
+    die "Error creating directory \"$fullpath\": $!\n";
 
-  if ( !$arg_outputOnlyNewDir )
+  if ( ! $outputOnlyNewDir )
   {
     write_stdout( "\n" );
   }
 
-  if ( $arg_outputOnlyNewDir )
+  if ( $outputOnlyNewDir )
   {
-    write_stdout( $newDirName . "\n" );
+    write_stdout( $fullpath . "\n" );
   }
 }
 
@@ -713,7 +851,7 @@ sub format_timestamp ( $ $ $ )
 
 sub get_next_timestamp ( $ )
 {
-  my $timestampStr    = shift;
+  my $timestampStr = shift;
 
   my $nextTimestamp = CSlotInfo->new();
 
@@ -834,43 +972,79 @@ sub compare_slots ($$)
 
   if ( $result == 0 )
   {
-    die "Internal error, duplicate sequence number " . $left->sequenceNumber . "\n";
+    my $errMsg = "Duplicate sequence number " . $left->sequenceNumber . " in " .
+                 format_str_for_message( $left ->slotSubdirName ) . " and " .
+                 format_str_for_message( $right->slotSubdirName ) . ".";
+
+    if ( $left->sequenceNumber eq FIRST_TIMESTAMP_SEQUENCE_NUMBER - 1 )
+    {
+      $errMsg .= " Are the directory names using the old separator ('@{[ SEQUENCE_NUMBER_SEPARATOR_FOR_DATES_OLD ]}') " .
+                 "instead of ('@{[ SEQUENCE_NUMBER_SEPARATOR_FOR_DATES ]}') for the sequence number?";
+    }
+
+    die $errMsg . "\n";
   }
 
   return $result;
 }
 
 
+my $timestampRegex  =  "\\A";           # Start of string.
+   $timestampRegex .=  "(\\d+)";        # Match the year as a number.
+   $timestampRegex .=  DATE_SEPARATOR;
+   $timestampRegex .=  "(\\d+)";        # Match the month as a number.
+   $timestampRegex .=  DATE_SEPARATOR;
+   $timestampRegex .=  "(\\d+)";        # Match the day as a number.
+
+   $timestampRegex .=  "(" . SEQUENCE_NUMBER_SEPARATOR_FOR_DATES . "\\d+" . ")?";  # An optional sequence number.
+
+   $timestampRegex .=  "([- ].*)?";     # An optional suffix that begins with a '-' or a space and extends until the end of the string.
+                                        # The suffix can be empty, but that probably does not make much sense.
+
+   $timestampRegex .=  "\\z";           # End of string.
+
+my $compiledTimestampRegex = qr/$timestampRegex/as;
+
 sub parse_timestamp ( $ $ $ )
 {
   my $str                 = shift;
-  my $allowSequenceNumber = shift;
+  my $allowSequenceNumber = shift;  # This allows the optional suffix too.
   my $slotInfo            = shift;
 
   # Examples of strings to parse:
-  #   2011-10-24     (without sequence number)
-  #   2011-10-24-3   (with    sequence number)
+  #   2011-10-24           (without sequence number)
+  #   2011-10-24~3         (with    sequence number)
+  #   2011-10-24~3-comment (with    sequence number and suffix)
+  #   2011-10-24~3 comment (with    sequence number and suffix)
+  # See the self-test code for more such strings.
 
-  my $regex  =  "^";             # Start of string.
-     $regex .=  "(\\d+)";        # Match the year as a number.
-     $regex .=  DATE_SEPARATOR;
-     $regex .=  "(\\d+)";        # Match the month as a number.
-     $regex .=  DATE_SEPARATOR;
-     $regex .=  "(\\d+)";        # Match the day as a number.
-     $regex .=  "(.*)";          # Capture the optional rest, which contains the sequence number.
-     $regex .=  "\$";            # End of string.
+  my @dateParts = $str =~ m/$compiledTimestampRegex/;
 
-  my @dateParts = $str =~ m/$regex/o;
-
-  if ( scalar( @dateParts ) != 4 )
+  if ( scalar( @dateParts ) < 3 )
   {
-    die "Invalid format.\n";
+    die "Invalid date format.\n";
   }
 
   $slotInfo->year ( $dateParts[ 0 ] );
   $slotInfo->month( $dateParts[ 1 ] );
   $slotInfo->day  ( $dateParts[ 2 ] );
-  my $rest        = $dateParts[ 3 ];
+
+  my $seqNum;
+
+  if ( scalar( @dateParts ) >= 4 )
+  {
+    $seqNum = $dateParts[ 3 ];
+  }
+
+  if ( scalar( @dateParts ) >= 5 )
+  {
+    my $suffix = $dateParts[ 4 ];
+
+    if ( defined( $suffix ) and not $allowSequenceNumber )
+    {
+      die "Invalid suffix after date: " . format_str_for_message( $suffix ) . "\n";
+    }
+  }
 
 
   # I'm paranoid with the year 2038 problem. If the year is too low, generate an error right away.
@@ -889,8 +1063,7 @@ sub parse_timestamp ( $ $ $ )
     die "Day \"" . $slotInfo->day . "\" is invalid.\n";
   }
 
-
-  if ( length( $rest ) == 0 )
+  if ( ! defined( $seqNum ) )
   {
     $slotInfo->sequenceNumber( FIRST_TIMESTAMP_SEQUENCE_NUMBER - 1 );
   }
@@ -898,20 +1071,11 @@ sub parse_timestamp ( $ $ $ )
   {
     if ( not $allowSequenceNumber )
     {
-      die "Invalid format.\n";
+      die "Invalid sequence number after date.\n";
     }
 
-    if ( not str_starts_with( $rest, "-" ) or length ( $rest ) < 2 )
-    {
-      die "Invalid sequence number \"$rest\".\n";
-    }
-
-    my $sequenceStr = substr( $rest, 1 );
-
-    if ( has_non_digits( $sequenceStr ) )
-    {
-      die "Invalid sequence number \"$sequenceStr\".\n";
-    }
+    # The captured sequence number includes the SEQUENCE_NUMBER_SEPARATOR_FOR_DATES prefix.
+    my $sequenceStr = substr( $seqNum, length( SEQUENCE_NUMBER_SEPARATOR_FOR_DATES ) );
 
     # If the number is too big, apparently it gets internally converted to zero,
     # which will make this test fail.
@@ -936,6 +1100,57 @@ sub parse_timestamp ( $ $ $ )
 }
 
 
+sub pts_test_case ( $ $ $ $ $ )
+{
+  my $strToParse             = shift;
+  my $expectedYear           = shift;
+  my $expectedMonth          = shift;
+  my $expectedDay            = shift;
+  my $expectedSequenceNumber = shift;
+
+  my $slotInfo = CSlotInfo->new();
+
+  eval
+  {
+    parse_timestamp( $strToParse,
+                     defined( $expectedSequenceNumber ) ? TRUE : FALSE,
+                     $slotInfo );
+
+    my $seqNo = defined( $expectedSequenceNumber ) ? $expectedSequenceNumber : FIRST_TIMESTAMP_SEQUENCE_NUMBER - 1;
+
+    if ( $slotInfo->year           != $expectedYear  ||
+         $slotInfo->month          != $expectedMonth ||
+         $slotInfo->day            != $expectedDay   ||
+         $slotInfo->sequenceNumber != $seqNo          )
+    {
+      die "The information parsed does not match expectations.\n";
+    }
+  };
+
+  my $errorMessage = $@;
+
+  if ( $errorMessage )
+  {
+    die "Test case for parse_timestamp() failed for " . format_str_for_message( $strToParse ) . ": " . $errorMessage;
+  }
+}
+
+
+sub self_test_parse_timestamp ()
+{
+  write_stdout( "Testing parse_timestamp()...\n" );
+
+  pts_test_case( "2020-06-29"               , 2020, 06, 29, undef );
+  pts_test_case( "2020-06-29"               , 2020, 06, 29,     1 );
+  pts_test_case( "2020-06-29-comment"       , 2020, 06, 29,     1 );
+  pts_test_case( "2020-06-29 comment"       , 2020, 06, 29,     1 );
+  pts_test_case( "2020-06-29~123"           , 2020, 06, 29,   123 );
+  pts_test_case( "2020-06-29~123 my comment", 2020, 06, 29,   123 );
+  pts_test_case( "2020-06-29~123-my-comment", 2020, 06, 29,   123 );
+  pts_test_case( "2020-06-29~123-my comment", 2020, 06, 29,   123 );
+}
+
+
 #------------------------------------------------------------------------
 
 sub write_stdout ( $ )
@@ -953,6 +1168,107 @@ sub write_stderr ( $ )
   ( print STDERR $str ) or
      die "Error writing to standard error: $!\n";
 }
+
+
+sub flush_stdout ()
+{
+  if ( ! defined( STDOUT->flush() ) )
+  {
+    # The documentation does not say whether $! is set. I am hoping that it does,
+    # because otherwise there is no telling what went wrong.
+    die "Error flushing standard output: $!\n";
+  }
+}
+
+
+sub close_or_die ( $ $ )
+{
+  close ( $_[0] ) or die "Internal error: Cannot close file handle of file " . format_str_for_message( $_[1] ) . ": $!\n";
+}
+
+
+# Say you have the following logic:
+# - Open a file.
+# - Do something that might fail.
+# - Close the file.
+#
+# If an error occurs between opening and closing the file, you need to
+# make sure that you close the file handle before propagating the error upwards.
+#
+# You should not die() from an eventual error from close(), because we would
+# otherwise be hiding the first error that happened. But you should
+# generate at least warning, because it is very rare that closing a file handle fails.
+# This is usually only the case if it has already been closed (or if there is some
+# serious memory corruption).
+#
+# Writing the warning to stderr may also fail, but you should ignore any such eventual
+# error for the same reason.
+
+sub close_file_handle_or_warn ( $ $ )
+{
+  my $fileHandle = shift;
+  my $filename   = shift;
+
+  close( $fileHandle )
+    or print STDERR "Warning: Internal error in '$Script': Cannot close file handle of " . format_str_for_message( $filename ) . ": $!\n";
+}
+
+
+sub if_error_close_file_handle_and_rethrow ( $ $ $ )
+{
+  my $fileHandle       = shift;
+  my $filename         = shift;
+  my $errorMsgFromEval = shift;
+
+  if ( $errorMsgFromEval )
+  {
+    close_file_handle_or_warn( $fileHandle, $filename );
+
+    die $errorMsgFromEval;
+  }
+}
+
+
+sub close_file_handle_and_rethrow_eventual_error ( $ $ $ )
+{
+  my $fileHandle       = shift;
+  my $filename         = shift;
+  my $errorMsgFromEval = shift;
+
+  if_error_close_file_handle_and_rethrow( $fileHandle, $filename, $errorMsgFromEval );
+
+  close_or_die( $fileHandle, $filename );
+}
+
+
+sub rethrow_eventual_error_with_filename ( $ $ )
+{
+  my $filename         = shift;
+  my $errorMsgFromEval = shift;
+
+  if ( $errorMsgFromEval )
+  {
+    # Do not say "file" here, because it could be a directory.
+    die "Error accessing " . format_str_for_message( $filename ) . ": $errorMsgFromEval";
+  }
+}
+
+
+# This routine does not include the filename in an eventual error message.
+
+sub open_file_for_binary_reading ( $ )
+{
+  my $filename = shift;
+
+  open( my $fileHandle, "<", "$filename" )
+    or die "Cannot open the file: $!\n";
+
+  binmode( $fileHandle )  # Avoids CRLF conversion.
+    or die "Cannot access the file in binary mode: $!\n";
+
+  return $fileHandle;
+}
+
 
 #------------------------------------------------------------------------
 #
@@ -994,31 +1310,6 @@ sub str_ends_with ( $ $ )
 
 #------------------------------------------------------------------------
 #
-# Removes leading and trailing blanks.
-#
-# Perl's definition of whitespace (blank characters) for the \s
-# used in the regular expresion includes, among others, spaces, tabs,
-# and new lines (\r and \n).
-#
-
-sub trim_blanks ( $ )
-{
-  my $retstr = shift;
-
-  # POSSIBLE OPTIMISATION: Removing blanks could perhaps be done faster with transliterations (tr///).
-
-  # Strip leading blanks.
-  $retstr =~ s/^\s*//;
-
-  # Strip trailing blanks.
-  $retstr =~ s/\s*$//;
-
-  return $retstr;
-}
-
-
-#------------------------------------------------------------------------
-#
 # Useful to parse integer numbers.
 #
 
@@ -1026,9 +1317,127 @@ sub has_non_digits ( $ )
 {
   my $str = shift;
 
-  my $scalar = $str =~ m/\D/;
+  # \D and \d would match anything that Unicode says it is a number somewhere in the world,
+  # which could even introduce a security issue. So specifically ask for ASCII numbers only.
+
+  my $scalar = $str =~ m/[^0-9]/;
 
   return $scalar;
+}
+
+
+#------------------------------------------------------------------------
+#
+# Sometimes we want to generate an error message meant for humans which contains the string
+# that caused the error. However, the string that we want to embed in the error message may be problematic:
+# 1) It may be too long, rendering the error message unreadable.
+# 2) It may have characters that make it difficult to know where the embedded string begins
+#    and ends inside the error message.
+# 3) It may have ASCII control characters that will cause visualisation problems depending
+#    on the terminal or editor.
+#
+# This routine escapes away any problematic characters, shortens the string if necessary
+# and surrounds it in double quotation marks. The resulting string can be safely embedded
+# in a larger text.
+#
+# Examples of such quoted strings:
+#   "abc"
+#   " abc "
+#   "a<TAB>b<CR>c"
+#   "a<QUOT>b"
+#
+# The quoted string is designed for maximum readability, so there is a trade-off:
+# it cannot be reliably unquoted, because some encodings are ambiguous. For example,
+# a string like 'a<TAB>b' will pass through without any quoting. The receiver will
+# have no way to know whether the original string had a single tab character,
+# or the 5 characters '<TAB>'.
+#
+# I have decided to use this ambiguous quoting rules because any other escaping mechanisms
+# I know are hard to read or pose more questions, and the focus here is readability in
+# informational messages for humans who cannot be bother to read the encodind specification.
+#
+# Example of hard-to-read or ugly quotation mechanisms:
+#   URL encoding: a%30%40%40b
+#   Shell: "\"Spaces\ get\ quoted\""
+#   Perl Unicode literals: \x{1234}x\x{4567}
+#   Perl Unicode literals: \N{U+1234}N\N{U+4567}
+#
+# Because all quoted characters are <= 127, this routine is safe to use before or after
+# converting a string to or from UTF-8.
+
+my %escapeTable =
+(
+   0  => "NUL",
+   1  => "SOH",
+   2  => "STX",
+   3  => "ETX",
+   4  => "EOT",
+   5  => "ENQ",
+   6  => "ACK",
+   7  => "BEL",
+   8  => "BS",
+   9  => "TAB",  # The ASCII name is actually HT for Horizontal Tab.
+  10  => "LF",
+  11  => "VT",
+  12  => "FF",
+  13  => "CR",
+  14  => "SO",
+  15  => "SI",
+  16  => "DLE",
+  17  => "DC1",
+  18  => "DC2",
+  19  => "DC3",
+  20  => "DC4",
+  21  => "NAK",
+  22  => "SYN",
+  23  => "ETB",
+  24  => "CAN",
+  25  => "EM",
+  26  => "SUB",
+  27  => "ESC",
+  28  => "FS",
+  29  => "GS",
+  30  => "RS",
+  31  => "US",  # In octal: 037
+
+  34  => "QUOT", # Double quotation mark, in octal: 042
+
+ 127  => "DEL", # In octal: 0177
+
+ # Anything above 127 may display as rubbish in a terminal or in a text editor, depending on the encoding,
+ # but it will probably cause no big problems like a line break.
+);
+
+sub format_str_for_message ( $ )
+{
+  my $str = shift;
+
+  $str =~ s/([\000-\037\042\177])/ '<' . $escapeTable{ ord $1 } . '>' /eg;
+
+  # This is some arbitrary length limit. Some people would like to see more text, some less.
+  use constant FSFM_MAX_LEN => 300;
+
+  use constant FSFM_SUFFIX => "[...]";
+
+  if ( length( $str ) > FSFM_MAX_LEN )
+  {
+    my $lenToPreserve = FSFM_MAX_LEN - length( FSFM_SUFFIX );
+
+    if ( FALSE )
+    {
+      # substr() can turn a Perl string marked as UTF-8 to a native/byte string,
+      # so avoid it because we want to support the assertion strategy enabled by ENABLE_UTF8_RESEARCH_CHECKS.
+      $str = substr( $str, 0, FSFM_MAX_LEN - length( FSFM_SUFFIX ) ) . FSFM_SUFFIX;
+    }
+    else
+    {
+      my @capture = $str =~ m/\A(.{$lenToPreserve})/;
+
+      $str = $capture[ 0 ] . FSFM_SUFFIX;
+    }
+  }
+
+  return '"' . $str . '"';
 }
 
 
@@ -1192,7 +1601,7 @@ sub delete_folder ( $ $ $ )
     if ( $print_progress )
     {
       write_stdout( "WARNING: The just-deleted folder is still visible. Waiting to see if it goes away..." );
-      STDOUT->flush();
+      flush_stdout();
     }
 
     sleep_seconds( $deletionDelay );
@@ -1281,28 +1690,131 @@ sub sleep_seconds ( $ )
 }
 
 
-sub get_cmdline_help_from_pod ( $ )
+# Reads a whole binary file, returns it as a scalar.
+#
+# Security warning: Any eventual error message will contain the file path.
+#
+# Alternative: use Perl module File::Slurp
+
+sub read_whole_binary_file ( $ )
 {
-  my $pathToThisScript = shift;
+  my $filename = shift;
 
-  my $memFileContents = "";
+  # I believe that standard tool 'cat' uses a 128 KiB buffer size under Linux.
+  use constant SOME_ARBITRARY_BLOCK_SIZE_RWBF => 128 * 1024;
 
-  open( my $memFile, '>', \$memFileContents )
-      or die "Cannot create in-memory file: $!\n";
+  my $fileContent;
 
-  binmode( $memFile )  # Avoids CRLF conversion.
-      or die "Cannot access in-memory file in binary mode: $!\n";
+  eval
+  {
+    my $fileHandle = open_file_for_binary_reading( $filename );
 
-  pod2usage( -exitval    => "NOEXIT",
-             -verbose    => 2,
-             -noperldoc  => 1,  # Perl does not come with the perl-doc package as standard (at least on Debian 4.0).
-             -input      => $pathToThisScript,
-             -output     => $memFile );
+    eval
+    {
+      my $pos = 0;
 
-  $memFile->close()
-      or die "Cannot close in-memory file: $!\n";
+      for ( ; ; )
+      {
+        my $readByteCount = sysread( $fileHandle, $fileContent, SOME_ARBITRARY_BLOCK_SIZE_RWBF, $pos );
 
-  return $memFileContents;
+        if ( not defined $readByteCount )
+        {
+          die "Error reading from file: $!\n";
+        }
+
+        if ( $readByteCount == 0 )
+        {
+          last;
+        }
+
+        $pos += $readByteCount;
+      }
+    };
+
+    close_file_handle_and_rethrow_eventual_error( $fileHandle, $filename, $@ );
+  };
+
+  rethrow_eventual_error_with_filename( $filename, $@ );
+
+  return $fileContent;
+}
+
+
+sub print_help_text ()
+{
+  my $podAsStr = get_pod_from_this_script();
+
+
+  # Prepare an in-memory file with the POD contents.
+
+  my $memFileWithPodContents;
+
+  open( my $memFileWithPod, '+>', \$memFileWithPodContents )
+    or die "Cannot create in-memory file: $!\n";
+
+  binmode( $memFileWithPod )  # Avoids CRLF conversion.
+    or die "Cannot access in-memory file in binary mode: $!\n";
+
+  ( print $memFileWithPod $podAsStr ) or
+    die "Error writing to in-memory file: $!\n";
+
+  seek $memFileWithPod, 0, 0
+    or die "Cannot seek inside in-memory file: $!\n";
+
+
+  write_stdout( "\n" );
+
+  # Unfortunately, pod2usage does not return any error indication.
+  # However, if the POD text has syntax errors, the user will see
+  # error messages in a "POD ERRORS" section at the end of the output.
+
+  Pod::Usage::pod2usage( -exitval    => "NOEXIT",
+                         -verbose    => 2,
+                         -noperldoc  => 1,  # Perl does not come with the perl-doc package as standard (at least on Debian 4.0).
+                         -input      => $memFileWithPod,
+                         -output     => \*STDOUT );
+
+  $memFileWithPod->close()
+    or die "Cannot close in-memory file: $!\n";
+}
+
+
+sub get_pod_from_this_script ()
+{
+  # POSSIBLE OPTIMISATION:
+  #   We do not actually need to read the whole file. We could read line-by-line,
+  #   discard everything before HelpBeginMarker and stop as soon as HelpEndMarker is found.
+
+  my $sourceCodeOfThisScriptAsString = read_whole_binary_file( "$Bin/$Script" );
+
+  # We do not actually need to isolate the POD section, but it is cleaner this way.
+
+  my $regex = "# HelpBeginMarker[\\s]+(.*?)[\\s]+# HelpEndMarker";
+
+  my @podParts = $sourceCodeOfThisScriptAsString =~ m/$regex/s;
+
+  if ( scalar( @podParts ) != 1 )
+  {
+    die "Internal error isolating the POD documentation.\n";
+  }
+
+  my $podAsStr = $podParts[0];
+
+
+  # Replace the known placeholders. This is the only practical way to make sure
+  # that things like the script name and version number in the help text are always right.
+  # If you duplicate name and version in the source code and in the help text,
+  # they will inevitably get out of sync at some point in time.
+
+  # There are faster ways to replace multiple placeholders, but optimising this
+  # is not worth the effort.
+
+  $podAsStr =~ s/PROGRAM_NAME/@{[ PROGRAM_NAME ]}/gs;
+  $podAsStr =~ s/SCRIPT_NAME/$Script/gs;
+  $podAsStr =~ s/SCRIPT_VERSION/@{[ SCRIPT_VERSION ]}/gs;
+  $podAsStr =~ s/OPT_NAME_HELP/@{[ OPT_NAME_HELP ]}/gs;
+
+  return replace_script_specific_help_placeholders( $podAsStr );
 }
 
 
