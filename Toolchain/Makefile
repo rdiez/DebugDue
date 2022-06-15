@@ -125,6 +125,20 @@ else ifeq ($(VERSION_SET),VersionSet10)
   PICOLIBC_VERSION := 1.7.6
   GDB_VERSION := 12.1
 
+else ifeq ($(VERSION_SET),VersionSet11)
+
+  # This version set with GCC 12.1 is still experimental.
+
+  BINUTILS_VERSION := 2.38
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.1.0
+  MPC_VERSION := 1.2.1
+  GCC_VERSION := 12.1.0
+  NEWLIB_VERSION := 4.1.0
+  # The toolchain fails to build with version 1.7.7 .
+  PICOLIBC_VERSION := 1.7.6
+  GDB_VERSION := 12.1
+
 else
   $(error Invalid configuration set "$(VERSION_SET)")
 endif
@@ -601,8 +615,9 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
   IS_GCC_10_X  := $(filter 10.%,$(GCC_VERSION))
   IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
+  IS_GCC_12_X  := $(filter 12.%,$(GCC_VERSION))
 
-  ifneq "$(or $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X) )" ""
+  ifneq "$(or $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
     # The patch for version 5.1.0 works in the next versions too.
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
