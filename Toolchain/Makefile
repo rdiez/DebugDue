@@ -115,16 +115,15 @@ else ifeq ($(VERSION_SET),VersionSet9)
 
 else ifeq ($(VERSION_SET),VersionSet10)
 
-  # This version set is still experimental.
-
   BINUTILS_VERSION := 2.38
   GMP_VERSION := 6.2.1
   MPFR_VERSION := 4.1.0
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
   NEWLIB_VERSION := 4.1.0
+  # The toolchain fails to build with version 1.7.7 .
   PICOLIBC_VERSION := 1.7.6
-  GDB_VERSION := 11.2
+  GDB_VERSION := 12.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
