@@ -464,14 +464,15 @@ on the system.
 
 Linux and Mac OS do no need any drivers. On linux, a new virtual serial port device
 is automatically created with a name like "/dev/ttyACM0", just look for the right device name
-under the "/dev" directory.
+under the "/dev" directory. On Linux, the system automatically creates a symbolic link
+like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00 >>C< >, see further below for more information.
 
 Now you should be able to connect to the virtual serial port with your favorite serial port console emulator.
 
 For example, this Linux client allows you to conveniently quit the client-side terminal emulator
 (the local 'socat' command) with Ctrl+C:
 
-  socat -t0  STDIO,raw,echo=0,escape=0x03  /dev/ttyACM0,b115200,cs8,parenb=0,cstopb=0,clocal=0,raw,echo=0,setlk,flock-ex-nb
+  socat -t0  STDIO,raw,echo=0,escape=0x03  file:/dev/ttyACM0,b115200,cs8,parenb=0,cstopb=0,clocal=0,raw,echo=0,setlk,flock-ex-nb
 
 On Windows, you can use Putty like this:
 
