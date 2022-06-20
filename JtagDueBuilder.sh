@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2014-2018 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
+# Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
 
 set -o errexit
 set -o nounset
@@ -274,7 +274,7 @@ display_help ()
 cat - <<EOF
 
 $SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014-2018 R. Diez - Licensed under the GNU AGPLv3
+Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3
 
 Overview:
 
@@ -389,7 +389,7 @@ display_license()
 {
 cat - <<EOF
 
-Copyright (c) 2014-2017 R. Diez
+Copyright (c) 2014-2022 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
