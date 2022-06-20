@@ -1418,8 +1418,52 @@ debug_target ()
 }
 
 
+check_open_ocd_version ()
+{
+  # OpenOCD versions older than 0.10.0 will probably not work well.
+  local -r OPENOCD_MINIMUM_VERSION="0.10.0"
+
+  echo "Checking that OpenOCD is at least version $OPENOCD_MINIMUM_VERSION..."
+
+  local VERSION_INFO_CMD=""
+
+  quote_and_append_args  VERSION_INFO_CMD  "$PATH_TO_OPENOCD"
+  quote_and_append_args  VERSION_INFO_CMD  "--version"
+
+  local OPENOCD_VERSION_TEXT
+  local OPENOCD_EXIT_CODE
+
+  set +o errexit
+  # Note that OpenOCD outputs the text to stderr
+  OPENOCD_VERSION_TEXT="$(eval "$VERSION_INFO_CMD" 2>&1)"
+  OPENOCD_EXIT_CODE="$?"
+  set -o errexit
+
+  if (( OPENOCD_EXIT_CODE != 0 )); then
+    abort "Cannot run OpenOCD, the error was: $OPENOCD_VERSION_TEXT."
+  fi
+
+  local OPENOCD_VERSION_REGEX="Open On-Chip Debugger ([[:digit:]]+.[[:digit:]]+.[[:digit:]]+)"
+  local OPENOCD_VERSION_NUMBER_FOUND
+
+  if [[ $OPENOCD_VERSION_TEXT =~ $OPENOCD_VERSION_REGEX ]]; then
+    OPENOCD_VERSION_NUMBER_FOUND="${BASH_REMATCH[1]}"
+  else
+    abort "Could not determine OpenOCD's version number from the following version information text:"$'\n'"$OPENOCD_VERSION_TEXT"
+  fi
+
+  echo "OpenOCD version found: $OPENOCD_VERSION_NUMBER_FOUND"
+
+  declare -r CHECK_VERSION_TOOL="$JTAGDUE_ROOT_DIR/Tools/CheckVersion.sh"
+
+  "$CHECK_VERSION_TOOL" "OpenOCD" "$OPENOCD_VERSION_NUMBER_FOUND" ">=" "$OPENOCD_MINIMUM_VERSION"
+}
+
+
 do_program_and_debug ()
 {
+  check_open_ocd_version
+
   local TMP_STR
 
   local OPEN_OCD_CMD=""

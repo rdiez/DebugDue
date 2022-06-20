@@ -69,6 +69,7 @@ declare -i UPGRADE_COUNT=0
 
 upgrade_script  "run-in-new-console.sh"  "RunInNewConsole"  "Tools"
 upgrade_script  "RotateDir.pl"           "RotateDir"        "Tools"
+upgrade_script  "CheckVersion.sh"        "CheckVersion"     "Tools"
 upgrade_script  "DownloadTarball.sh"     "DownloadTarball"  "Toolchain/Tools"
 
 echo "$UPGRADE_COUNT file(s) upgraded."
