@@ -1459,22 +1459,38 @@ do_program_and_debug ()
   # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
   # back to 500 KHz, at least with the Flyswatter2.
   case "$JTAG_ADAPTER" in
+
     JtagDue)
       # The JtagDue software has no speed control yet.
       ;;
+
     Olimex-ARM-USB-OCD-H)
-      # Enabling RTCK/RCLK (with "adapter_khz 0") makes the adapter hang. The red LED remains on
-      # and you have to unplug and reconnect the USB cable in order for the adapter to work again.
-      # Keep in mind that the Olimex-ARM-USB-OCD-H states that it does support "adaptive clocking RTCK".
-      # I suspect that the SAM3X microcontroller on the Arduino Due has no RTCK signal. Other
-      # microcontrollers, like the Atmel SAM9XE family, do have an RTCK signal.
-      # According to TI: "The ARM Cortex M4, R4, or A8 cores do not have RTCK". I guess that Cortex-M3 does not have it either.
+      # About RTCK/RCLK:
+      #
+      #   Enabling RTCK/RCLK (with "adapter_khz 0" or "adapter speed 0") makes the adapter hang. The red LED
+      #   remains on and you have to unplug and reconnect the USB cable in order for the adapter to work again.
+      #
+      #   The Olimex-ARM-USB-OCD-H states that it does support "adaptive clocking RTCK",
+      #   but the SAM3X microcontroller on the Arduino Due provides no RTCK signal.
+      #
+      #   Other microcontrollers, like the Atmel SAM9XE series, do have an RTCK signal.
+      #   The Atmel SAM9XE series have an ARM926EJ-S core, not a Cortex-Mx core.
+      #
+      #   According to TI: "The ARM Cortex M4, R4, or A8 cores do not have RTCK".
+      #   I guess that Cortex-M3 does not have it either.
+      #
+      #  The JTAG connector on the Arduino Due, a 10-Pin Cortex Debug Connector, does not have a RTCK/RCLK pin.
       add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
+
+      # Explicitly select JTAG, just in case.
+      add_openocd_cmd "transport select jtag"
       ;;
+
     Flyswatter2)
       # Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
       add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
       ;;
+
     *) abort "Invalid JTAG_ADAPTER value of \"$JTAG_ADAPTER\"." ;;
   esac
 
