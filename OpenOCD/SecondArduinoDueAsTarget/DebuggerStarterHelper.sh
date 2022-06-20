@@ -276,7 +276,12 @@ case "$TARGET_TYPE" in
 esac
 
 
-add_gdb_cmd "target remote :3333"
+# If you use command "target remote", instead of "target extended-remote" OpenOCD version 0.11.0
+# generates the following warning:
+#   Warn : Prefer GDB command "target extended-remote 3333" instead of "target remote 3333"
+# OpenOCD version 0.10.0 apparently works fine with "extended-remote" too.
+add_gdb_cmd "target extended-remote :3333"
+
 
 if (( ${#BREAKPOINTS[*]} > 0 )); then
   for BP in "${BREAKPOINTS[@]}"; do
