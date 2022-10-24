@@ -1558,9 +1558,36 @@ do_program_and_debug ()
         add_openocd_cmd "$TMP_STR"
       fi
 
+
       add_openocd_cmd_echo "Flashing file \"$BIN_FILEPATH\"..."
+
+      # Command 'flash write_image' prints the write speed to the console,
+      # but if we calculate the speed ourselves, we can programmatically check later on
+      # whether the flash speed has decreased, for example after making changes to this script.
+      local -r MEASURE_TIME=false
+
+      if $MEASURE_TIME; then
+        add_openocd_cmd "set fileStats [file stat $BIN_FILEPATH]"
+        add_openocd_cmd "set fileSize \$fileStats(size)"
+
+        # Store the start time in order to calculate the duration later on.
+        # This measurement is unreliable: it will not work properly if the realtime clock is adjusted in the meantime.
+        # For example, the ntpd daemon automatically adjusts the clock all the time,
+        # in order to keep it synchronised with an external source.
+        # We should take 'os.uptime' instead, but its resolution is only 1 second, so not enough for our purposes.
+        # Alas, reading a more accurate uptime in OpenOCD's Tcl is hard.
+
+        add_openocd_cmd "set startTime [clock milliseconds]"
+      fi
+
       printf -v TMP_STR  "flash write_image erase %q %q" "$BIN_FILEPATH" "$FLASH_ADDR"
       add_openocd_cmd "$TMP_STR"
+
+      if $MEASURE_TIME; then
+        add_openocd_cmd "set elapsedMs [ expr { [clock milliseconds] - \$startTime } ]"
+        add_openocd_cmd "echo [ format \"Flashed in %d,%03d s at %d kB/s.\" [expr { \$elapsedMs / 1000 }]  [expr { \$elapsedMs % 1000 }]  [expr { \$fileSize / \$elapsedMs }] ]"
+      fi
+
 
       if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
         add_openocd_cmd_echo "Keeping a copy of programmed file \"$BIN_FILEPATH\" at \"$CACHED_PROGRAMMED_FILE_FILENAME\" ..."
