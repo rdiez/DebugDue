@@ -337,6 +337,7 @@ Step 2, build operations:
 Step 3, program operations:
   --program-over-jtag  Transfers the firmware over JTAG to the target device.
   --program-with-bossac  Transfers the firmware with 'bossac' to the target device.
+  --verify  After programming, verify that the firmware was written correctly.
   --cache-programmed-file  Programming a new binary takes time. If the binary has not
                            changed, this option skips programming.
                            Warning: This assumes exclusive access to a single device.
@@ -591,6 +592,8 @@ process_command_line_argument ()
         ;;
 
     clean) CLEAN_SPECIFIED=true;;
+
+    verify) VERIFY_SPECIFIED=true;;
 
     enable-configure-cache) ENABLE_CONFIGURE_CACHE_SPECIFIED=true;;
 
@@ -1034,7 +1037,7 @@ do_bossac ()
 
   # If you suspect your target is not getting flashed correctly, you can
   # turn verification on. It is normally disabled because it takes a long time.
-  if false; then
+  if $VERIFY_SPECIFIED; then
     quote_and_append_args CMD "--verify"
   fi
 
@@ -1595,6 +1598,16 @@ do_program_and_debug ()
         add_openocd_cmd "echo [ format \"Flashed in %d,%03d s at %d kB/s.\" [expr { \$elapsedMs / 1000 }]  [expr { \$elapsedMs % 1000 }]  [expr { \$fileSize / \$elapsedMs }] ]"
       fi
 
+      if $VERIFY_SPECIFIED; then
+
+        add_openocd_cmd_echo "Verifying file \"$BIN_FILEPATH\" at addr $FLASH_ADDR..."
+
+        # Both 'verify_image' and 'verify_image_checksum' take a while to run, depending on the CPU frequency.
+        # They both take the same time, at least when the verification succeeds (which should always be the case).
+        printf -v TMP_STR  "verify_image %q %q" "$BIN_FILEPATH" "$FLASH_ADDR"
+        add_openocd_cmd "$TMP_STR"
+
+      fi
 
       if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
         add_openocd_cmd_echo "Keeping a copy of programmed file \"$BIN_FILEPATH\" at \"$CACHED_PROGRAMMED_FILE_FILENAME\" ..."
@@ -1774,6 +1787,7 @@ USER_LONG_OPTIONS_SPEC+=( [install]=0 )
 USER_LONG_OPTIONS_SPEC+=( [disassemble]=0 )
 USER_LONG_OPTIONS_SPEC+=( [program-over-jtag]=0 )
 USER_LONG_OPTIONS_SPEC+=( [program-with-bossac]=0 )
+USER_LONG_OPTIONS_SPEC+=( [verify]=0 )
 USER_LONG_OPTIONS_SPEC+=( [cache-programmed-file]=0 )
 USER_LONG_OPTIONS_SPEC+=( [debug]=0 )
 USER_LONG_OPTIONS_SPEC+=( [debug-from-the-start]=0 )
@@ -1793,6 +1807,7 @@ USER_LONG_OPTIONS_SPEC+=( [debug-adapter]=1 )
 
 
 CLEAN_SPECIFIED=false
+VERIFY_SPECIFIED=false
 ENABLE_CONFIGURE_CACHE_SPECIFIED=false
 CONFIGURE_CACHE_FILENAME=""
 BUILD_SPECIFIED=false
@@ -1889,6 +1904,10 @@ BIN_FILEPATH="$PROJECT_OBJ_DIR/$BIN_FILENAME.bin"
 ELF_FILEPATH="$PROJECT_OBJ_DIR/$BIN_FILENAME.elf"
 
 OPENOCD_CONFIG_DIR="$JTAGDUE_ROOT_DIR/OpenOCD/SecondArduinoDueAsTarget"
+
+if $VERIFY_SPECIFIED && ! $PROGRAM_OVER_JTAG_SPECIFIED && ! $PROGRAM_WITH_BOSSAC_SPECIFIED ; then
+  abort "Option '--verify' specified, but no programming operation requested."
+fi
 
 
 # ---------  Step 1: Clean ---------
