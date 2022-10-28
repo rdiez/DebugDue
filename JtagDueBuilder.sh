@@ -21,11 +21,9 @@ user_config ()
   # This setting only matters when using the 'bossac' tool.
   PROGRAMMING_USB_VIRTUAL_SERIAL_PORT="/dev/serial/by-id/usb-Arduino__www.arduino.cc__Arduino_Due_Prog._Port_7523230323535180A120-if00"
 
-  JTAG_ADAPTER="JtagDue"
-  # JTAG_ADAPTER="Flyswatter2"
-  # JTAG_ADAPTER="Olimex-ARM-USB-OCD-H"
+  DEFAULT_DEBUG_ADAPTER="JtagDue"
 
-  # This setting only matters when JTAG_ADAPTER="JtagDue". This is the location of the
+  # This setting only matters for the 'JtagDue' adapter. This is the location of the
   # 'native' USB virtual serial port of the Arduino Due that is acting as a JTAG adapter.
   # OpenOCD will be told that this is where to find the (emulated) Bus Pirate.
   JTAGDUE_SERIAL_PORT="/dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"
@@ -350,6 +348,8 @@ Step 3, program operations:
   --path-to-bossac="path/to/bossac"  The default is "bossac", which only works
                                      if is is on the PATH. Under Ubuntu/Debian,
                                      the package to install is called 'bossa-cli'.
+  --debug-adapter=xxx  What debug adapter to use:
+                       JtagDue, Flyswatter2 or Olimex-ARM-USB-OCD-H.
 
 Step 4, debug operations:
   --debug  Starts the firmware under the debugger (GDB connected to
@@ -668,6 +668,13 @@ process_command_line_argument ()
         fi
         PATH_TO_OPENOCD="$OPTARG"
         ;;
+
+    debug-adapter)
+      if [[ $OPTARG = "" ]]; then
+        abort "Option --debug-adapter has an empty value."
+      fi
+      DEBUG_ADAPTER="$OPTARG"
+      ;;
 
     project)
         PROJECT="$OPTARG"
@@ -1481,7 +1488,7 @@ do_program_and_debug ()
   # Therefore, force localhost-only listening here.
   add_openocd_cmd "bindto localhost"
 
-  case "$JTAG_ADAPTER" in
+  case "$DEBUG_ADAPTER" in
     JtagDue)
       printf -v TMP_STR  "set JTAGDUE_SERIAL_PORT %q"  "$JTAGDUE_SERIAL_PORT"
       add_openocd_cmd "$TMP_STR"
@@ -1493,7 +1500,7 @@ do_program_and_debug ()
     Olimex-ARM-USB-OCD-H)
       quote_and_append_args OPEN_OCD_CMD  "-f" "interface/ftdi/olimex-arm-usb-ocd-h.cfg"
       ;;
-    *) abort "Invalid JTAG_ADAPTER value of \"$JTAG_ADAPTER\"." ;;
+    *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
   esac
 
   quote_and_append_args OPEN_OCD_CMD "-f" "target/at91sam3ax_8x.cfg"
@@ -1502,7 +1509,7 @@ do_program_and_debug ()
 
   # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
   # back to 500 KHz, at least with the Flyswatter2.
-  case "$JTAG_ADAPTER" in
+  case "$DEBUG_ADAPTER" in
 
     JtagDue)
       # The JtagDue software has no speed control yet.
@@ -1535,7 +1542,7 @@ do_program_and_debug ()
       add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
       ;;
 
-    *) abort "Invalid JTAG_ADAPTER value of \"$JTAG_ADAPTER\"." ;;
+    *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
   esac
 
   add_openocd_cmd "init"
@@ -1748,6 +1755,7 @@ BUILD_TYPE="$DEFAULT_BUILD_TYPE"
 DEBUGGER_TYPE="$DEFAULT_DEBUGGER_TYPE"
 PATH_TO_BOSSAC="$DEFAULT_PATH_TO_BOSSAC"
 BUILD_OUTPUT_BASE_DIR="$DEFAULT_BUILD_OUTPUT_BASE_DIR"
+DEBUG_ADAPTER="$DEFAULT_DEBUG_ADAPTER"
 
 
 USER_SHORT_OPTIONS_SPEC=""
@@ -1781,6 +1789,7 @@ USER_LONG_OPTIONS_SPEC+=( [configure-cache-filename]=1 )
 USER_LONG_OPTIONS_SPEC+=( [project]=1 )
 USER_LONG_OPTIONS_SPEC+=( [make-arg]=1 )
 USER_LONG_OPTIONS_SPEC+=( [build-output-base-dir]=1 )
+USER_LONG_OPTIONS_SPEC+=( [debug-adapter]=1 )
 
 
 CLEAN_SPECIFIED=false
