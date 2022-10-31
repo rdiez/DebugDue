@@ -1544,10 +1544,12 @@ do_program_and_debug ()
       #   If the firmware from this project has been programmed already, you can use the maximum speed,
       #   because the firmware increases F_CPU to 84 MHz on start-up before the short pause
       #   for the eventual OpenOCD connection.
-      #   Otherwise, you have to options:
+      #   Otherwise, you have the following options:
       #   - Lower the speed to to 666 kHz, which makes programming and debugging slow.
       #   - Program a first firmware version with tool 'bossac', which does the programming with the help of
       #     the small ATmega16U2 AVR microcontroller next to the main Atmel SAM9XE microcontroller.
+      #   - Implement some clever OpenOCD logic (in Jim Tcl, triggered from this script) in order
+      #     to check the current CPU speed and increase the debug adapter speed accordingly.
       #
       #   High speeds may not be reliable, especially if you use non-professional cables.
       #   You can use command-line option '--verify' (at the cost of a short extra delay)
