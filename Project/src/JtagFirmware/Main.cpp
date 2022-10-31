@@ -188,6 +188,8 @@ static void Configure ( void )
   }
   else
   {
+    // The watchdog is enabled on start-up, so we need to disable it
+    // if we won't be using it.
     WDT->WDT_MR = WDT_MR_WDDIS;
   }
 }

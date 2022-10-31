@@ -170,6 +170,10 @@ void BareMetalSupport_Reset_Handler ( void )
     // breakpoints somewhere during the initialisation code, then you can disable this busy wait.
     if ( true )
     {
+      // The watchdog is enabled by default. It runs off the slow clock (32 kHz or 32.768 kHz,
+      // depending on where you look in the documentation), divided by 128.
+      // The initial counter is 4095. That means a timeout of 16 seconds.
+      // So the pause here cannot be too long. But we normally wait well under a second.
       const unsigned BUSY_WAIT_LOOP_US = 120 * 1000;
       BusyWaitLoop( GetBusyWaitLoopIterationCountFromUs( BUSY_WAIT_LOOP_US ) );
     }
