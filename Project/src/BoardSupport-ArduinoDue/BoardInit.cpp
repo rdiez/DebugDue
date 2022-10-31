@@ -174,6 +174,11 @@ void BareMetalSupport_Reset_Handler ( void )
       // depending on where you look in the documentation), divided by 128.
       // The initial counter is 4095. That means a timeout of 16 seconds.
       // So the pause here cannot be too long. But we normally wait well under a second.
+      //
+      // Do not specify a wait value > 150 ms, because that will trigger an early-warning
+      // integer overflow assert in the calculations below, and it is too early for asserts.
+      // If you need a longer pause, write a loop below, or write a new routine
+      // that can wait longer without risking an integer overflow.
       const unsigned BUSY_WAIT_LOOP_US = 120 * 1000;
       BusyWaitLoop( GetBusyWaitLoopIterationCountFromUs( BUSY_WAIT_LOOP_US ) );
     }
