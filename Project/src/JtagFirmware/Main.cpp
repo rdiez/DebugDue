@@ -71,9 +71,15 @@ static void Configure ( void )
 
   InitSerialPortAsyncTx( EOL );
 
-  // Print this msg only on serial port, and not on USB port:
-  SerialPrintf( "--- JtagDue %s ---" EOL, PACKAGE_VERSION );
-  SerialPrintStr( "Welcome to the Arduino Due's programming USB serial port." EOL );
+  // Print the following message only the on serial port, and not on the USB port.
+  //
+  // The first EOLs help delimit any old content on the console
+  // from the new firmware restart.
+  SerialPrintf( EOL
+                EOL
+                "--- JtagDue %s ---" EOL
+                "Welcome to the Arduino Due's programming USB serial port." EOL,
+                PACKAGE_VERSION );
 
   SetUserPanicMsgFunction( &PrintPanicMsg );
 
