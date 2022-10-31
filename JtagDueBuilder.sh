@@ -1534,7 +1534,26 @@ do_program_and_debug ()
       #   I guess that Cortex-M3 does not have it either.
       #
       #  The JTAG connector on the Arduino Due, a 10-Pin Cortex Debug Connector, does not have a RTCK/RCLK pin.
-      add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
+      #
+      # About the connection speed:
+      #
+      #   The maximum JTAG speed for this kind of chip is F_CPU/6. If the CPU is running at the normal speed of 84 MHz,
+      #   the maximum JTAG clock would be 14 MHz then. Note however that the SAM3X starts at 4 MHz upon reset,
+      #   so that maximum speed is 666 kHz.
+      #
+      #   If the firmware from this project has been programmed already, you can use the maximum speed,
+      #   because the firmware increases F_CPU to 84 MHz on start-up before the short pause
+      #   for the eventual OpenOCD connection.
+      #   Otherwise, you have to options:
+      #   - Lower the speed to to 666 kHz, which makes programming and debugging slow.
+      #   - Program a first firmware version with tool 'bossac', which does the programming with the help of
+      #     the small ATmega16U2 AVR microcontroller next to the main Atmel SAM9XE microcontroller.
+      #
+      #   High speeds may not be reliable, especially if you use non-professional cables.
+      #   You can use command-line option '--verify' (at the cost of a short extra delay)
+      #   to make sure that you can trust your setup.
+      #   Speeds over 10 MHz do not really bring any advantage, as the Flash memory becomes then the bottleneck.
+      add_openocd_cmd "adapter_khz 10000"
 
       # Explicitly select JTAG, just in case.
       add_openocd_cmd "transport select jtag"
@@ -1542,7 +1561,8 @@ do_program_and_debug ()
 
     Flyswatter2)
       # Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
-      add_openocd_cmd "adapter_khz 10000"  # It looks like 15 and even 20 MHz works too, but the speed difference with GDB 'load' is very small.
+      # See the notes above in the Olimex-ARM-USB-OCD-H section for more information about the debug adapter speed.
+      add_openocd_cmd "adapter_khz 10000"
       ;;
 
     *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
