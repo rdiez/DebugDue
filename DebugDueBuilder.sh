@@ -40,7 +40,7 @@ user_config ()
 
 
 VERSION_NUMBER="1.06"
-SCRIPT_NAME="Builder.sh"
+declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
 
 declare -r EXIT_CODE_SUCCESS=0
 declare -r EXIT_CODE_ERROR=1
