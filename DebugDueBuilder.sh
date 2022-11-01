@@ -39,7 +39,6 @@ user_config ()
 }
 
 
-VERSION_NUMBER="1.06"
 declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
 
 declare -r EXIT_CODE_SUCCESS=0
@@ -271,8 +270,7 @@ display_help ()
 {
 cat - <<EOF
 
-$SCRIPT_NAME version $VERSION_NUMBER
-Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3
+$SCRIPT_NAME - Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3
 
 Overview:
 
@@ -284,7 +282,6 @@ Syntax:
 
 Information switches:
  --help     Displays this help text.
- --version  Displays the tool's version number (currently $VERSION_NUMBER).
  --license  Prints license information.
 
 All steps below are optional. The step number gives the order in which
@@ -580,10 +577,6 @@ process_command_line_argument ()
   case "$OPTION_NAME" in
     help)
         display_help
-        exit $EXIT_CODE_SUCCESS
-        ;;
-    version)
-        echo "$VERSION_NUMBER"
         exit $EXIT_CODE_SUCCESS
         ;;
     license)
