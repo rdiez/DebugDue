@@ -93,10 +93,10 @@ static void UsbConnectionLost ( void )
   // should be automatically discarded.
   //
   // Another way to generate stale data is with this bash command:
-  //     printf "help\r">/dev/jtagdue1
-  // The next time you connect to /dev/jtagdue1 you will get the help text,
+  //     printf "help\r">/dev/debugdue1
+  // The next time you connect to /dev/debugdue1 you will get the help text,
   // you can test it with this bash command:
-  //     cat /dev/jtagdue1
+  //     cat /dev/debugdue1
 
   if ( false )
   {

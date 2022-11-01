@@ -1,5 +1,5 @@
 
-# Copyright (C) 2012-2017 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2012-2017 R. Diez - see the DebugDue project for licensing information.
 
 AUTOMAKE_OPTIONS := foreign subdir-objects
 

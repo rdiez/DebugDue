@@ -11,7 +11,7 @@ set -o pipefail
 
 user_config ()
 {
-  DEFAULT_TOOLCHAIN_DIR="$HOME/SomeDir/JtagDueToolchain"
+  DEFAULT_TOOLCHAIN_DIR="$HOME/SomeDir/DebugDueToolchain"
 
   DEFAULT_PATH_TO_OPENOCD="$HOME/SomeDir/openocd-0.10.0-bin/bin/openocd"
 
@@ -21,14 +21,14 @@ user_config ()
   # This setting only matters when using the 'bossac' tool.
   PROGRAMMING_USB_VIRTUAL_SERIAL_PORT="/dev/serial/by-id/usb-Arduino__www.arduino.cc__Arduino_Due_Prog._Port_7523230323535180A120-if00"
 
-  DEFAULT_DEBUG_ADAPTER="JtagDue"
+  DEFAULT_DEBUG_ADAPTER="DebugDue"
 
-  # This setting only matters for the 'JtagDue' adapter. This is the location of the
+  # This setting only matters for the 'DebugDue' adapter. This is the location of the
   # 'native' USB virtual serial port of the Arduino Due that is acting as a JTAG adapter.
   # OpenOCD will be told that this is where to find the (emulated) Bus Pirate.
-  JTAGDUE_SERIAL_PORT="/dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"
+  DEBUGDUE_SERIAL_PORT="/dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_DebugDue1-if00"
 
-  DEFAULT_PROJECT="JtagDue"
+  DEFAULT_PROJECT="DebugDue"
 
   DEFAULT_BUILD_TYPE="debug"
 
@@ -40,7 +40,7 @@ user_config ()
 
 
 VERSION_NUMBER="1.06"
-SCRIPT_NAME="JtagDueBuilder.sh"
+SCRIPT_NAME="Builder.sh"
 
 declare -r EXIT_CODE_SUCCESS=0
 declare -r EXIT_CODE_ERROR=1
@@ -276,7 +276,7 @@ Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3
 
 Overview:
 
-This script builds/runs/etc. the JtagDue project. You would normally run
+This script builds/runs/etc. the DebugDue project. You would normally run
 the script from your development environment (Emacs, Vim, Eclipse, ...).
 
 Syntax:
@@ -350,7 +350,7 @@ Step 3, program operations:
                                      if is is on the PATH. Under Ubuntu/Debian,
                                      the package to install is called 'bossa-cli'.
   --debug-adapter=xxx  What debug adapter to use:
-                       JtagDue, Flyswatter2 or Olimex-ARM-USB-OCD-H.
+                       DebugDue, Flyswatter2 or Olimex-ARM-USB-OCD-H.
 
 Step 4, debug operations:
   --debug  Starts the firmware under the debugger (GDB connected to
@@ -362,7 +362,7 @@ Step 4, debug operations:
   --openocd-path="openocd-0.10.0/bin/openocd"  Path to the OpenOCD executable.
 
 Global options:
-  --project="<project name>"  Specify 'JtagDue' (the default), 'EmptyFirmware' or 'QemuFirmware'.
+  --project="<project name>"  Specify 'DebugDue' (the default), 'EmptyFirmware' or 'QemuFirmware'.
   --toolchain-dir="<path>"
   --build-type="<type>"  Build types are "debug" and "release".
 
@@ -1464,7 +1464,7 @@ check_open_ocd_version ()
 
   echo "OpenOCD version found: $OPENOCD_VERSION_NUMBER_FOUND"
 
-  declare -r CHECK_VERSION_TOOL="$JTAGDUE_ROOT_DIR/Tools/CheckVersion.sh"
+  declare -r CHECK_VERSION_TOOL="$DEBUGDUE_ROOT_DIR/Tools/CheckVersion.sh"
 
   "$CHECK_VERSION_TOOL" "OpenOCD" "$OPENOCD_VERSION_NUMBER_FOUND" ">=" "$OPENOCD_MINIMUM_VERSION"
 }
@@ -1492,10 +1492,10 @@ do_program_and_debug ()
   add_openocd_cmd "bindto localhost"
 
   case "$DEBUG_ADAPTER" in
-    JtagDue)
-      printf -v TMP_STR  "set JTAGDUE_SERIAL_PORT %q"  "$JTAGDUE_SERIAL_PORT"
+    DebugDue)
+      printf -v TMP_STR  "set DEBUGDUE_SERIAL_PORT %q"  "$DEBUGDUE_SERIAL_PORT"
       add_openocd_cmd "$TMP_STR"
-      quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/JtagDueInterfaceConfig.cfg"
+      quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/DebugDueInterfaceConfig.cfg"
       ;;
     Flyswatter2)
       quote_and_append_args OPEN_OCD_CMD  "-f" "interface/ftdi/flyswatter2.cfg"
@@ -1514,8 +1514,8 @@ do_program_and_debug ()
   # back to 500 KHz, at least with the Flyswatter2.
   case "$DEBUG_ADAPTER" in
 
-    JtagDue)
-      # The JtagDue software has no speed control yet.
+    DebugDue)
+      # The DebugDue software has no speed control yet.
       ;;
 
     Olimex-ARM-USB-OCD-H)
@@ -1868,8 +1868,8 @@ check_only_one "Only one build operation can be specified." $BUILD_SPECIFIED $IN
 
 check_only_one "Only one program operation can be specified." $PROGRAM_OVER_JTAG_SPECIFIED $PROGRAM_WITH_BOSSAC_SPECIFIED
 
-JTAGDUE_ROOT_DIR="$(readlink --verbose --canonicalize -- "$PWD")"
-PROJECT_SRC_DIR="$JTAGDUE_ROOT_DIR/Project"
+DEBUGDUE_ROOT_DIR="$(readlink --verbose --canonicalize -- "$PWD")"
+PROJECT_SRC_DIR="$DEBUGDUE_ROOT_DIR/Project"
 
 case "${BUILD_TYPE}" in
   debug)   PROJECT_OBJ_DIR_SUFFIX="debug"   ;;
@@ -1881,7 +1881,7 @@ esac
 PROJECT_NAME_LOWERCASE="${PROJECT,,}"
 
 case "${PROJECT_NAME_LOWERCASE}" in
-  jtagdue)       PROJECT_NAME="JtagDue" ;;
+  debugdue)       PROJECT_NAME="DebugDue" ;;
   emptyfirmware) PROJECT_NAME="EmptyFirmware" ;;
   qemufirmware) PROJECT_NAME="QemuFirmware" ;;
   *) abort "Invalid project name \"$PROJECT\"." ;;
@@ -1925,7 +1925,7 @@ BIN_FILENAME="firmware"
 BIN_FILEPATH="$PROJECT_OBJ_DIR/$BIN_FILENAME.bin"
 ELF_FILEPATH="$PROJECT_OBJ_DIR/$BIN_FILENAME.elf"
 
-OPENOCD_CONFIG_DIR="$JTAGDUE_ROOT_DIR/OpenOCD/SecondArduinoDueAsTarget"
+OPENOCD_CONFIG_DIR="$DEBUGDUE_ROOT_DIR/OpenOCD/SecondArduinoDueAsTarget"
 
 if $VERIFY_SPECIFIED && ! $PROGRAM_OVER_JTAG_SPECIFIED && ! $PROGRAM_WITH_BOSSAC_SPECIFIED ; then
   abort "Option '--verify' specified, but no programming operation requested."

@@ -63,7 +63,7 @@
 //! USB Device string definitions (Optional)
 #define  USB_DEVICE_MANUFACTURE_NAME      "Arduino Due"
 #define  USB_DEVICE_PRODUCT_NAME          "JTAG Adapter"
-#define  USB_DEVICE_SERIAL_NAME           "JtagDue1"
+#define  USB_DEVICE_SERIAL_NAME           "DebugDue1"
 
 #define  USB_DEVICE_HS_SUPPORT
 

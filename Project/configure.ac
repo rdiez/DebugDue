@@ -1,12 +1,12 @@
 
-# Copyright (C) 2012-2021 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2012-2021 R. Diez - see the DebugDue project for licensing information.
 
 # By default, if you change the firmware version number below, the next 'make' invocation
 # will rebuild the 'configure' script. This script will have the updated version number
 # in the PACKAGE_VERSION variable. All makefiles will automatically get rebuilt,
 # but despite this, the sources will not be recompiled.
 # I tried the "maintainer mode" (AM_MAINTAINER_MODE), but that did not help.
-AC_INIT([JtagDue],[1.1.6])
+AC_INIT([DebugDue],[1.1.7])
 AC_PREREQ([2.69])  # Anything older may not work properly.
 
 # Place auxiliary files in a subdirectory in order to reduce clutter in the top-level project directory.
@@ -318,7 +318,7 @@ case "$PROJECT_NAME_LOWERCASE" in
   qemufirmware)  IS_QEMU_FIRMWARE=true
                  BOARD_SUPPORT_DIR="BoardSupport-LM3S6965EVB"
                  ;;
-  jtagdue)       IS_JTAG_DUE=true
+  debugdue)      IS_JTAG_DUE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
                  NEEDS_BARE_METAL=true
                  NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
@@ -503,7 +503,7 @@ if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
   # Linux needs no drivers, all CDC interfaces are automatically recognised.
   # I have heard that composite devices are not supported on Mac OS, but I don't really know.
   #
-  # The JtagDue Firmware does not use a composite device, but defines a single CDC device,
+  # The DebugDue Firmware does not use a composite device, but defines a single CDC device,
   # so that the standard Arduino Due INF driver does not work even if you use the same PID.
   #
   # Therefore, I have chosen a different PID of 0x1234. You can choose your own,

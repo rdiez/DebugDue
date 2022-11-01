@@ -77,7 +77,7 @@ static void Configure ( void )
   // from the new firmware restart.
   SerialPrintf( EOL
                 EOL
-                "--- JtagDue %s ---" EOL
+                "--- DebugDue %s ---" EOL
                 "Welcome to the Arduino Due's programming USB serial port." EOL,
                 PACKAGE_VERSION );
 

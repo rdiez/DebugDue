@@ -262,23 +262,23 @@ you'll realise that many of the test binaries are built with this flag.
 
 The toolchain builder makefile does not support building a multilib toolchain. You will need a separate toolchain for each CPU type you need (one for Cortex-M0, one for Cortex-M4F, and so on).
 
-=head1 JtagDue Fimware
+=head1 DebugDue Fimware
 
 This firmware converts the Arduino Due into a JTAG adapter. It is similar to the Bus Pirate when used as a JTAG adapter.
 
 The Arduino Due has a faster USB port and a faster CPU, so it can easily outperform the Bus Pirate.
 
-I made a quick test, and GDB's 'load' command reports a transfer rate of 24 KiB/s with the JtagDue firmware (release build)
-when programming a second JtagDue board, compared to 8 KiB/s with the Bus Pirate. When programming an STM32429I-EVAL1 evaluation board,
+I made a quick test, and GDB's 'load' command reports a transfer rate of 24 KiB/s with the DebugDue firmware (release build)
+when programming a second Arduino Due board, compared to 8 KiB/s with the Bus Pirate. When programming an STM32429I-EVAL1 evaluation board,
 which has an STM32F429 microcontroller, GDB reports 31 KiB/s compared to 24 KiB/s with its built-in SWD adapter,
 and I have obtained rates of around 84 KiB/s with an Atmel AT91SAM9G20-EK board when writing to SDRAM instead of Flash.
 
 Note that I had to manually patch OpenOCD version 0.8.0 as of May 2013 in order
 for setting "buspirate_speed fast" to work with the Bus Pirate board, otherwise you have to revert back to "buspirate_speed normal",
 and then you get just 1 KiB/s when using the Bus Pirate as a JTAG adapter. This should no longer be necessary for OpenOCD 0.9.0.
-If you modify OpenOCD in order to use bigger USB packets, you can reach slightly higher speeds with the JtagDue.
+If you modify OpenOCD in order to use bigger USB packets, you can reach slightly higher speeds with the DebugDue.
 
-There are some caveats when using the Arduino Due with the JtagDue firmware as a JTAG adapter:
+There are some caveats when using the Arduino Due with the DebugDue firmware as a JTAG adapter:
 
 =over
 
@@ -354,7 +354,7 @@ without any hardware whatsoever. There is no programming (flashing) time, the fi
 
 =head2 Installing a Binary File
 
-Pre-built binary files for the Arduino Due are available in a separate repository at S<< L<< https://github.com/rdiez/JtagDueBinaries >> . >>
+Pre-built binary files for the Arduino Due are available in a separate repository at S<< L<< https://github.com/rdiez/DebugDueBinaries >> . >>
 These binaries can be flashed with the standard Arduino Due tools. Jump straight to section "Flash the new firmware" below
 in order to flash a pre-built binary file.
 
@@ -425,11 +425,11 @@ by verifying that this command works:
 
   mkdir obj
   cd obj
-  ../Project/configure --prefix=/some/bin/directory --with-project="JtagDue" --host="arm-none-eabi" --with-target-arch="arm-none-eabi" --with-atmel-software-framework=<directory where the ASF is>
+  ../Project/configure --prefix=/some/bin/directory --with-project="DebugDue" --host="arm-none-eabi" --with-target-arch="arm-none-eabi" --with-atmel-software-framework=<directory where the ASF is>
   make  --no-builtin-rules  -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
   make install
 
-The binaries files land in the prefix directory you specified, inside a subdirectory called S<< F<< share >> . >> Look for files F<< jtagdue.bin >> and S<< F<< emptydue.bin >> . >>
+The binaries files land in the prefix directory you specified, inside a subdirectory called S<< F<< share >> . >> Look for files F<< debugdue.bin >> and S<< F<< emptydue.bin >> . >>
 
 =back
 
@@ -456,7 +456,7 @@ Plug the USB cable into the Arduino Due's "native" USB socket (as opposed to the
 
 If you are running Windows, you will be prompted the first time to install a driver for the new device,
 just point it to the "WindowsDriver" subdirectory. The .INF file in that subdirectory is actually just
-a special text file that associates JtagDue's USB IDs to Windows' own USB CDC driver,
+a special text file that associates DebugDue's USB IDs to Windows' own USB CDC driver,
 so that a standard "COMx" virtual serial port is automatically created upon connection.
 Unfortunately, you cannot choose a fixed serial port number (the "x" in the name), so that
 it will change from time to time depending on how many virtual serial ports currently exist
@@ -465,7 +465,7 @@ on the system.
 Linux and Mac OS do no need any drivers. On linux, a new virtual serial port device
 is automatically created with a name like "/dev/ttyACM0", just look for the right device name
 under the "/dev" directory. On Linux, the system automatically creates a symbolic link
-like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00 >>C< >, see further below for more information.
+like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_DebugDue1-if00 >>C< >, see further below for more information.
 
 Now you should be able to connect to the virtual serial port with your favorite serial port console emulator.
 
@@ -478,21 +478,21 @@ On Windows, you can use Putty like this:
 
   putty -serial COM8
 
-The JtagDue firmware does not implement the usual command-line editing comfort features yet, like
+The DebugDue firmware does not implement the usual command-line editing comfort features yet, like
 command history and all the standard cursor key movements.
 
 Due to a protocol limitation, there is no welcome banner. Press the Enter key at least once
 to see the cursor ('E<lt>'), or type "help" for a list of available commands.
 
-=item 6) Find a way to address the JtagDue USB virtual serial port comfortably.
+=item 6) Find a way to address the DebugDue USB virtual serial port comfortably.
 
 When you connect the Arduino Due to your Linux PC, you will get a new virtual serial port like
 /dev/ttyACM0 or /dev/ttyACM1, depending on how many serial ports currently exist on the system.
 If you wish to write your own scripts to automate JTAG tasks,
 it is desirable that the assigned device name is always the same.
 
-The easiest way is to look under F<< /dev/serial/by-id >>. Normally, when running the JtagDue
-firmware, you will automatically get a link like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00 >>,
+The easiest way is to look under F<< /dev/serial/by-id >>. Normally, when running the DebugDue
+firmware, you will automatically get a link like F<< /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_DebugDue1-if00 >>,
 but the exact name may be different on your system. This link will stay the same even if you
 connect the Arduino Due to another USB port. Alternatively, you could use script
 L<< FindUsbSerialPort.sh|https://github.com/rdiez/Tools/tree/master/FindUsbSerialPort >>C< >.
@@ -502,15 +502,15 @@ F<< /dev/serial/by-path >>.
 
 On many Linux systems, normal users do not have enough permissions to access USB virtual serial ports.
 In order to allow all users to access such ports, you will have to create a Linux I<< udev >> rule.
-You can also specify a fixed name for a device, in order to get the same "/dev/jtagdue1"
-filename every time you connect your JtagDue-running Arduino Due.
+You can also specify a fixed name for a device, in order to get the same "/dev/debugdue1"
+filename every time you connect your DebugDue-running Arduino Due.
 
-The JtagDue firmware uses the standard Arduino Due Vendor ID, but uses a Device ID of 0x1234
-(you can change it when configuring the build). It also reports a serial number of "JtagDue1".
-In order to get a fixed "/dev/jtagdue1" device name,
-create a new file called /etc/udev/rules.d/47-JtagDue.rules (as root) with the following content:
+The DebugDue firmware uses the standard Arduino Due Vendor ID, but uses a Device ID of 0x1234
+(you can change it when configuring the build). It also reports a serial number of "DebugDue1".
+In order to get a fixed "/dev/debugdue1" device name,
+create a new file called /etc/udev/rules.d/47-DebugDue.rules (as root) with the following content:
 
-  SUBSYSTEM=="tty" ATTRS{idVendor}=="2341" ATTRS{idProduct}=="1234" ATTRS{serial}=="JtagDue1" MODE="0666" SYMLINK+="jtagdue1"
+  SUBSYSTEM=="tty" ATTRS{idVendor}=="2341" ATTRS{idProduct}=="1234" ATTRS{serial}=="DebugDue1" MODE="0666" SYMLINK+="debugdue1"
 
 You can also add an entry for the standard Arduino Due "programming" USB port. For example:
 
@@ -521,8 +521,8 @@ Restarting udev with "sudo restart udev" should not be necessary for the new rul
 Theoretically, you can add a GROUP="some_group" option in order to restrict access to a particular user group,
 but I could not make it work on my system.
 
-The next time you plug the Arduino Due, if it is running the JtagDue firmware, an entry like /dev/ttyACM1
-will still be created, but there will also be a /dev/jtagdue1 link pointing to the right one.
+The next time you plug the Arduino Due, if it is running the DebugDue firmware, an entry like /dev/ttyACM1
+will still be created, but there will also be a /dev/debugdue1 link pointing to the right one.
 
 If you are using the second example rule, you will not get a user-defined link, but the automatically-created links
 under F<< /dev/serial/by-id >> and so on should now work for any user account.
@@ -556,7 +556,7 @@ so the VCC, GND1 and GND2 signals are _not_ used as reference voltages when driv
 You need to make sure beforehand that the voltage levels are the same on both the Arduino Due and
 the JTAG target board.
 
-=item 8) Connect to the JtagDue with OpenOCD.
+=item 8) Connect to the DebugDue with OpenOCD.
 
 First of all, you may need to build OpenOCD with support for the Bus Pirate.
 
@@ -577,7 +577,7 @@ Build OpenOCD. For example:
   make --output-sync=recurse  -j $(( $(getconf _NPROCESSORS_ONLN) + 1 ))
   make install-strip
 
-You will need to disconnect the command console from the JtagDue's USB virtual serial port beforehand, if you have it open.
+You will need to disconnect the command console from the DebugDue's USB virtual serial port beforehand, if you have it open.
 
 I have tested these instructions with OpenOCD version 0.8.0. Configure OpenOCD as if your JTAG adapter were a Bus Pirate, but bear in mind that:
 
@@ -596,7 +596,7 @@ to be of any use. On my dodgy test set-up, and once looked at TCK with the oscil
 and the rising edges were very long curves, the speed was not enough to run reliably
 at as low as 24 KHz.
 
-=item * If you set option 'buspirate_mode' to 'open-drain', JtagDue will use the Atmel ATSAM3X8's "Multi Drive Control" (Open Drain) mode.
+=item * If you set option 'buspirate_mode' to 'open-drain', DebugDue will use the Atmel ATSAM3X8's "Multi Drive Control" (Open Drain) mode.
 
 Therefore, you need to enable the internal pull-ups (which are probably too weak, see above)
 or have external ones in order to guarantee a high level on the lines when necessary.
@@ -612,8 +612,8 @@ From this point on, follow the standard OpenOCD instructions in order to connect
 If you are connecting to a second Arduino Due target, check out the files under S<< F<< OpenOCD/SecondArduinoDueAsTarget/ >> . >>
 You should be able to connect to it with a command like this:
 
-  cd <JtagDue root dir where this README file is>
-  openocd  --command "set JTAGDUE_SERIAL_PORT /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_JtagDue1-if00"  -f "OpenOCD/SecondArduinoDueAsTarget/JtagDueInterfaceConfig.cfg"  -f "target/at91sam3ax_8x.cfg"  -f "OpenOCD/SecondArduinoDueAsTarget/OpenOCDJtagConfig.cfg"
+  cd <DebugDue root dir where this README file is>
+  openocd  --command "set DEBUGDUE_SERIAL_PORT /dev/serial/by-id/usb-Arduino_Due_JTAG_Adapter_DebugDue1-if00"  -f "OpenOCD/SecondArduinoDueAsTarget/DebugDueInterfaceConfig.cfg"  -f "target/at91sam3ax_8x.cfg"  -f "OpenOCD/SecondArduinoDueAsTarget/OpenOCDJtagConfig.cfg"
 
 If there are no errors, you should see at the bottom the following output:
 
@@ -627,7 +627,7 @@ Press Ctrl+C to quit OpenOCD at this point.
 
 You may find it difficult to control your second Arduino Due over JTAG if it is not running the right kind of firmware.
 The reason is that, if the CPU is sleeping or not running at a high-enough frequency, the JTAG connection will not work well.
-Note also that the JtagDue firmware does not support adaptive JTAG clocking, which could help in this situation.
+Note also that the DebugDue firmware does not support adaptive JTAG clocking, which could help in this situation.
 If you hold the ERASE button for at least 220 ms on the target Arduino Due, you will experience this issue.
 OpenOCD will detect the JTAG chain correctly, but you will get errors like this if you try to connect over OpenOCD/JTAG with GDB:
 
@@ -636,7 +636,7 @@ OpenOCD will detect the JTAG chain correctly, but you will get errors like this 
 After this error, any OpenOCD command like I<< step >> is likely to fail with an error such as "target not halted".
 
 The easiest way to overcome this problem is to flash the "EmptyFirmware" project (file F<< emptydue.bin >>) with I<< Bossac >>, see above for details.
-The EmptyFirmware, like the full JtagDue project, ramps up the CPU speed at the very beginning and then makes a short "busy" pause (without sleeping).
+The EmptyFirmware, like the full DebugDue project, ramps up the CPU speed at the very beginning and then makes a short "busy" pause (without sleeping).
 This way, OpenOCD stands a good chance of connecting over JTAG right after resetting the board and stopping the CPU
 before the firmware runs too far away. The very early pause location enables you to debug comfortably most of the firmware initialisation sequence.
 You should use the same technique in your own firmware, or it will be hard (or maybe downright impossible) to debug it over JTAG.
@@ -651,12 +651,12 @@ You can test it as follows:
 
 If everything works correctly, you should see a new console window asking you to press the ENTER key.
 
-Then edit script F<< JtagDueBuilder.sh >>, which lives next to this README file is. If you are programming a second Arduino Due over JTAG,
+Then edit script F<< DebugDueBuilder.sh >>, which lives next to this README file is. If you are programming a second Arduino Due over JTAG,
 you will have to make minimal modifications to routine I<< user_config() >>. For other targets, you will have to make more amendments.
 
 Try the modified script out with the following command:
 
-  ./JtagDueBuilder.sh --project=JtagDue --clean --build --program-over-jtag --debug
+  ./DebugDueBuilder.sh --project=DebugDue --clean --build --program-over-jtag --debug
 
 That should build the firmware from scratch, send it to the target device and start debugging it.
 
@@ -665,10 +665,10 @@ In the GDB window, press Ctrl+C to halt the firmware. You can then use commands 
 The idea is that, no matter what development environment you are using (Emacs, Vim, Eclipse, ...),
 you should configure the usual compile/run/etc. keys to run the script with different arguments. For example:
 
- F7 (compile):          ./JtagDueBuilder.sh --project=JtagDue --build
- F5 (run)    :          ./JtagDueBuilder.sh --project=JtagDue --build --program-over-jtag --debug --debugger-type=ddd --cache-programmed-file
- Ctrl+Alt+F7 (rebuild): ./JtagDueBuilder.sh --project=JtagDue --clean --build
- Ctrl+R (run to line):  ./JtagDueBuilder.sh --project=JtagDue --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123" --cache-programmed-file
+ F7 (compile):          ./DebugDueBuilder.sh --project=DebugDue --build
+ F5 (run)    :          ./DebugDueBuilder.sh --project=DebugDue --build --program-over-jtag --debug --debugger-type=ddd --cache-programmed-file
+ Ctrl+Alt+F7 (rebuild): ./DebugDueBuilder.sh --project=DebugDue --clean --build
+ Ctrl+R (run to line):  ./DebugDueBuilder.sh --project=DebugDue --build --program-over-jtag --debug --add-breakpoint="Main.cpp:123" --cache-programmed-file
 
 This way, you will not have to type any console commands in order to run or debug your firmware.
 You will not get the full comfort you are used to when writing standard PC applications,
@@ -695,7 +695,7 @@ on reconstruct the call stack, if the .elf file with debug information is availa
 
 =head1 Changelog
 
-This changelog only covers the released binary files for the JtagDue firmware.
+This changelog only covers the released binary files for the DebugDue firmware.
 Sources are updated more frequently.
 
 =over
@@ -710,7 +710,7 @@ Sources are updated more frequently.
 
 Please send feedback to rdiezmail-arduino at yahoo.de
 
-The project's official web site is L<< https://github.com/rdiez/JtagDue >>
+The project's official web site is L<< https://github.com/rdiez/DebugDue >>
 
 =head1 License
 

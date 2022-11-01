@@ -261,9 +261,9 @@ void CCommandProcessor::ProcessUsbSpeedTestCmd ( const char * const paramBegin,
 {
   // Examples about how to automate the speed test from the bash command line:
   //   Tests where the Arduino Due is sending:
-  //     echo "UsbSpeedTest TxFastLoopRawUsb" | socat - /dev/jtagdue1,b115200,raw,echo=0,crnl | pv -pertb >/dev/null
+  //     echo "UsbSpeedTest TxFastLoopRawUsb" | socat - /dev/debugdue1,b115200,raw,echo=0,crnl | pv -pertb >/dev/null
   //   Tests where the Arduino Due is receiving:
-  //     (echo "UsbSpeedTest RxWithCircularBuffer" && yes ".") | pv -pertb - | socat - /dev/jtagdue1,b115200,raw,echo=0,crnl >/dev/null
+  //     (echo "UsbSpeedTest RxWithCircularBuffer" && yes ".") | pv -pertb - | socat - /dev/debugdue1,b115200,raw,echo=0,crnl >/dev/null
 
   const uint32_t TEST_TIME_IN_MS = 5000;  // We could make a user parameter out of this value.
 
@@ -529,7 +529,7 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
       const char buildType[] = "Release build";
     #endif
 
-    Printf( "JtagDue %s" EOL, PACKAGE_VERSION );
+    Printf( "DebugDue %s" EOL, PACKAGE_VERSION );
     Printf( "%s, compiler version %s" EOL, buildType, __VERSION__ );
     Printf( "Watchdog %s" EOL, ENABLE_WDT ? "enabled" : "disabled" );
 

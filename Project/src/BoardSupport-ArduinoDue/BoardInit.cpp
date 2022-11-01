@@ -162,7 +162,7 @@ void BareMetalSupport_Reset_Handler ( void )
     //
     // How much busy wait time you need to spend here depends on how fast your JTAG adapter is.
     // With my slow Bus Pirate (at 'normal' speed, instead of 'fast'), and with a non-optimised
-    // JtagDue firmware, I need around 34 ms. If you have a fast JTAG probe, you can probably
+    // DebugDue firmware, I need around 34 ms. If you have a fast JTAG probe, you can probably
     // lower this time in order to get faster overall boot times.
     // When using a second Arduino Due, we need more time. 110 ms seems enough.
     //
