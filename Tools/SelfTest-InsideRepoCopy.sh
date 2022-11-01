@@ -224,7 +224,7 @@ test_building_toolchain ()
 
   local L_CMD
 
-  local -r SHOULD_SKIP_TARBALL_DOWNLOAD_TEST="${JTAGDUE_SKIP_TARBALL_DOWNLOAD_TEST:-false}"
+  local -r SHOULD_SKIP_TARBALL_DOWNLOAD_TEST="${DEBUGDUE_SKIP_TARBALL_DOWNLOAD_TEST:-false}"
 
   if $SHOULD_SKIP_TARBALL_DOWNLOAD_TEST; then
 
@@ -261,14 +261,14 @@ test_building_toolchain ()
   fi
 
 
-  local -r SHOULD_SKIP_TOOLCHAIN_CHECK="${JTAGDUE_SKIP_TOOLCHAIN_CHECK:-true}"
+  local -r SHOULD_SKIP_TOOLCHAIN_CHECK="${DEBUGDUE_SKIP_TOOLCHAIN_CHECK:-true}"
 
 
   # This will be the toolchain to use later on to build the firmwares.
   # If we build both toolchains, with and without GMP etc, we will use the one with those libraries.
   TOOLCHAIN_BIN_DIR=""
 
-  local -r SHOULD_SKIP_TOOLCHAIN_WITH_GMP_MPFR_MPC="${JTAGDUE_SKIP_TOOLCHAIN_WITH_GMP_MPFR_MPC:-false}"
+  local -r SHOULD_SKIP_TOOLCHAIN_WITH_GMP_MPFR_MPC="${DEBUGDUE_SKIP_TOOLCHAIN_WITH_GMP_MPFR_MPC:-false}"
 
   if ! $SHOULD_SKIP_TOOLCHAIN_WITH_GMP_MPFR_MPC; then
 
@@ -332,7 +332,7 @@ test_building_toolchain ()
   # If you want to build a toolchain without GMP, MPFR and MPC, you must have those libraries
   # installed on your host system.
 
-  local -r SHOULD_SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC="${JTAGDUE_SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC:-true}"
+  local -r SHOULD_SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC="${DEBUGDUE_SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC:-true}"
 
   if ! $SHOULD_SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC; then
 
@@ -390,11 +390,11 @@ test_basic_functions_of_firmware_build_script ()
 
   printf -v L_CMD \
          "%q --help" \
-         "$COPY_OF_REPOSITORY/JtagDueBuilder.sh"
+         "$COPY_OF_REPOSITORY/DebugDueBuilder.sh"
 
-  run_cmd "Testing the JtagDue builder script with --help ..." \
+  run_cmd "Testing the DebugDue builder script with --help ..." \
           "$L_CMD" \
-          stdout  "$LOG_FILES_DIRNAME/JtagDueBuilder-output-help.txt"
+          stdout  "$LOG_FILES_DIRNAME/DebugDueBuilder-output-help.txt"
 
 
   if false; then
@@ -420,11 +420,11 @@ test_basic_functions_of_firmware_build_script ()
 
     # echo "DIR_MATCH: $DIR_MATCH"
 
-    JTAGDUE_ASF_PATH="$(readlink --canonicalize --verbose -- "$DIR_MATCH/../..")"
+    DEBUGDUE_ASF_PATH="$(readlink --canonicalize --verbose -- "$DIR_MATCH/../..")"
 
-  elif ! is_var_set "JTAGDUE_ASF_PATH"; then
+  elif ! is_var_set "DEBUGDUE_ASF_PATH"; then
 
-    abort "Environment variable JTAGDUE_ASF_PATH is not set."
+    abort "Environment variable DEBUGDUE_ASF_PATH is not set."
 
   fi
 }
@@ -450,7 +450,7 @@ build_firmwares ()
   local BUILD_BASE_CMD
   printf -v BUILD_BASE_CMD \
          "%q  --show-build-commands  --toolchain-dir=%q  --build-output-base-dir=%q" \
-         "./JtagDueBuilder.sh" \
+         "./DebugDueBuilder.sh" \
          "$L_TOOLCHAIN_BIN_DIR" \
          "$OUTPUT_BASE_DIR"
 
@@ -458,36 +458,36 @@ build_firmwares ()
   printf -v BUILD_BASE_ASF_CMD \
          "%s  --atmel-software-framework=%q" \
          "$BUILD_BASE_CMD" \
-         "$JTAGDUE_ASF_PATH"
+         "$DEBUGDUE_ASF_PATH"
 
-  run_cmd "Building JtagDue, debug build..." \
+  run_cmd "Building DebugDue, debug build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build" \
-          both  "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-JtagDue-debug.txt"
+          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-DebugDue-debug.txt"
 
   # We only test '--disassemble' with one firmware. That should be enough.
-  run_cmd "Building JtagDue, debug build with disassemble..." \
+  run_cmd "Building DebugDue, debug build with disassemble..." \
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble" \
-          both  "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-JtagDue-debug-disassemble.txt"
+          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-DebugDue-debug-disassemble.txt"
 
-  run_cmd "Building JtagDue, release build..." \
+  run_cmd "Building DebugDue, release build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=release --build" \
-          both  "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-JtagDue-release.txt"
+          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-DebugDue-release.txt"
 
   run_cmd "Building EmptyFirmware, debug build..." \
           "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build" \
-          both  "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-EmptyFirmware-debug.txt"
+          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-EmptyFirmware-debug.txt"
 
   run_cmd "Building EmptyFirmware, release build..." \
           "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build" \
-          both "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-EmptyFirmware-release.txt"
+          both "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-EmptyFirmware-release.txt"
 
   run_cmd "Building QemuFirmware, debug build..." \
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build" \
-          both  "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-QemuFirmware-debug.txt"
+          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-QemuFirmware-debug.txt"
 
   run_cmd "Building QemuFirmware, release build..." \
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build" \
-          both  "$LOG_FILES_DIRNAME/JtagDueBuilder-$L_LIBC_NAME-QemuFirmware-release.txt"
+          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-QemuFirmware-release.txt"
 
   popd >/dev/null
 }
@@ -620,13 +620,13 @@ echo "Creating \"$LOG_FILES_DIRNAME\" ..."
 mkdir --parents -- "$LOG_FILES_DIRNAME"
 
 
-declare -r SHOULD_LINT="${JTAGDUE_SHOULD_LINT:-true}"
-declare -r SHOULD_BUILD_TOOLCHAINS="${JTAGDUE_SHOULD_BUILD_TOOLCHAINS:-true}"
-declare -r SHOULD_BUILD_FIRMWARES="${JTAGDUE_SHOULD_BUILD_FIRMWARES:-true}"
+declare -r SHOULD_LINT="${DEBUGDUE_SHOULD_LINT:-true}"
+declare -r SHOULD_BUILD_TOOLCHAINS="${DEBUGDUE_SHOULD_BUILD_TOOLCHAINS:-true}"
+declare -r SHOULD_BUILD_FIRMWARES="${DEBUGDUE_SHOULD_BUILD_FIRMWARES:-true}"
 
 
-# Environment variable JTAGDUE_LIBC_VARIANTS should contain a space-separated list of libcs.
-declare -r LIBC_VARIANTS="${JTAGDUE_LIBC_VARIANTS:-newlib picolibc}"
+# Environment variable DEBUGDUE_LIBC_VARIANTS should contain a space-separated list of libcs.
+declare -r LIBC_VARIANTS="${DEBUGDUE_LIBC_VARIANTS:-newlib picolibc}"
 
 read -r -a LIBC_VARIANTS_ARRAY <<< "$LIBC_VARIANTS"
 
@@ -668,9 +668,9 @@ if $SHOULD_BUILD_FIRMWARES; then
 
   if (( ${#TOOLCHAIN_BIN_DIR_ARRAY[@]} == 0 )); then
 
-    # Environment variable JTAGDUE_TOOLCHAIN_PATHS should contain a space-separated list of
+    # Environment variable DEBUGDUE_TOOLCHAIN_PATHS should contain a space-separated list of
     # paths to the toolchain bin directories.
-    declare -r TOOLCHAIN_PATHS="${JTAGDUE_TOOLCHAIN_PATHS:-}"
+    declare -r TOOLCHAIN_PATHS="${DEBUGDUE_TOOLCHAIN_PATHS:-}"
 
     read -r -a TOOLCHAIN_PATHS_ARRAY <<< "$TOOLCHAIN_PATHS"
 

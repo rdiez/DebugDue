@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2014-2020 R. Diez - Licensed under the GNU AGPLv3 - see companion script JtagDueBuilder.sh for more information.
+# Copyright (c) 2014-2020 R. Diez - Licensed under the GNU AGPLv3 - see companion script DebugDueBuilder.sh for more information.
 
 set -o errexit
 set -o nounset

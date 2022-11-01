@@ -120,7 +120,7 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
      src/AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
      src/AsfSrc/common/services/clock/sam3x/sysclk.c
 
-if IS_JTAG_DUE
+if IS_DEBUG_DUE
   libAtmelSoftwareFramework_a_SOURCES += \
      src/AsfSrc/sam/drivers/pmc/sleep.c \
      src/AsfSrc/sam/drivers/adc/adc.c \
@@ -151,7 +151,7 @@ if IS_QEMU_FIRMWARE
 
 endif
 
-if IS_JTAG_DUE
+if IS_DEBUG_DUE
 
   firmware_elf_SOURCES += \
     src/JtagFirmware/Main.cpp \

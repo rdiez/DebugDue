@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 R. Diez - see the JtagDue project for licensing information.
+# Copyright (C) 2022 R. Diez - see the DebugDue project for licensing information.
 
 set -o errexit
 set -o pipefail

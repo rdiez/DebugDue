@@ -3,7 +3,7 @@
 ; Copyright (c) 2000 Microsoft Corporation
 ;
 ; R. Diez: I have taken file "Arduino Due.inf" and changed the USB PID
-;          to match the JtagDue Firmware.
+;          to match the DebugDue Firmware.
 
 
 [Version]
@@ -104,5 +104,5 @@ MFGFILENAME="CDC_vista"
 DRIVERFILENAME ="usbser"
 MFGNAME="R. Diez"
 INSTDISK="Arduino Due Driver Installer"
-DESCRIPTION="JtagDue"
+DESCRIPTION="DebugDue"
 SERVICE="USB RS-232 Emulation Driver"

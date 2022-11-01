@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# This script tests the toolchain builder makefile and the JtagDue firmware builder script.
+# This script tests the toolchain builder makefile and the DebugDue firmware builder script.
 #
 # Steps before running this script:
 #
@@ -14,7 +14,7 @@
 #   I did not want to automate the download step in oder to save bandwidth when
 #   running this script several times.
 #
-# - Set environment variable JTAGDUE_ASF_PATH so that it points to the root of the ASF library.
+# - Set environment variable DEBUGDUE_ASF_PATH so that it points to the root of the ASF library.
 #   Remember that you need to patch one header file by hand before using it.
 #
 # Copyright (c) 2013-2022 - R. Diez - Licensed under the GNU AGPLv3.
@@ -53,14 +53,14 @@ else
   # If you run this script often, you may want to place its output in a RAM disk
   # instead of inside the source repository.
   declare -r ROTATE_DIR_SLOT_COUNT="1"
-  declare -r OUTPUT_BASE_DIR="$HOME/MyTmpFs/JtagDueSelfTestOutput"
+  declare -r OUTPUT_BASE_DIR="$HOME/MyTmpFs/DebugDueSelfTestOutput"
 fi
 
 mkdir --parents -- "$OUTPUT_BASE_DIR"
 
 echo "Rotating test output directories..."
 
-ROTATED_DIR="$(perl "$TOOLS_DIR/RotateDir.pl" --slot-count "$ROTATE_DIR_SLOT_COUNT" --dir-name-prefix "JtagDueSelfTest-" --dir-naming-scheme="date" --output-only-new-dir-name "$OUTPUT_BASE_DIR")"
+ROTATED_DIR="$(perl "$TOOLS_DIR/RotateDir.pl" --slot-count "$ROTATE_DIR_SLOT_COUNT" --dir-name-prefix "DebugDueSelfTest-" --dir-naming-scheme="date" --output-only-new-dir-name "$OUTPUT_BASE_DIR")"
 
 echo "Test output directory rotated. The output directory is:"
 echo "  $ROTATED_DIR"
