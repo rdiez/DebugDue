@@ -289,6 +289,8 @@ if (( ${#BREAKPOINTS[*]} > 0 )); then
   done
 fi
 
+# OpenOCD halts the CPU when GDB connects. We want to start the firmware
+# from the beginning, so reset the CPU here.
 if $DEBUG_FROM_THE_START_SPECIFIED; then
   add_gdb_cmd "myhaltafterreset"
 else
