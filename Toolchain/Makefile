@@ -61,7 +61,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
-VERSION_SET := VersionSet10
+VERSION_SET := VersionSet11
 
 ifeq ($(VERSION_SET),VersionSet3)
 
@@ -126,8 +126,6 @@ else ifeq ($(VERSION_SET),VersionSet10)
   GDB_VERSION := 12.1
 
 else ifeq ($(VERSION_SET),VersionSet11)
-
-  # This version set with GCC 12.1 is still experimental.
 
   BINUTILS_VERSION := 2.39
   GMP_VERSION := 6.2.1
@@ -619,7 +617,7 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
 
   ifneq "$(or $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
     # The patch for version 5.1.0 works in the next versions too.
-    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
+    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else
     $(error Unknown GCC version)
   endif
@@ -629,6 +627,12 @@ else
   GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := this-patch-filename-should-not-be-used
 
 endif
+
+
+# For more information about the following patch, see:
+#  Bug 107500 - Useless atexit entry for ~constant_init in eh_globals.cc
+#  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107500
+GCC_12_EH_GLOBALS_ATEXIT_PATCH_FILENAME := Gcc12EhGlobalsAtexit.patch
 
 
 # ------- Newlib configuration -------
@@ -1347,7 +1351,11 @@ $(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(GCC_SRC_DIR)" >/dev/null && \
 	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
 	  echo "Applying patch \"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)\" ..." && \
-	  patch -p0 --fuzz=0 --forward <"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
+	  patch -p0 --fuzz=0 --forward <"$(MAKEFILE_PATCHES_DIR)/$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
+	fi && \
+	if [ -n "$(IS_GCC_12_X)" ]; then \
+	  echo "Applying $(GCC_12_EH_GLOBALS_ATEXIT_PATCH_FILENAME) ..." && \
+	  patch -p0 --fuzz=0 --forward <"$(MAKEFILE_PATCHES_DIR)/$(GCC_12_EH_GLOBALS_ATEXIT_PATCH_FILENAME)"; \
 	fi && \
 	popd >/dev/null && \
 	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
