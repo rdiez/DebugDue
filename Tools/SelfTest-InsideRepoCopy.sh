@@ -216,11 +216,17 @@ test_basic_functions_of_toolchain_makefile ()
 }
 
 
+declare -r TOOLCHAIN_LIBC_DIR_PREFIX="toolchain-with-"
+
+
 test_building_toolchain ()
 {
   local -r L_LIBC_NAME="$1"
 
   echo "Toolchain build tests for $L_LIBC_NAME"
+
+  local -r TOOLCHAIN_LOG_FILE_PREFIX="$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-"
+  local -r TOOLCHAIN_DEST_DIR="$ROTATED_DIR/${TOOLCHAIN_LIBC_DIR_PREFIX}$L_LIBC_NAME"
 
   local L_CMD
 
@@ -232,7 +238,7 @@ test_building_toolchain ()
 
   else
 
-    local -r DOWNLOADED_TARBALLS_DIRNAME="$ROTATED_DIR/$L_LIBC_NAME/DownloadedTarballs"
+    local -r DOWNLOADED_TARBALLS_DIRNAME="$TOOLCHAIN_DEST_DIR/DownloadedTarballs"
 
     printf -v L_CMD \
            "make %s  TARGET_LIBC=%q  TARBALLS_DOWNLOAD_DIR=%q  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
@@ -243,7 +249,7 @@ test_building_toolchain ()
 
     run_cmd "Testing downloading tarballs from a file server to a different directory..." \
             "$L_CMD" \
-            stdout  "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-download-to-specific-dir.txt"
+            stdout  "${TOOLCHAIN_LOG_FILE_PREFIX}make-download-to-specific-dir.txt"
 
     # The default download directory will accumulate the tarballs for both Newlib and Picolibc,
     # so we will not be using it later on to build the toolchain.
@@ -257,7 +263,7 @@ test_building_toolchain ()
     run_cmd "Testing downloading tarballs from a file server to the default directory..." \
             "$L_CMD" \
             stdout \
-            "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-download-to-default-dir.txt"
+            "${TOOLCHAIN_LOG_FILE_PREFIX}make-download-to-default-dir.txt"
   fi
 
 
@@ -272,8 +278,8 @@ test_building_toolchain ()
 
   if ! $SHOULD_SKIP_TOOLCHAIN_WITH_GMP_MPFR_MPC; then
 
-    local -r BUILD_DIR="$ROTATED_DIR/$L_LIBC_NAME/Toolchain-Build"
-    local -r INSTALLATION_DIR="$ROTATED_DIR/$L_LIBC_NAME/Toolchain-Bin"
+    local -r BUILD_DIR="$TOOLCHAIN_DEST_DIR/Toolchain-Build"
+    local -r INSTALLATION_DIR="$TOOLCHAIN_DEST_DIR/Toolchain-Bin"
 
     printf -v L_CMD \
            "make  %s  %s  TARGET_LIBC=%q TARBALLS_DOWNLOAD_DIR=%q  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  all" \
@@ -286,7 +292,7 @@ test_building_toolchain ()
 
     run_cmd "Testing building the toolchain..." \
             "$L_CMD" \
-            both  "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-build-all.txt"
+            both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-build-all.txt"
 
 
     # If environment variable LANG="C" were not set beforehand, we would need to do it here,
@@ -295,9 +301,9 @@ test_building_toolchain ()
 
     run_cmd "Testing running the toolchain building makefile a second time..." \
             "$L_CMD" \
-            both  "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-build-all-2nd-time.txt"
+            both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-build-all-2nd-time.txt"
 
-    OUTPUT_FILE_CONTENTS=$(<"$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-build-all-2nd-time.txt")
+    OUTPUT_FILE_CONTENTS=$(<"${TOOLCHAIN_LOG_FILE_PREFIX}make-build-all-2nd-time.txt")
 
     local -r NOTHING_TO_DO_REGEX=".*Nothing to be done for.*"
 
@@ -322,7 +328,7 @@ test_building_toolchain ()
 
       run_cmd "Checking the toolchain..." \
               "$L_CMD" \
-              both  "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-check.txt"
+              both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-check.txt"
 
     fi
 
@@ -336,8 +342,8 @@ test_building_toolchain ()
 
   if ! $SHOULD_SKIP_TOOLCHAIN_WITHOUT_GMP_MPFR_MPC; then
 
-    local -r BUILD_DIR_WITHOUT_GMP_MPFR_MPC="$ROTATED_DIR/$L_LIBC_NAME/Toolchain-WithoutGmpMpfrMpc-Build"
-    local -r INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC="$ROTATED_DIR/$L_LIBC_NAME/Toolchain-WithoutGmpMpfrMpc-Bin"
+    local -r BUILD_DIR_WITHOUT_GMP_MPFR_MPC="$TOOLCHAIN_DEST_DIR/Toolchain-WithoutGmpMpfrMpc-Build"
+    local -r INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC="$TOOLCHAIN_DEST_DIR/Toolchain-WithoutGmpMpfrMpc-Bin"
 
     printf -v L_CMD \
            "make %s  %s  TARGET_LIBC=%q TARBALLS_DOWNLOAD_DIR=%q CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  all" \
@@ -350,7 +356,7 @@ test_building_toolchain ()
 
     run_cmd "Building the toolchain without GMP, MPFR and MPC..." \
             "$L_CMD" \
-            both  "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-build-all-without-gmp-mpfr-mpc.txt"
+            both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-build-all-without-gmp-mpfr-mpc.txt"
 
     # Here we could to the same test too as for the other toolchain: "Testing running the toolchain building makefile a second time..."
 
@@ -370,7 +376,7 @@ test_building_toolchain ()
 
       run_cmd "Checking the toolchain without GMP, MPFR and MPC..." \
               "$L_CMD" \
-              both  "$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-make-check-without-gmp-mpfr-mpc.txt"
+              both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-check-without-gmp-mpfr-mpc.txt"
     fi
 
   fi
@@ -438,7 +444,10 @@ build_firmwares ()
   echo
   echo "Building firmwares with $L_LIBC_NAME, toolchain \"$L_TOOLCHAIN_BIN_DIR\"..."
 
-  local -r OUTPUT_BASE_DIR="$ROTATED_DIR/$L_LIBC_NAME/Firmwares"
+  local -r FW_BUILD_LOG_FILE_PREFIX="$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-"
+  local -r TOOLCHAIN_DEST_DIR="$ROTATED_DIR/${TOOLCHAIN_LIBC_DIR_PREFIX}$L_LIBC_NAME"
+
+  local -r OUTPUT_BASE_DIR="$TOOLCHAIN_DEST_DIR/Firmwares"
 
   # In case we are reusing an output directory, delete any existing firmwares,
   # so that we rebuild all of them from scratch.
@@ -462,32 +471,32 @@ build_firmwares ()
 
   run_cmd "Building DebugDue, debug build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build" \
-          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-DebugDue-debug.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-debug.txt"
 
   # We only test '--disassemble' with one firmware. That should be enough.
   run_cmd "Building DebugDue, debug build with disassemble..." \
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble" \
-          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-DebugDue-debug-disassemble.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-debug-disassemble.txt"
 
   run_cmd "Building DebugDue, release build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=release --build" \
-          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-DebugDue-release.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-release.txt"
 
   run_cmd "Building EmptyFirmware, debug build..." \
           "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build" \
-          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-EmptyFirmware-debug.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-debug.txt"
 
   run_cmd "Building EmptyFirmware, release build..." \
           "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build" \
-          both "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-EmptyFirmware-release.txt"
+          both "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-release.txt"
 
   run_cmd "Building QemuFirmware, debug build..." \
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build" \
-          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-QemuFirmware-debug.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-debug.txt"
 
   run_cmd "Building QemuFirmware, release build..." \
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build" \
-          both  "$LOG_FILES_DIRNAME/DebugDueBuilder-$L_LIBC_NAME-QemuFirmware-release.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-release.txt"
 
   popd >/dev/null
 }
