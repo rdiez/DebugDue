@@ -410,7 +410,7 @@ GMP_CHECK_SENTINEL   := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpCheck)
 
 
 # According to GMP's documentation, when building for Windows:
-#  "Static and DLL libraries can’t both be built, since certain export directives in gmp.h must be different."
+#  "Static and DLL libraries can't both be built, since certain export directives in gmp.h must be different."
 # If you build GMP as a static library, MPFR and MPC can apparently only be built as static libraries too.
 #
 # Normally, the build scripts for all those libraries will try to build them both as static libraries
