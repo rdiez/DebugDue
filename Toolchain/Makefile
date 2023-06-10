@@ -61,6 +61,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
+# VersionSet13 uses GCC 13.1, which is still rather new, so stay at VersionSet12 for now.
 VERSION_SET := VersionSet12
 
 ifeq ($(VERSION_SET),VersionSet3)
@@ -150,6 +151,19 @@ else ifeq ($(VERSION_SET),VersionSet12)
   PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 13.2
 
+else ifeq ($(VERSION_SET),VersionSet13)
+
+  BINUTILS_VERSION := 2.40
+  GMP_VERSION := 6.2.1
+  MPFR_VERSION := 4.2.0
+  MPC_VERSION := 1.3.1
+  GCC_VERSION := 13.1.0
+  NEWLIB_VERSION := 4.3.0.20230120
+  # Warning: This picolibc version does not really work, and I would not use
+  #          any older versions at this point. I will try to fix this in the future.
+  PICOLIBC_VERSION := 1.8.2
+  GDB_VERSION := 13.2
+
 else
   $(error Invalid configuration set "$(VERSION_SET)")
 endif
@@ -161,6 +175,17 @@ ifneq "$(TARGET_LIBC)" "newlib"
   ifneq "$(TARGET_LIBC)" "picolibc"
     $(error Invalid value of TARGET_LIBC: $(TARGET_LIBC))
   endif
+endif
+
+
+IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
+IS_GCC_10_X  := $(filter 10.%,$(GCC_VERSION))
+IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
+IS_GCC_12_X  := $(filter 12.%,$(GCC_VERSION))
+IS_GCC_13_X  := $(filter 13.%,$(GCC_VERSION))
+
+ifeq "$(or $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X) )" ""
+  $(error Unsupported GCC version)
 endif
 
 
@@ -607,6 +632,19 @@ endif
 # but just to memory buffers.
 COMMON_GCC_OPTIONS += --disable-libstdcxx-verbose
 
+GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME :=
+
+ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
+
+  ifneq "$(or $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
+    # The patch for GCC version 5.1.0 works up to GCC version 12.x .
+    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
+  else ifneq "$(IS_GCC_13_X)" ""
+    COMMON_GCC_OPTIONS += --with-libstdcxx-eh-pool-obj-count=0
+  endif
+
+endif
+
 COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 
 # It is not clearly documented what --enable-lto does.
@@ -615,31 +653,6 @@ COMMON_GCC_OPTIONS += --with-gnu-ld --with-gnu-as
 # We could probably disable it and save some build time for the GCC phase 1,
 # but we may want to build Newlib with LTO support in the future.
 COMMON_GCC_OPTIONS += --enable-lto
-
-
-ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
-
-  IS_GCC_5_X   := $(filter 5.%,$(GCC_VERSION))
-  IS_GCC_6_X   := $(filter 6.%,$(GCC_VERSION))
-  IS_GCC_7_X   := $(filter 7.%,$(GCC_VERSION))
-  IS_GCC_8_X   := $(filter 8.%,$(GCC_VERSION))
-  IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
-  IS_GCC_10_X  := $(filter 10.%,$(GCC_VERSION))
-  IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
-  IS_GCC_12_X  := $(filter 12.%,$(GCC_VERSION))
-
-  ifneq "$(or $(IS_GCC_5_X), $(IS_GCC_6_X), $(IS_GCC_7_X), $(IS_GCC_8_X), $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
-    # The patch for version 5.1.0 works in the next versions too.
-    GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
-  else
-    $(error Unknown GCC version)
-  endif
-
-else
-
-  GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := this-patch-filename-should-not-be-used
-
-endif
 
 
 # For more information about the following patch, see:
@@ -1362,7 +1375,7 @@ $(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GCC_TAR_FILE)" && \
 	popd >/dev/null && \
 	pushd "$(GCC_SRC_DIR)" >/dev/null && \
-	if [ $(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER) -ne 0 ]; then \
+	if [ -n "$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)" ]; then \
 	  echo "Applying patch \"$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)\" ..." && \
 	  patch -p0 --fuzz=0 --forward <"$(MAKEFILE_PATCHES_DIR)/$(GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME)"; \
 	fi && \
