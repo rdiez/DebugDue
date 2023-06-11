@@ -72,6 +72,7 @@ ifeq ($(VERSION_SET),VersionSet3)
   MPC_VERSION := 1.1.0
   GCC_VERSION := 9.3.0
   NEWLIB_VERSION := 3.3.0
+  PICOLIBC_VERSION := picolibc-not-supported-yet
   GDB_VERSION := 9.1
 
 else ifeq ($(VERSION_SET),VersionSet4)
@@ -82,6 +83,7 @@ else ifeq ($(VERSION_SET),VersionSet4)
   MPC_VERSION := 1.2.0
   GCC_VERSION := 9.3.0
   NEWLIB_VERSION := 3.3.0
+  PICOLIBC_VERSION := picolibc-not-supported-yet
   GDB_VERSION := 9.2
 
 else ifeq ($(VERSION_SET),VersionSet7)
@@ -92,6 +94,7 @@ else ifeq ($(VERSION_SET),VersionSet7)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 10.3.0
   NEWLIB_VERSION := 4.1.0
+  PICOLIBC_VERSION := picolibc-not-supported-yet
   GDB_VERSION := 10.2
 
 else ifeq ($(VERSION_SET),VersionSet8)
@@ -102,6 +105,7 @@ else ifeq ($(VERSION_SET),VersionSet8)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 10.3.0
   NEWLIB_VERSION := 4.1.0
+  PICOLIBC_VERSION := picolibc-not-supported-yet
   GDB_VERSION := 11.1
 
 else ifeq ($(VERSION_SET),VersionSet9)
@@ -112,6 +116,7 @@ else ifeq ($(VERSION_SET),VersionSet9)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
   NEWLIB_VERSION := 4.1.0
+  PICOLIBC_VERSION := picolibc-not-supported-yet
   GDB_VERSION := 11.2
 
 else ifeq ($(VERSION_SET),VersionSet10)
