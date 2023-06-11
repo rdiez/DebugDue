@@ -127,8 +127,7 @@ else ifeq ($(VERSION_SET),VersionSet10)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
   NEWLIB_VERSION := 4.1.0
-  # The toolchain fails to build with version 1.7.7 .
-  PICOLIBC_VERSION := 1.7.6
+  PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 12.1
 
 else ifeq ($(VERSION_SET),VersionSet11)
@@ -139,8 +138,7 @@ else ifeq ($(VERSION_SET),VersionSet11)
   MPC_VERSION := 1.2.1
   GCC_VERSION := 12.2.0
   NEWLIB_VERSION := 4.1.0
-  # The toolchain fails to build with version 1.7.7 .
-  PICOLIBC_VERSION := 1.7.6
+  PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 12.1
 
 else ifeq ($(VERSION_SET),VersionSet12)
@@ -151,8 +149,6 @@ else ifeq ($(VERSION_SET),VersionSet12)
   MPC_VERSION := 1.3.1
   GCC_VERSION := 12.3.0
   NEWLIB_VERSION := 4.3.0.20230120
-  # Warning: This picolibc version does not really work, and I would not use
-  #          any older versions at this point. I will try to fix this in the future.
   PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 13.2
 
@@ -164,8 +160,6 @@ else ifeq ($(VERSION_SET),VersionSet13)
   MPC_VERSION := 1.3.1
   GCC_VERSION := 13.1.0
   NEWLIB_VERSION := 4.3.0.20230120
-  # Warning: This picolibc version does not really work, and I would not use
-  #          any older versions at this point. I will try to fix this in the future.
   PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 13.2
 
@@ -833,14 +827,6 @@ ifeq ($(TARGET_LIBC), picolibc)
   # This file will be automatically generated in the future.
   PICOLIBC_TARGET_FLAGS_FILENAME := ToolchainBuilder-cross-$(TARGET_ARCH).txt
 
-  # Many years ago compilers could not optimise and emit debug information at the same time,
-  # so libg.a was a version of libc.a without optimisation and with debugging information.
-  # If the -g to produce debugging information is present, GCC will link with libg.a.
-  # Most GCC targets stopped using libg.a a long time ago, but the embedded targets
-  # apparently continue to use it.
-  # Nowadays, we will just link libg.a to libc.a .
-  PICOLIBC_LIBC_INSTALLATION_DIR = $(CROSS_TOOLCHAIN_DIR)/$(TARGET_ARCH)/lib
-
   PICOLIBC_UNTAR_SENTINEL     := $(PICOLIBC_SRC_DIR)/$(call sentinel_filename,PicolibcDecompress)
   PICOLIBC_CONFIGURE_SENTINEL := $(PICOLIBC_OBJ_DIR)/$(call sentinel_filename,PicolibcConfigure)
   PICOLIBC_MAKE_SENTINEL      := $(PICOLIBC_OBJ_DIR)/$(call sentinel_filename,PicolibcMake)
@@ -897,7 +883,10 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dtinystdio=true
 
   # Our bare-metal firmware does not use anything like fopen/fdopen.
-  PICOLIBC_CFG_FLAGS += -Dposix-io=false
+  # Picolibc version 1.8.2 has a bug and does not build with posix-io=false .
+  ifneq "$(PICOLIBC_VERSION)" "1.8.2"
+    PICOLIBC_CFG_FLAGS += -Dposix-io=false
+  endif
 
   # Enable C99 support in I/O functions like printf/scanf.
   # Note that tinystdio does not support thousands separators, as in printf( "%'d" ),
@@ -1602,7 +1591,6 @@ $(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.log" \
 	    "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.report" \
 	    meson install  -C "$(PICOLIBC_OBJ_DIR)"  && \
-	ln --symbolic --force -- "$(PICOLIBC_LIBC_INSTALLATION_DIR)/libc.a"  "$(PICOLIBC_LIBC_INSTALLATION_DIR)/libg.a" && \
 	echo "The Picolibc installation has finished." >"$(PICOLIBC_INSTALL_SENTINEL)" && \
 	echo "The Picolibc installation has finished."
 
