@@ -1784,7 +1784,8 @@ $(TARGET_NAME_HELP):
 	@echo
 	@echo "This makefile builds a GCC/Newlib toolchain for a 'bare metal' programming environment"
 	@echo "for an ARM Cortex-M3 microcontroller. Other CPUs are supported, search for"
-	@echo "TOOLCHAIN_TARGET_CPU in the makefile for details."
+	@echo "TOOLCHAIN_TARGET_CPU in the makefile for details. You can also use Picolibc"
+	@echo "instead of Newlib by specifying TARGET_LIBC=picolibc ."
 	@echo
 	@echo "Before building the toolchain with this makefile, you need to do the following:"
 	@echo
@@ -1839,7 +1840,7 @@ $(TARGET_NAME_HELP):
 	@echo "5) Install any packages needed to build GCC and GDB, like a C compiler and ELF libraries."
 	@echo "   The 'devel' versions of those packages are probably needed. You will normally"
 	@echo "   find such libraries in your Linux distribution's repository. Note that this makefile"
-	@echo "   builds GMP, MPFR and MPC itself by default."
+	@echo "   builds GMP, MPFR and MPC itself by default, but you can switch it off with BUILD_GMP_MPFR_MPC=0."
 	@echo "   Consult GCC's and GDB's documentation for details."
 	@echo "   On Ubuntu/Debian systems, installing package 'build-essential' gets you a long way."
 	@echo "   Package 'libsource-highlight-dev' provides syntax highlighting in GDB."
