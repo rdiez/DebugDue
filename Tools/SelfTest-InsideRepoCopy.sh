@@ -80,8 +80,13 @@ run_cmd ()
       local STDERR_COPY_FILENAME="$L_LOG_FILENAME.stderr"
 
       set +o errexit
-      "$RUN_AND_REPORT_TOOL_PATH" --quiet --copy-stderr="$STDERR_COPY_FILENAME" -- \
-                                  "$L_DESCRIPTION_BANNER" "$L_DESCRIPTION_BANNER" "$L_LOG_FILENAME" /dev/null \
+      "$RUN_AND_REPORT_TOOL_PATH" --quiet \
+                                  --copy-stderr="$STDERR_COPY_FILENAME" \
+                                  --id="$L_DESCRIPTION_BANNER" \
+                                  --userFriendlyName="$L_DESCRIPTION_BANNER" \
+                                  --logFilename="$L_LOG_FILENAME" \
+                                  --reportFilename=/dev/null \
+                                  -- \
                                   bash -c "$L_CMD"
       local -r L_CMD_EXIT_CODE="$?"
       set -o errexit
@@ -91,8 +96,12 @@ run_cmd ()
 
       set +o errexit
 
-      "$RUN_AND_REPORT_TOOL_PATH" --quiet -- \
-                                  "$L_DESCRIPTION_BANNER" "$L_DESCRIPTION_BANNER" "$L_LOG_FILENAME" /dev/null \
+      "$RUN_AND_REPORT_TOOL_PATH" --quiet \
+                                  --id="$L_DESCRIPTION_BANNER" \
+                                  --userFriendlyName="$L_DESCRIPTION_BANNER" \
+                                  --logFilename="$L_LOG_FILENAME" \
+                                  --reportFilename=/dev/null \
+                                  -- \
                                   bash -c "$L_CMD"
 
       local -r L_CMD_EXIT_CODE="$?"

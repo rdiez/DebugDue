@@ -8,7 +8,7 @@ declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
 
 declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
-declare -r VERSION_NUMBER="1.06"
+declare -r VERSION_NUMBER="1.08"
 
 
 abort ()
@@ -44,30 +44,225 @@ read_uptime_as_integer ()
 }
 
 
-get_human_friendly_elapsed_time ()
+#------------------------------------------------------------------------
+#
+# Formats a duration as a human-friendly string, with hours, minutes, etc.
+#
+
+declare -r -i SECONDS_IN_MINUTE=60
+declare -r -i SECONDS_IN_HOUR=$(( 60 * SECONDS_IN_MINUTE ))
+declare -r -i SECONDS_IN_DAY=$((  24 * SECONDS_IN_HOUR   ))
+declare -r -i SECONDS_IN_WEEK=$((  7 * SECONDS_IN_DAY    ))
+
+format_human_friendly_duration ()
 {
-  local -i SECONDS="$1"
+  local -i TOTAL_SECONDS="$1"  # Number of seconds as an integer.
 
-  if (( SECONDS <= 59 )); then
-    ELAPSED_TIME_STR="$SECONDS seconds"
+  if (( TOTAL_SECONDS < 0 )); then
+    abort "Invalid number of seconds."
+  fi
+
+  if (( TOTAL_SECONDS < SECONDS_IN_MINUTE )); then
+
+    ELAPSED_TIME_STR="$TOTAL_SECONDS second"
+
+    if (( TOTAL_SECONDS != 1 )); then
+      ELAPSED_TIME_STR+="s"
+    fi
+
     return
+
   fi
 
-  local -i V="$SECONDS"
+  # At this point, the message will not consist of just a number of seconds.
+  # The total number of seconds will be appended to the message inside parenthesis.
 
-  ELAPSED_TIME_STR="$(( V % 60 )) seconds"
+  local -i SECONDS=$TOTAL_SECONDS
 
-  V="$(( V / 60 ))"
+  local -i MINUTES=$(( SECONDS / 60 ))
+           SECONDS=$(( SECONDS % 60 ))
 
-  ELAPSED_TIME_STR="$(( V % 60 )) minutes, $ELAPSED_TIME_STR"
+  # Possible optimisation: Do not consider higher units if the number of minutes <= 59,
+  #                        and the same later on for hours etc.
 
-  V="$(( V / 60 ))"
+  local -i HOURS=$(( MINUTES / 60 ))
+         MINUTES=$(( MINUTES % 60 ))
 
-  if (( V > 0 )); then
-    ELAPSED_TIME_STR="$V hours, $ELAPSED_TIME_STR"
+  local -i DAYS=$((  HOURS   / 24 ))
+          HOURS=$((  HOURS   % 24 ))
+
+  local -i WEEKS=$(( DAYS    /  7 ))
+            DAYS=$(( DAYS    %  7 ))
+
+  # Months are problematic in a duration, because not all months have the same number of days.
+
+  local -a MESSAGE_COMPONENTS
+  local TMP
+
+  if (( WEEKS > 0 )); then
+
+    # Note the ' in %'d for the thousands separators. There could be 1,000 weeks or more.
+
+    printf -v TMP "%'d week" "$WEEKS"
+
+    if (( WEEKS != 1 )); then
+      TMP+="s"
+    fi
+
+    MESSAGE_COMPONENTS+=( "$TMP" )
   fi
 
-  printf -v ELAPSED_TIME_STR  "%s (%'d seconds)"  "$ELAPSED_TIME_STR"  "$SECONDS"
+  if (( DAYS > 0 )); then
+
+    printf -v TMP "%d day" "$DAYS"
+
+    if (( DAYS != 1 )); then
+      TMP+="s"
+    fi
+
+    MESSAGE_COMPONENTS+=( "$TMP" )
+  fi
+
+  if (( HOURS > 0 )); then
+
+    printf -v TMP "%d hour" "$HOURS"
+
+    if (( HOURS != 1 )); then
+      TMP+="s"
+    fi
+
+    MESSAGE_COMPONENTS+=( "$TMP" )
+
+  fi
+
+  if (( MINUTES > 0 )); then
+
+    printf -v TMP "%d minute" "$MINUTES"
+
+    if (( MINUTES != 1 )); then
+      TMP+="s"
+    fi
+
+    MESSAGE_COMPONENTS+=( "$TMP" )
+
+  fi
+
+  if (( SECONDS > 0 )); then
+
+    printf -v TMP "%d second" "$SECONDS"
+
+    if (( SECONDS != 1 )); then
+      TMP+="s"
+    fi
+
+    MESSAGE_COMPONENTS+=( "$TMP" )
+
+  fi
+
+
+  local -i MESSAGE_COMPONENT_COUNT="${#MESSAGE_COMPONENTS[@]}"
+
+  if (( MESSAGE_COMPONENT_COUNT < 2 )); then
+
+    ELAPSED_TIME_STR="${MESSAGE_COMPONENTS[0]}"
+
+  else
+
+    TMP=""
+    TMP+="${MESSAGE_COMPONENTS[$(( MESSAGE_COMPONENT_COUNT - 2 ))]}"
+    TMP+=" and "
+    TMP+="${MESSAGE_COMPONENTS[$(( MESSAGE_COMPONENT_COUNT - 1 ))]}"
+
+    if (( MESSAGE_COMPONENT_COUNT == 2 )); then
+
+      ELAPSED_TIME_STR="$TMP"
+
+    else
+
+      printf -v ELAPSED_TIME_STR \
+             "%s, " \
+             "${MESSAGE_COMPONENTS[@]:0:$(( MESSAGE_COMPONENT_COUNT - 2 ))}"
+
+      ELAPSED_TIME_STR+="$TMP"
+
+    fi
+
+  fi
+
+  printf -v TMP \
+         " (%'d seconds)" \
+         "$TOTAL_SECONDS"
+
+  ELAPSED_TIME_STR+="$TMP"
+}
+
+
+fhfd_test ()
+{
+  local -i NUMBER_OF_SECONDS="$1"
+  local    EXPECTED_RESULT="$2"
+
+  FHFD_TEST_CASE_NUMBER=$(( FHFD_TEST_CASE_NUMBER + 1 ))
+
+  echo "Test $FHFD_TEST_CASE_NUMBER"
+
+  format_human_friendly_duration "$NUMBER_OF_SECONDS"
+
+  if [[ $ELAPSED_TIME_STR != "$EXPECTED_RESULT" ]]; then
+
+    local ERR_MSG
+
+    ERR_MSG+="Test case failed:"$'\n'
+    ERR_MSG+="- Number of seconds: $NUMBER_OF_SECONDS"$'\n'
+    ERR_MSG+="- Result           : $ELAPSED_TIME_STR"$'\n'
+    ERR_MSG+="- Expected         : $EXPECTED_RESULT"
+
+    abort "$ERR_MSG"
+
+  fi
+}
+
+
+self_test_format_human_friendly_duration ()
+{
+  local SAVED_LC_NUMERIC="$LC_NUMERIC"
+  LC_NUMERIC=""  # The thousands separators should be the default ones.
+
+  local FHFD_TEST_CASE_NUMBER=0
+
+  fhfd_test "0"  "0 seconds"
+  fhfd_test "1"  "1 second"
+  fhfd_test "59" "59 seconds"
+
+  fhfd_test "$(( SECONDS_IN_WEEK        ))"  "1 week (604,800 seconds)"
+  fhfd_test "$(( SECONDS_IN_WEEK * 2    ))"  "2 weeks (1,209,600 seconds)"
+  fhfd_test "$(( SECONDS_IN_WEEK * 1234 ))"  "1,234 weeks (746,323,200 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK +     SECONDS_IN_DAY ))"  "1 week and 1 day (691,200 seconds)"
+  fhfd_test "$(( SECONDS_IN_WEEK + 2 * SECONDS_IN_DAY ))"  "1 week and 2 days (777,600 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK + SECONDS_IN_DAY + SECONDS_IN_HOUR ))"  "1 week, 1 day and 1 hour (694,800 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK + SECONDS_IN_DAY + SECONDS_IN_HOUR + SECONDS_IN_MINUTE ))"  "1 week, 1 day, 1 hour and 1 minute (694,860 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK + SECONDS_IN_DAY + SECONDS_IN_HOUR + SECONDS_IN_MINUTE + 3 ))"  "1 week, 1 day, 1 hour, 1 minute and 3 seconds (694,863 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK + SECONDS_IN_HOUR ))"  "1 week and 1 hour (608,400 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK + SECONDS_IN_HOUR + 2 * SECONDS_IN_MINUTE ))"  "1 week, 1 hour and 2 minutes (608,520 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_WEEK + SECONDS_IN_HOUR + 2 * SECONDS_IN_MINUTE + 3 ))"  "1 week, 1 hour, 2 minutes and 3 seconds (608,523 seconds)"
+
+  fhfd_test "$(( 2 * SECONDS_IN_WEEK + 1 ))"  "2 weeks and 1 second (1,209,601 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_DAY ))"  "1 day (86,400 seconds)"
+
+  fhfd_test "$(( SECONDS_IN_MINUTE     ))"  "1 minute (60 seconds)"
+  fhfd_test "$(( SECONDS_IN_MINUTE * 5 ))"  "5 minutes (300 seconds)"
+  fhfd_test "$(( SECONDS_IN_MINUTE + 3 ))"  "1 minute and 3 seconds (63 seconds)"
+
+  # There is a shortcoming here: this restore operation does not run if an error occurs above.
+  LC_NUMERIC="$SAVED_LC_NUMERIC"
 }
 
 
@@ -75,30 +270,51 @@ display_help ()
 {
   echo
   echo "$SCRIPT_NAME version $VERSION_NUMBER"
-  echo "Copyright (c) 2011-2022 R. Diez - Licensed under the GNU AGPLv3"
+  echo "Copyright (c) 2011-2023 R. Diez - Licensed under the GNU AGPLv3"
   echo
   echo "This tool runs a command with Bash, saves its stdout and stderr output and generates a report file."
   echo
-  echo "Use companion tool GenerateBuildReport.pl to generate an HTML table with the succeeded/failed status of all commands run. You can then drill-down to each command's output."
+  echo "Very long log files are often difficult to deal with, so storing a separate log file per task"
+  echo "can be helpful on its own. You can also use companion tool GenerateBuildReport.pl to generate"
+  echo "an HTML table with the succeeded (in green) and failed (in red) status of all commands run."
+  echo "You can then conveniently drill-down to each command's output."
   echo
   echo "Syntax:"
-  echo "  $SCRIPT_NAME <options...> <--> <programmatic name>  <user-friendly name>  filename.log  filename.report  command <command arguments...>"
+  echo "  $SCRIPT_NAME <options...> <--> command <command arguments...>"
   echo
   echo "Options:"
-  echo " --help     displays this help text"
-  echo " --version  displays the tool's version number (currently $VERSION_NUMBER)"
-  echo " --license  prints license information"
-  echo " --quiet    Suppress printing command banner, exit code and elapsed time."
+  echo " --help      displays this help text and exits"
+  echo " --version   displays the tool's version number (currently $VERSION_NUMBER) and exits"
+  echo " --license   prints license information and exits"
+  echo " --self-test runs some internal tests and exits"
+  echo " --id=xxx    Programmatic name of this task, for reporting purposes."
+  echo "             This option is normally a must, as each task needs a different ID."
+  echo " --userFriendlyName=xxx An optional user-friendly name for this task, for reporting purposes."
+  echo " --logFilename=xxx      The default log filename is derived from the task ID."
+  echo " --reportFilename=xxx   Companion tool GenerateBuildReport.pl needs these files."
+  echo "                        The default report filename is derived form the task ID."
+  echo "                        If you want to prevent the creation of the report file,"
+  echo "                        set the filename to /dev/null ."
   echo " --hide-from-report-if-successful  Sometimes, a task is only worth reporting when it fails."
-  echo " --copy-stderr=filename  Copies stderr to a separate file."
+  echo " --quiet                 Suppress printing command banner, exit code and elapsed time."
+  echo " --copy-stderr=filename  Copies stderr to a separate file. This is sometimes useful"
+  echo "                         to tell whether there was any stderr output at all."
   echo "                         This uses a separate 'tee' process for stderr, so the order of"
-  echo "                         stdout and stderr mixing in the final log file may change a little."
+  echo "                         stdout and stderr mixing in the normal log file may change a little."
   echo "                         This separate file does not appear in the report (no yet implemented)."
   echo
-  echo "Usage examples:"
-  echo "  ./$SCRIPT_NAME -- test1  \"Test 1\"  test1.log  test1.report  echo \"Test 1 output.\""
+  echo "Usage example:"
+  echo "  ./$SCRIPT_NAME --id=test1 -- echo \"Test 1 output.\""
   echo
-  echo "Exit status: Same as the command executed. Note that this script assumes that 0 means success."
+  echo "Exit status:"
+  echo "  If an error occurs inside this script, it yields a non-zero exit code."
+  echo "  Otherwise, the exit status is the same as the command executed."
+  echo "  Note that this script assumes that an exit status of 0 means success."
+  echo
+  echo "Script history:"
+  echo "  Compatibility break between script versions 1.07 und 1.08:"
+  echo "  The command-line options have changed, the task ID etc."
+  echo "  are no longer positional arguments."
   echo
   echo "Feedback: Please send feedback to rdiezmail-tools at yahoo.de"
   echo
@@ -109,7 +325,7 @@ display_license ()
 {
 cat - <<EOF
 
-Copyright (c) 2011-2022 R. Diez
+Copyright (c) 2011-2023 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
@@ -148,11 +364,39 @@ process_command_line_argument ()
     quiet)
         QUIET=true
         ;;
+    self-test)
+        self_test_format_human_friendly_duration
+        exit $EXIT_CODE_SUCCESS
+        ;;
     copy-stderr)
         if [[ $OPTARG = "" ]]; then
-          abort "Option --copy-stderr has an empty value.";
+          abort "Option --copy-stderr has an empty value."
         fi
         STDERR_COPY_FILENAME="$OPTARG"
+        ;;
+    id)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --id has an empty value."
+        fi
+        PROGRAMMATIC_NAME="$OPTARG"
+        ;;
+    userFriendlyName)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --userFriendlyName has an empty value."
+        fi
+        USER_FRIENDLY_NAME="$OPTARG"
+        ;;
+    logFilename)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --logFilename has an empty value."
+        fi
+        LOG_FILENAME="$OPTARG"
+        ;;
+    reportFilename)
+        if [[ $OPTARG = "" ]]; then
+          abort "Option --reportFilename has an empty value."
+        fi
+        REPORT_FILENAME="$OPTARG"
         ;;
 
     *)  # We should actually never land here, because parse_command_line_arguments() already checks if an option is known.
@@ -283,24 +527,39 @@ USER_LONG_OPTIONS_SPEC+=( [version]=0 )
 USER_LONG_OPTIONS_SPEC+=( [license]=0 )
 USER_LONG_OPTIONS_SPEC+=( [hide-from-report-if-successful]=0 )
 USER_LONG_OPTIONS_SPEC+=( [quiet]=0 )
+USER_LONG_OPTIONS_SPEC+=( [self-test]=0 )
 USER_LONG_OPTIONS_SPEC+=( [copy-stderr]=1 )
+USER_LONG_OPTIONS_SPEC+=( [id]=1 )
+USER_LONG_OPTIONS_SPEC+=( [userFriendlyName]=1 )
+USER_LONG_OPTIONS_SPEC+=( [logFilename]=1 )
+USER_LONG_OPTIONS_SPEC+=( [reportFilename]=1 )
 
 HIDE_FROM_REPORT_IF_SUCCESSFUL=false
 QUIET=false
 STDERR_COPY_FILENAME=""
+PROGRAMMATIC_NAME="DefaultTaskId"
+USER_FRIENDLY_NAME=""
+LOG_FILENAME=""
+REPORT_FILENAME=""
 
 parse_command_line_arguments "$@"
 
-if (( ${#ARGS[@]} < 5 )); then
+if (( ${#ARGS[@]} < 1 )); then
   abort "Invalid number of command-line arguments. Run this tool with the --help option for usage information."
 fi
 
-PROGRAMMATIC_NAME="${ARGS[0]}"
-USER_FRIENDLY_NAME="${ARGS[1]}"
-LOG_FILENAME="${ARGS[2]}"
-REPORT_FILENAME="${ARGS[3]}"
+if [ -z "$USER_FRIENDLY_NAME" ]; then
+  USER_FRIENDLY_NAME="$PROGRAMMATIC_NAME"
+fi
 
-ARGS=( "${ARGS[@]:4}" )
+if [ -z "$LOG_FILENAME" ]; then
+  LOG_FILENAME="$PROGRAMMATIC_NAME-log.txt"
+fi
+
+if [ -z "$REPORT_FILENAME" ]; then
+  REPORT_FILENAME="$PROGRAMMATIC_NAME.report"
+fi
+
 
 printf  -v USER_CMD  " %q"  "${ARGS[@]}"
 USER_CMD="${USER_CMD:1}"  # Remove the leading space.
@@ -317,6 +576,11 @@ START_TIME_UTC="$(date --date=@"$START_TIME" '+%Y-%m-%d %T %z' --utc)"
   # Print the executed command with proper quoting, so that the user can
   # copy-and-paste the command from the log file and expect it to work.
   echo "Log file for \"$USER_FRIENDLY_NAME\""
+
+  if [[ $PROGRAMMATIC_NAME != "$USER_FRIENDLY_NAME" ]]; then
+    echo "Programmatic task name: $PROGRAMMATIC_NAME"
+  fi
+
   printf "Command: %s" "$USER_CMD"
   echo
 
@@ -325,6 +589,8 @@ START_TIME_UTC="$(date --date=@"$START_TIME" '+%Y-%m-%d %T %z' --utc)"
   echo "Start time:  Local: $START_TIME_LOCAL, UTC: $START_TIME_UTC"
   echo "Environment variables:"
   export
+  echo
+  echo "Start of log for \"$USER_FRIENDLY_NAME\""
   echo
 } >"$LOG_FILENAME"
 
@@ -379,7 +645,7 @@ declare -r FINISH_UPTIME="$UPTIME"
 
 ELAPSED_SECONDS="$((FINISH_UPTIME - START_UPTIME))"
 
-get_human_friendly_elapsed_time "$ELAPSED_SECONDS"
+format_human_friendly_duration "$ELAPSED_SECONDS"
 
 if (( CMD_EXIT_CODE == 0 )); then
   FINISHED_MSG="The command finished successfully (exit code 0)."
@@ -389,7 +655,7 @@ fi
 
 {
   echo
-  echo "End of log file for \"$USER_FRIENDLY_NAME\""
+  echo "End of log for \"$USER_FRIENDLY_NAME\""
   echo "Finish time: Local: $FINISH_TIME_LOCAL, UTC: $FINISH_TIME_UTC"
   echo "Elapsed time: $ELAPSED_TIME_STR"
   echo "$FINISHED_MSG"
