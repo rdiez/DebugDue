@@ -2,7 +2,7 @@
 
 
 # Setting option '--no-builtin-variables' inside the makefile has no effect, at least when expanding
-# the top-level makefile expressions with GNU Make version 4.3. I guess it is too late to set
+# the top-level makefile expressions with GNU Make versions 4.3 and 4.4.1 . I guess it is too late to set
 # the option at this point. That means that option '--no-builtin-rules' does not get automatically enabled either.
 # Incidentally, '--no-builtin-variables' does seem to have an effect later on when executing the recipes, which
 # means its behaviour is then inconsistent and confusing if set here.
@@ -25,9 +25,10 @@ MAKEFLAGS += --no-builtin-rules
 
 # This makefile defines all variables that it needs. Turning on the following warning
 # makes the makefile easier to debug.
-# Unfortunately, setting this flag inside the makefile is not enough, as of GNU Make 4.3.
+# Unfortunately, setting this flag inside the makefile is not enough, as of GNU Make version 4.3.
 # It does work for undefined variables inside recipies, but not inside prerequisites or globally,
 # like "$(info $(UNDEFINED_VARIABLE))" at top level.
+# Later note: This option seems to work now globally too with GNU Make version 4.4.1 .
 MAKEFLAGS += --warn-undefined-variables
 
 # Unfortunately, option "--output-sync" leads to long periods of time with no output, followed by large bursts of output.
