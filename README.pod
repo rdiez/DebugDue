@@ -372,8 +372,8 @@ These are the commands I normally use to build a toolchain:
 
   < delete any old build and installation directories >
 
-  make CROSS_TOOLCHAIN_DIR=~/arduino/toolchain-test-bin  \
-       CROSS_TOOLCHAIN_BUILD_DIR=~/arduino/toolchain-test-build  \
+  make CROSS_TOOLCHAIN_DIR=~/DebugDue/toolchain-test-bin  \
+       CROSS_TOOLCHAIN_BUILD_DIR=~/DebugDue/toolchain-test-build  \
        TOOLCHAIN_TARGET_CPU=cortex-m3  \
        --no-builtin-variables  --warn-undefined-variables  \
        --output-sync=recurse  -j 5  \
