@@ -37,6 +37,14 @@
 #include <Misc/AssertionUtils.h>
 
 
+// Check that the assertion patch for Newlib was applied.
+#ifdef _PICOLIBC__
+  // I haven't got such a patch for Picolibc yet.
+#else
+  static_assert( IS_ASSERT_TYPE_HONOURED );
+#endif
+
+
 void RunUserCode ( void ) throw()
 {
   #ifdef __EXCEPTIONS  // If the compiler supports C++ exceptions...

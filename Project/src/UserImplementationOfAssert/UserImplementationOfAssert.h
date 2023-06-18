@@ -69,6 +69,8 @@
 
 #undef assert
 
+#define IS_ASSERT_TYPE_HONOURED  true
+
 #ifdef NDEBUG  // Required by the ANSI standard.
 
   #define assert(__e) ((void)0)
