@@ -10,10 +10,12 @@ set -o pipefail
 
 # set -x  # Enable tracing of this script.
 
+declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
+
 
 abort ()
 {
-  echo >&2 && echo "Error in script \"$0\": $*" >&2
+  echo >&2 && echo "Error in script \"$SCRIPT_NAME\": $*" >&2
   exit 1
 }
 
@@ -65,7 +67,10 @@ run_cmd ()
 
     noredir)
       # If you want to use this option, you should probably change the way the command is run below.
-      abort "We are not using 'noredir' anymore."
+      if [ -n "$SCRIPT_NAME" ]; then  # This condition is always true, but it prevents ShellCheck warning SC2317 (code unreachable) below.
+        abort "We are not using 'noredir' anymore."
+      fi
+
       set +o errexit
       eval "$L_CMD"
       local -r L_CMD_EXIT_CODE="$?"
