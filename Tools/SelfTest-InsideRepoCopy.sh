@@ -171,6 +171,11 @@ test_basic_functions_of_toolchain_makefile ()
   echo
   echo "Testing the basic functions of the toolchain makefile..."
 
+  # Workaround for a bug in GNU Make 4.4.1:
+  #   [Regression] --no-builtin-variables with --warn-undefined-variables trigger warning on GNUMAKEFLAGS
+  #   https://savannah.gnu.org/bugs/?63439
+  export GNUMAKEFLAGS=""
+
   local L_CMD
 
   # Running make without arguments should just display the help text.
