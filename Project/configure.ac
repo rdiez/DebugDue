@@ -194,8 +194,8 @@ if test "x$GCC" != "xyes"; then
   AC_MSG_ERROR([GCC is the only supported compiler at the moment.])
 fi
 
-# This code is inspired by macro AX_COMPILER_VERSION, because using that macro means that the user needs
-# to install GNU Autoconf Archive beforehand.
+# This code is inspired by macro AX_COMPILER_VERSION. Actually using that macro would
+# force the user to install the GNU Autoconf Archive beforehand.
 # Note that we are assuming here that the C and C++ compilers are the same version.
 AC_COMPUTE_INT(gcc_version_major, __GNUC__,, AC_MSG_FAILURE([unknown gcc major]))
 AC_COMPUTE_INT(gcc_version_minor, __GNUC_MINOR__,, AC_MSG_FAILURE([unknown gcc minor]))
@@ -203,11 +203,16 @@ AC_COMPUTE_INT(gcc_version_patch, __GNUC_PATCHLEVEL__,, AC_MSG_FAILURE([unknown 
 my_compiler_version="$gcc_version_major.$gcc_version_minor.$gcc_version_patch"
 echo "Detected compiler: GCC $my_compiler_version"
 
-IS_GCC_7_OR_LATER=false
-AS_VERSION_COMPARE( [$my_compiler_version], [7], [], [], [IS_GCC_7_OR_LATER=true] )
-IS_GCC_8_OR_LATER=false
-AS_VERSION_COMPARE( [$my_compiler_version], [8], [], [], [IS_GCC_8_OR_LATER=true] )
+# This check is not really necessary, as we only support GCC version 10 or later,
+# but this kind of version check will probably be useful in the future again,
+# so I have kept the code here.
+if false; then
+  IS_GCC_10_OR_LATER=false
+  AS_VERSION_COMPARE( [$my_compiler_version], [10], [], [], [IS_GCC_10_OR_LATER=true] )
+fi
 
+
+# ----------- Flag variables -----------
 
 BUILD_FLAGS=""           # Flags for C, C++ and the assembler.
 EXTRA_CPP_FLAGS=""       # C and C++ preprocessor flags.
@@ -246,21 +251,32 @@ else
     # -O3 optimisation with GCC options "#pragma GCC optimize ("string"...)" and "attribute((optimize("STRING")))".
     BUILD_FLAGS+=" -O3 -DNDEBUG"
 
-    if true; then
-      # The GCC toolchain is built with --enable-lto. I hope that makes it build the C runtime library,
-      # libstdc++, etc. with -flto. We should probably build newlib with LTO enabled too.
+    declare -r ENABLE_LTO=true
 
-      # GCC's option "-flto=jobserver" only works properly if the make recipe starts with the special character '+',
-      # so that GNU Make passes the jobserver file descriptors to the child process.
-      #   LTO_PARALLEL_LEVEL="jobserver"
-      # Unfortunately, that is not possible with Automake 1.15.1. I asked in the Automake mailing list to no avail:
-      #   Subject: Prepending '+' to the recipe line when linking with GCC's -flto=jobserver
-      #   URL: https://lists.gnu.org/archive/html/automake/2020-02/msg00012.html
-      # As a workaround, I am requesting as many threads as CPU cores + 1. This is not ideal if you are using
-      # a top-level jobserver to build several projects like this one in parallel.
-      LTO_PARALLEL_LEVEL="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
+    if $ENABLE_LTO; then
 
-      BUILD_FLAGS+=" -flto=$LTO_PARALLEL_LEVEL"
+      # Notes about option "-flto=auto":
+      # - Setting "auto" is only available on GCC version 10 and later.
+      #   If you using an older GCC version, use "-flto" or "-flto=n",
+      #   because "-flto=jobserver" is unlikely to work.
+      #   But beware that this project only supports GCC version 10 or later.
+      # - GCC only uses the inherited jobserver under certain situations.
+      #   If GCC ends up not using it, and you are using a top-level jobserver to build several
+      #   projects like this one in parallel, then LTO could overload the system,
+      #   as there will be no global limit to the number of parallel jobs.
+      # - Only GNU Make version 4.4 and later supports named pipes in the jobserver,
+      #   and only on some platforms.
+      # - If GNU Make uses inherited file descriptors, the jobserver will not be used.
+      #   The make recipes must start with the special character '+' in order for GNU Make to pass
+      #   the jobserver file descriptors to the child processes. Unfortunately, that is not possible
+      #   with Automake 1.15.1 and later versions (as of 1.16.5). I asked in the Automake mailing list to no avail:
+      #     Subject: Prepending '+' to the recipe line when linking with GCC's -flto=jobserver
+      #     URL: https://lists.gnu.org/archive/html/automake/2020-02/msg00012.html
+      # - Only GCC version 13 and later support named pipes in the jobserver.
+      #
+      # In short: Using "-flto=auto" should parallelise LTO, but an inherited jobserver
+      # (supposed to limit the system load) may not be honoured.
+      BUILD_FLAGS+=" -flto=auto"
 
       # Compilation is faster without "fat LTO objects", and the .o files are also significantly smaller.
       # The following option is not really necessary, because that mode is actually the default in our toolchain,
@@ -665,15 +681,15 @@ AC_CONFIG_FILES(
 AC_OUTPUT
 
 
-# Optionally show the Autotools versions this script is using.
+# Optionally show the tool versions this script is using.
 
-SHOW_TOOL_VERSIONS=false
+declare -r SHOW_TOOL_VERSIONS=false
 
 if $SHOW_TOOL_VERSIONS; then
 
   echo "Tool versions:"
 
-  TMP_TXT="$(make --version)"
+  TMP_TXT="$($am_make --version)"
   head -n 1 - <<<"- $TMP_TXT"
 
   TMP_TXT="$(autoconf --version)"
@@ -684,6 +700,8 @@ if $SHOW_TOOL_VERSIONS; then
 
   # We could also show the libtool version here, but we are not using it at all,
   # so it may not even be installed.
+  #
+  # The GCC version is shown further above.
 fi
 
 

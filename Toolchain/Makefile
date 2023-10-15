@@ -63,29 +63,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 
 VERSION_SET := VersionSet13
 
-ifeq ($(VERSION_SET),VersionSet3)
-
-  BINUTILS_VERSION := 2.34
-  GMP_VERSION := 6.2.0
-  MPFR_VERSION := 4.0.2
-  MPC_VERSION := 1.1.0
-  GCC_VERSION := 9.3.0
-  NEWLIB_VERSION := 3.3.0
-  PICOLIBC_VERSION := picolibc-not-supported-yet
-  GDB_VERSION := 9.1
-
-else ifeq ($(VERSION_SET),VersionSet4)
-
-  BINUTILS_VERSION := 2.35.1
-  GMP_VERSION := 6.2.0
-  MPFR_VERSION := 4.1.0
-  MPC_VERSION := 1.2.0
-  GCC_VERSION := 9.3.0
-  NEWLIB_VERSION := 3.3.0
-  PICOLIBC_VERSION := picolibc-not-supported-yet
-  GDB_VERSION := 9.2
-
-else ifeq ($(VERSION_SET),VersionSet7)
+ifeq ($(VERSION_SET),VersionSet7)
 
   BINUTILS_VERSION := 2.36.1
   GMP_VERSION := 6.2.1
@@ -176,13 +154,12 @@ ifneq "$(TARGET_LIBC)" "newlib"
 endif
 
 
-IS_GCC_9_X   := $(filter 9.%,$(GCC_VERSION))
 IS_GCC_10_X  := $(filter 10.%,$(GCC_VERSION))
 IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
 IS_GCC_12_X  := $(filter 12.%,$(GCC_VERSION))
 IS_GCC_13_X  := $(filter 13.%,$(GCC_VERSION))
 
-ifeq "$(or $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X) )" ""
+ifeq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X) )" ""
   $(error Unsupported GCC version)
 endif
 
@@ -225,10 +202,28 @@ HF_OPT += -O3
 HF_OPT += -march=native
 
 
-# See the project's configure.ac file for more information about why we are
-# not using "-flto=jobserver" here.
-LTO_PARALLEL_LEVEL:=$(shell echo $$(( $$(getconf _NPROCESSORS_ONLN) + 1 )) )
-HF_LTO := -flto=$(LTO_PARALLEL_LEVEL)
+# Notes about option "-flto=auto":
+# - Setting "auto" is only available on GCC version 10 and later.
+#   If you using an older GCC version, use "-flto" or "-flto=n",
+#   because "-flto=jobserver" is unlikely to work.
+#   But beware that this project only supports GCC version 10 or later.
+# - GCC only uses the inherited jobserver under certain situations.
+#   If GCC ends up not using it, and you are using a top-level jobserver to build several
+#   projects like this one in parallel, then LTO could overload the system,
+#   as there will be no global limit to the number of parallel jobs.
+# - Only GNU Make version 4.4 and later supports named pipes in the jobserver,
+#   and only on some platforms.
+# - If GNU Make uses inherited file descriptors, the jobserver will not be used.
+#   The make recipes must start with the special character '+' in order for GNU Make to pass
+#   the jobserver file descriptors to the child processes. Unfortunately, that is not possible
+#   with Automake 1.15.1 and later versions (as of 1.16.5). I asked in the Automake mailing list to no avail:
+#     Subject: Prepending '+' to the recipe line when linking with GCC's -flto=jobserver
+#     URL: https://lists.gnu.org/archive/html/automake/2020-02/msg00012.html
+# - Only GCC version 13 and later support named pipes in the jobserver.
+#
+# In short: Using "-flto=auto" should parallelise LTO, but an inherited jobserver
+# (supposed to limit the system load) may not be honoured.
+HF_LTO := -flto=auto
 
 
 HOST_FLAGS_WITHOUT_OPT      := CFLAGS="$(HF_COMMON) $(HF_NO_OPT)"        CXXFLAGS="$(HF_COMMON) $(HF_NO_OPT)"
@@ -635,7 +630,7 @@ GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME :=
 
 ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
 
-  ifneq "$(or $(IS_GCC_9_X), $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
+  ifneq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
     # The patch for GCC version 5.1.0 works up to GCC version 12.x .
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
   else ifneq "$(IS_GCC_13_X)" ""
