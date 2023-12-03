@@ -87,6 +87,10 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   # I reported this issue to the Autoconf project:
   #   sr #110476: ar: `u' modifier ignored since `D' is the default (see `U')
   #   https://savannah.gnu.org/support/index.php?110476
+  # It turns out that this was an Automake issue, see Automate bug number 20082.
+  # It has been fixed on 2023-11-21 with this commit:
+  #   https://git.savannah.gnu.org/cgit/automake.git/commit/?h=8cdbdda5aec652c356fe6dbba96810202176ae75
+  # When the information in this comment was last updated, there was no new Autoconf release yet with this fix.
   libAtmelSoftwareFramework_a_AR := $(AR) cr
 
   firmware_elf_LDADD += libAtmelSoftwareFramework.a
