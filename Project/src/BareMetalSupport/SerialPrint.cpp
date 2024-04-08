@@ -20,6 +20,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <inttypes.h>
+#include <stdexcept>
 
 #include "SerialPortAsyncTx.h"
 
@@ -87,7 +88,12 @@ void SerialPrintV ( const char * const formatStr, va_list argList )
 
   const int len = vsnprintf( buffer, MAX_SERIAL_PRINT_LEN + 1, formatStr, argList );
 
-  if ( len >= MAX_SERIAL_PRINT_LEN + 1 )  // If the string needs to be truncated ...
+  if ( len < 0 )
+  {
+    // I do not think that vsnprintf would ever fail, but you never know.
+    throw std::runtime_error( "vsnprintf failed." );
+  }
+  else if ( len >= MAX_SERIAL_PRINT_LEN + 1 )  // If the string needs to be truncated ...
   {
     assert( false );  // The caller should strive to avoid any truncation.
 
