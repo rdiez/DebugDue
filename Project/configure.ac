@@ -579,13 +579,17 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wunreachable-code"
 EXTRA_C_AND_CXX_FLAGS+=" -Wredundant-decls"
 EXTRA_C_AND_CXX_FLAGS+=" -Wwrite-strings"
 EXTRA_C_AND_CXX_FLAGS+=" -Wfloat-equal"
-EXTRA_C_AND_CXX_FLAGS+=" -Wformat=2"
+EXTRA_C_AND_CXX_FLAGS+=" -Wformat=2"  # Also enables '-Wformat-nonliteral'.
+EXTRA_C_AND_CXX_FLAGS+=" -Wformat-signedness"
+EXTRA_C_AND_CXX_FLAGS+=" -Wformat-truncation=2"
 EXTRA_C_AND_CXX_FLAGS+=" -Wunknown-pragmas"
 EXTRA_C_AND_CXX_FLAGS+=" -Wattributes"
 EXTRA_C_AND_CXX_FLAGS+=" -Wtrampolines"
+EXTRA_C_AND_CXX_FLAGS+=" -Wpacked"
 EXTRA_C_AND_CXX_FLAGS+=" -Wnormalized=nfc"
 EXTRA_C_AND_CXX_FLAGS+=" -Wpragmas"
 EXTRA_C_AND_CXX_FLAGS+=" -Wlogical-op"
+EXTRA_C_AND_CXX_FLAGS+=" -Wduplicated-branches"
 EXTRA_C_AND_CXX_FLAGS+=" -Wduplicated-cond"
 EXTRA_C_AND_CXX_FLAGS+=" -Wunsafe-loop-optimizations"
 EXTRA_C_AND_CXX_FLAGS+=" -Wstack-protector"
@@ -610,6 +614,8 @@ fi
 
 EXTRA_C_FLAGS+=" -Wc++-compat"
 EXTRA_C_FLAGS+=" -Wstrict-prototypes"
+EXTRA_C_FLAGS+=" -Wbad-function-cast"
+EXTRA_C_FLAGS+=" -Wnested-externs"
 
 EXTRA_C_FLAGS+=" -Wmissing-prototypes"      # "no previous prototype"   warning for C   mode.
 EXTRA_CXX_FLAGS+=" -Wmissing-declarations"  # "no previous declaration" warning for C++ mode.
@@ -638,6 +644,17 @@ EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=malloc"
 # EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=pure"
 # EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=noreturn"
 # EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=cold"
+
+EXTRA_CXX_FLAGS+=" -Wnoexcept"
+EXTRA_CXX_FLAGS+=" -Wsign-promo"
+EXTRA_CXX_FLAGS+=" -Wsuggest-override"
+EXTRA_CXX_FLAGS+=" -Wuseless-cast"
+EXTRA_CXX_FLAGS+=" -Wzero-as-null-pointer-constant"
+EXTRA_CXX_FLAGS+=" -Wextra-semi"
+EXTRA_CXX_FLAGS+=" -Wcomma-subscript"
+EXTRA_CXX_FLAGS+=" -Wredundant-tags"
+EXTRA_CXX_FLAGS+=" -Wvolatile"  # Enabled by default with '-std=c++20'.
+
 
 # --- Compiler warning configuration, end ---
 

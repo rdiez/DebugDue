@@ -743,8 +743,8 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_MEMORY_USAGE, false, false, &extraParamsFound ) )
   {
-    const unsigned stackAreaSize = unsigned( uintptr_t( &__StackTop  ) - uintptr_t( &__StackLimit ) );
-    const unsigned heapAreaSize  = unsigned( uintptr_t( &__HeapLimit ) - uintptr_t( &__end__      ) );
+    const unsigned stackAreaSize = uintptr_t( &__StackTop  ) - uintptr_t( &__StackLimit );
+    const unsigned heapAreaSize  = uintptr_t( &__HeapLimit ) - uintptr_t( &__end__      );
 
     Printf( "Used stack (estimated): %zu from %u bytes." EOL,
              GetStackSizeUsageEstimate(),

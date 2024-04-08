@@ -52,7 +52,7 @@ static volatile bool s_rxBufferOverrun = false;
 class CSerialPortConsole : public CGenericSerialConsole
 {
 private:
-  virtual void Printf ( const char * formatStr, ... ) const __attribute__ ((format(printf, 2, 3)));
+  virtual void Printf ( const char * formatStr, ... ) const override __attribute__ ((format(printf, 2, 3)));
 
 public:
 
@@ -76,8 +76,8 @@ void CSerialPortConsole::Printf ( const char * formatStr, ... ) const
 class CProgrammingUsbCommandProcessor : public CCommandProcessor
 {
 private:
-  virtual void Printf ( const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
-  virtual void PrintStr ( const char * str );
+  virtual void Printf ( const char * formatStr, ... ) override __attribute__ ((format(printf, 2, 3)));
+  virtual void PrintStr ( const char * str ) override;
 
 public:
     CProgrammingUsbCommandProcessor ( void )

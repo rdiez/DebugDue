@@ -269,7 +269,7 @@ void CpuLoadStatsTick ( void ) throw()
   {
     CAutoDisableInterrupts autoDisableInterrupts;
 
-    s_tickCount++;
+    s_tickCount = s_tickCount + 1;
   }
 }
 

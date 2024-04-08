@@ -224,7 +224,7 @@ void StartOfUserCode ( void )
       SerialPrintf( "Stack entering main loop: current depth: %zu, estimated usage %zu, max room %u bytes." EOL,
                     GetCurrentStackDepth(),
                     GetStackSizeUsageEstimate(),
-                    STACK_SIZE );
+                    unsigned( STACK_SIZE ) );
 
     }
 

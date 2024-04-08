@@ -42,7 +42,7 @@ class CUsbSerialConsole : public CGenericSerialConsole
 private:
   CUsbTxBuffer * m_txBuffer;
 
-  virtual void Printf ( const char * formatStr, ... ) const __attribute__ ((format(printf, 2, 3)));
+  virtual void Printf ( const char * formatStr, ... ) const override __attribute__ ((format(printf, 2, 3)));
 
 public:
 
@@ -98,8 +98,8 @@ const char * CUsbSerialConsole::AddSerialChar ( const uint8_t c,
 class CNativeUsbCommandProcessor : public CCommandProcessor
 {
 private:
-  virtual void Printf ( const char * formatStr, ... ) __attribute__ ((format(printf, 2, 3)));
-  virtual void PrintStr ( const char * str );
+  virtual void Printf ( const char * formatStr, ... ) override __attribute__ ((format(printf, 2, 3)));
+  virtual void PrintStr ( const char * str ) override;
 
 public:
     CNativeUsbCommandProcessor ( CUsbRxBuffer * const rxBuffer,
