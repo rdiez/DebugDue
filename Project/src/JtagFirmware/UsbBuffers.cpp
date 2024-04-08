@@ -89,7 +89,7 @@ void UsbPrintV ( CUsbTxBuffer * const txBuffer, const char * const formatStr, va
   }
   else
   {
-    SendData( txBuffer, (const uint8_t *)buffer, len );
+    SendData( txBuffer, (const uint8_t *)buffer, size_t( len ) );
   }
 }
 

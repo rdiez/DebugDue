@@ -774,7 +774,7 @@ static bool ShiftCommand ( CUsbRxBuffer * const rxBuffer,
   }
 
 
-  const unsigned dataByteCount = ( dataBitCount + 7 ) / 8;
+  const unsigned dataByteCount = unsigned( ( dataBitCount + 7 ) / 8 );
   const uint32_t cmdLen   = TAP_SHIFT_CMD_HEADER_LEN + dataByteCount * 2;
   const uint32_t replyLen = TAP_SHIFT_CMD_HEADER_LEN + dataByteCount;
 

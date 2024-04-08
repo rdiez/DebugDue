@@ -99,7 +99,7 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 
   # We cannot realistically fix all warnings in the Atmel Software Library, so selectively turn some of them off.
   # If you encounter too many in the future, you could also turn all warnings off for this library.
-  libAtmelSoftwareFramework_a_CFLAGS += -Wno-cast-qual -Wno-conversion -Wno-expansion-to-defined
+  libAtmelSoftwareFramework_a_CFLAGS += -Wno-cast-qual -Wno-conversion -Wno-sign-conversion -Wno-expansion-to-defined
 
   libAtmelSoftwareFramework_a_CPPFLAGS := $(AM_CPPFLAGS)
 

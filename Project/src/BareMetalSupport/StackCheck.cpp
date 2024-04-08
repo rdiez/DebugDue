@@ -77,12 +77,13 @@ size_t GetStackSizeUsageEstimate ( void ) throw()
     {
         if ( *scan != STACK_CANARY_VAL )
         {
-            return endAddr - scan;
+            return size_t( endAddr - scan );
         }
     }
 
+    // It is very rare that the whole stack space has been used up.
     assert( false );
-    return endAddr - startAddr;
+    return size_t( endAddr - startAddr );
 }
 
 

@@ -106,6 +106,6 @@ void SerialPrintV ( const char * const formatStr, va_list argList )
   }
   else
   {
-    SendSerialPortAsyncData( buffer, len );
+    SendSerialPortAsyncData( buffer, size_t( len ) );
   }
 }
