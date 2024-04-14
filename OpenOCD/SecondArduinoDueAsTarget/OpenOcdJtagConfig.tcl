@@ -54,7 +54,13 @@ cortex_m  reset_config  sysresetreq
 # Alas, I don't know yet how to translate the values above into a value here.
 # The default is 0, and the documentation does not state how long OpenOCD waits, so that it could change
 # depending on the PC speed. 1 ms seems a good value.
-adapter_nsrst_assert_width 1
+
+if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
+  adapter srst pulse_width 1
+} else {
+  adapter_nsrst_assert_width 1
+}
+
 
 # The documented default of 100 ms delay after deasserting SRST is too long.
 # With one Arduino Due board running the optimised DebugDue firmware in order to debug another Arduino Due board,
@@ -64,7 +70,13 @@ adapter_nsrst_assert_width 1
 # 10 ms is too long for the non-optimised DebugDue firmware, the firmware has time to complete the delay busy-loop
 # and goes further. 5 ms seems to work well.
 #   adapter_nsrst_assert_width  milliseconds
-adapter_nsrst_delay 5
+
+if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
+  adapter srst delay 5
+} else {
+  adapter_nsrst_delay 5
+}
+
 
 proc arduino_due_reset_and_halt { } {
 

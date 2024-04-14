@@ -1425,6 +1425,7 @@ check_open_ocd_version ()
 {
   # OpenOCD versions older than 0.10.0 will probably not work well.
   local -r OPENOCD_MINIMUM_VERSION="0.10.0"
+  local -r OPENOCD_VERSION_0_11_0="0.11.0"
 
   echo "Checking that OpenOCD is at least version $OPENOCD_MINIMUM_VERSION..."
 
@@ -1457,7 +1458,18 @@ check_open_ocd_version ()
 
   echo "OpenOCD version found: $OPENOCD_VERSION_NUMBER_FOUND"
 
-  declare -r CHECK_VERSION_TOOL="$DEBUGDUE_ROOT_DIR/Tools/CheckVersion.sh"
+  local -r CHECK_VERSION_TOOL="$DEBUGDUE_ROOT_DIR/Tools/CheckVersion.sh"
+
+  local IS_VER_0_11_0_OR_HIGHER_BOOL
+
+  IS_VER_0_11_0_OR_HIGHER_BOOL="$("$CHECK_VERSION_TOOL" --result-as-text "OpenOCD" "$OPENOCD_VERSION_NUMBER_FOUND" ">=" "$OPENOCD_VERSION_0_11_0")"
+
+  case "$IS_VER_0_11_0_OR_HIGHER_BOOL" in
+    true)  IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER=true
+           return;;
+    false) IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER=false;;
+    *) abort "Tool \"$CHECK_VERSION_TOOL\" returned invalid answer \"$IS_VER_0_11_0_OR_HIGHER_BOOL\"."
+  esac
 
   "$CHECK_VERSION_TOOL" "OpenOCD" "$OPENOCD_VERSION_NUMBER_FOUND" ">=" "$OPENOCD_MINIMUM_VERSION"
 }
@@ -1476,6 +1488,12 @@ do_program_and_debug ()
   if false; then
     # The default is debug level 2. Level 3 is too verbose and slows execution down considerably.
     quote_and_append_args OPEN_OCD_CMD "--debug=3"
+  fi
+
+  if $IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER; then
+    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher true"
+  else
+    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher false"
   fi
 
   # OpenOCD's documentation states the following:
@@ -1548,7 +1566,11 @@ do_program_and_debug ()
       #   You can use command-line option '--verify' (at the cost of a short extra delay)
       #   to make sure that you can trust your setup.
       #   Speeds over 10 MHz do not really bring any advantage, as the Flash memory becomes then the bottleneck.
-      add_openocd_cmd "adapter_khz 10000"
+      if $IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER; then
+        add_openocd_cmd "adapter speed 10000"
+      else
+        add_openocd_cmd "adapter_khz 10000"
+      fi
 
       # Explicitly select JTAG, just in case.
       add_openocd_cmd "transport select jtag"
@@ -1557,7 +1579,11 @@ do_program_and_debug ()
     Flyswatter2)
       # Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
       # See the notes above in the Olimex-ARM-USB-OCD-H section for more information about the debug adapter speed.
-      add_openocd_cmd "adapter_khz 10000"
+      if $IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER; then
+        add_openocd_cmd "adapter speed 10000"
+      else
+        add_openocd_cmd "adapter_khz 10000"
+      fi
       ;;
 
     *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
