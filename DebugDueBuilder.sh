@@ -1488,7 +1488,7 @@ do_program_and_debug ()
     DebugDue)
       printf -v TMP_STR  "set DEBUGDUE_SERIAL_PORT %q"  "$DEBUGDUE_SERIAL_PORT"
       add_openocd_cmd "$TMP_STR"
-      quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/DebugDueInterfaceConfig.cfg"
+      quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/DebugDueInterfaceConfig.tcl"
       ;;
     Flyswatter2)
       quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/flyswatter2.cfg"
@@ -1501,7 +1501,7 @@ do_program_and_debug ()
 
   quote_and_append_args OPEN_OCD_CMD "--file" "target/at91sam3ax_8x.cfg"
 
-  quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.cfg"
+  quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.tcl"
 
   # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
   # back to 500 KHz, at least with the Flyswatter2.
