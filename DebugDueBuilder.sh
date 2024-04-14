@@ -1513,6 +1513,11 @@ do_program_and_debug ()
       ;;
     Olimex-ARM-USB-OCD-H)
       quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/olimex-arm-usb-ocd-h.cfg"
+
+      # Prevent the following log information line by explicitly selecting the transport here.
+      #   Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
+      add_openocd_cmd "transport select jtag"
+
       ;;
     *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
   esac
@@ -1550,7 +1555,8 @@ do_program_and_debug ()
       #
       #   The maximum JTAG speed for this kind of chip is F_CPU/6. If the CPU is running at the normal speed of 84 MHz,
       #   the maximum JTAG clock would be 14 MHz then. Note however that the SAM3X starts at 4 MHz upon reset,
-      #   so that maximum speed is 666 kHz.
+      #   so that maximum speed is 666 kHz. The standard OpenOCD configuration sets it to 500 kHz,
+      #   because the internal oscillator may not be very accurate.
       #
       #   If the firmware from this project has been programmed already, you can use the maximum speed,
       #   because the firmware increases F_CPU to 84 MHz on start-up before the short pause
@@ -1571,9 +1577,6 @@ do_program_and_debug ()
       else
         add_openocd_cmd "adapter_khz 10000"
       fi
-
-      # Explicitly select JTAG, just in case.
-      add_openocd_cmd "transport select jtag"
       ;;
 
     Flyswatter2)
