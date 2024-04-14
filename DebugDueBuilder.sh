@@ -1488,20 +1488,20 @@ do_program_and_debug ()
     DebugDue)
       printf -v TMP_STR  "set DEBUGDUE_SERIAL_PORT %q"  "$DEBUGDUE_SERIAL_PORT"
       add_openocd_cmd "$TMP_STR"
-      quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/DebugDueInterfaceConfig.cfg"
+      quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/DebugDueInterfaceConfig.cfg"
       ;;
     Flyswatter2)
-      quote_and_append_args OPEN_OCD_CMD  "-f" "interface/ftdi/flyswatter2.cfg"
+      quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/flyswatter2.cfg"
       ;;
     Olimex-ARM-USB-OCD-H)
-      quote_and_append_args OPEN_OCD_CMD  "-f" "interface/ftdi/olimex-arm-usb-ocd-h.cfg"
+      quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/olimex-arm-usb-ocd-h.cfg"
       ;;
     *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
   esac
 
-  quote_and_append_args OPEN_OCD_CMD "-f" "target/at91sam3ax_8x.cfg"
+  quote_and_append_args OPEN_OCD_CMD "--file" "target/at91sam3ax_8x.cfg"
 
-  quote_and_append_args OPEN_OCD_CMD "-f" "$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.cfg"
+  quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.cfg"
 
   # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
   # back to 500 KHz, at least with the Flyswatter2.
