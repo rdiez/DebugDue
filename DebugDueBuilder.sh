@@ -1508,9 +1508,14 @@ do_program_and_debug ()
       add_openocd_cmd "$TMP_STR"
       quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/DebugDueInterfaceConfig.tcl"
       ;;
+
     Flyswatter2)
       quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/flyswatter2.cfg"
+
+      # TDO is actually valid on the falling edge of the clock.
+      add_openocd_cmd "ftdi_tdo_sample_edge falling"
       ;;
+
     Olimex-ARM-USB-OCD-H)
       quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/olimex-arm-usb-ocd-h.cfg"
 
@@ -1518,7 +1523,10 @@ do_program_and_debug ()
       #   Info : auto-selecting first available session transport "jtag". To override use 'transport select <transport>'.
       add_openocd_cmd "transport select jtag"
 
+      # TDO is actually valid on the falling edge of the clock.
+      add_openocd_cmd "ftdi_tdo_sample_edge falling"
       ;;
+
     *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
   esac
 
