@@ -87,11 +87,15 @@ proc my_reset_init_proc { } {
 
     mww $::REG_RSTC_CR $::REG_RSTC_CR_RESET_PERIPHERALS
 
+    echo "Finished resetting the microcontroller peripherals."
+
   } else {
 
     echo "Resetting the microcontroller CPU and peripherals..."
 
     mww $::REG_RSTC_CR $::REG_RSTC_CR_RESET_CPU_AND_PERIPHERALS
+
+    echo "Finished resetting the microcontroller CPU and peripherals."
   }
 }
 
