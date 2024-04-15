@@ -1426,6 +1426,7 @@ check_open_ocd_version ()
   # OpenOCD versions older than 0.10.0 will probably not work well.
   local -r OPENOCD_MINIMUM_VERSION="0.10.0"
   local -r OPENOCD_VERSION_0_11_0="0.11.0"
+  local -r OPENOCD_VERSION_0_12_0="0.12.0"
 
   echo "Checking that OpenOCD is at least version $OPENOCD_MINIMUM_VERSION..."
 
@@ -1459,6 +1460,20 @@ check_open_ocd_version ()
   echo "OpenOCD version found: $OPENOCD_VERSION_NUMBER_FOUND"
 
   local -r CHECK_VERSION_TOOL="$DEBUGDUE_ROOT_DIR/Tools/CheckVersion.sh"
+
+
+  local IS_VER_0_12_0_OR_HIGHER_BOOL
+
+  IS_VER_0_12_0_OR_HIGHER_BOOL="$("$CHECK_VERSION_TOOL" --result-as-text "OpenOCD" "$OPENOCD_VERSION_NUMBER_FOUND" ">=" "$OPENOCD_VERSION_0_12_0")"
+
+  case "$IS_VER_0_12_0_OR_HIGHER_BOOL" in
+    true)  IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER=true
+           IS_OPEN_OCD_VERSION_0_12_0_OR_HIGHER=true
+           return;;
+    false) IS_OPEN_OCD_VERSION_0_12_0_OR_HIGHER=false;;
+    *) abort "Tool \"$CHECK_VERSION_TOOL\" returned invalid answer \"$IS_VER_0_12_0_OR_HIGHER_BOOL\"."
+  esac
+
 
   local IS_VER_0_11_0_OR_HIGHER_BOOL
 
@@ -1496,6 +1511,12 @@ do_program_and_debug ()
     add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher 0"
   fi
 
+  if $IS_OPEN_OCD_VERSION_0_12_0_OR_HIGHER; then
+    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_12_0_OrHigher 1"
+  else
+    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_12_0_OrHigher 0"
+  fi
+
   # OpenOCD's documentation states the following:
   #   By default, OpenOCD will listen on the loopback interface only.
   # But my OpenOCD version 0.10.0 is listening on all IP addresses, which makes it a security risk.
@@ -1513,7 +1534,11 @@ do_program_and_debug ()
       quote_and_append_args OPEN_OCD_CMD  "--file" "interface/ftdi/flyswatter2.cfg"
 
       # TDO is actually valid on the falling edge of the clock.
-      add_openocd_cmd "ftdi_tdo_sample_edge falling"
+      if $IS_OPEN_OCD_VERSION_0_12_0_OR_HIGHER; then
+        add_openocd_cmd "ftdi tdo_sample_edge falling"
+      else
+        add_openocd_cmd "ftdi_tdo_sample_edge falling"
+      fi
       ;;
 
     Olimex-ARM-USB-OCD-H)
@@ -1524,7 +1549,11 @@ do_program_and_debug ()
       add_openocd_cmd "transport select jtag"
 
       # TDO is actually valid on the falling edge of the clock.
-      add_openocd_cmd "ftdi_tdo_sample_edge falling"
+      if $IS_OPEN_OCD_VERSION_0_12_0_OR_HIGHER; then
+        add_openocd_cmd "ftdi tdo_sample_edge falling"
+      else
+        add_openocd_cmd "ftdi_tdo_sample_edge falling"
+      fi
       ;;
 
     *) abort "Invalid DEBUG_ADAPTER value of \"$DEBUG_ADAPTER\"." ;;
