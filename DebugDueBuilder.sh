@@ -1491,9 +1491,9 @@ do_program_and_debug ()
   fi
 
   if $IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER; then
-    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher true"
+    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher 1"
   else
-    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher false"
+    add_openocd_cmd "set ::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher 0"
   fi
 
   # OpenOCD's documentation states the following:
