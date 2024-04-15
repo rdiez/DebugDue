@@ -645,6 +645,8 @@ EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=malloc"
 # EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=noreturn"
 # EXTRA_CXX_FLAGS+=" -Wsuggest-attribute=cold"
 
+EXTRA_CXX_FLAGS+=" -Wunused-const-variable"  # This C++ warning must be enabled explicitly, that is,
+                                             # neither -Wall nor -Wunused-variable enable it for C++.
 EXTRA_CXX_FLAGS+=" -Wnoexcept"
 EXTRA_CXX_FLAGS+=" -Wsign-promo"
 EXTRA_CXX_FLAGS+=" -Wsuggest-override"
