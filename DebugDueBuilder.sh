@@ -1534,8 +1534,31 @@ do_program_and_debug ()
 
   quote_and_append_args OPEN_OCD_CMD "--file" "$OPENOCD_CONFIG_DIR/OpenOcdJtagConfig.tcl"
 
-  # Set the JTAG clock speed. If you try to set it speed earlier, it gets overridden
+  # Set the JTAG clock speed. If you try to set the speed earlier, it gets overridden
   # back to 500 KHz, at least with the Flyswatter2.
+  #
+  # About the connection speed:
+  #   The maximum JTAG speed for this kind of microcontroller is F_CPU/6.
+  #   The SAM3X starts at 4 MHz upon reset, so that maximum JTAG speed on start-up is 666 kHz.
+  #   However, the standard OpenOCD configuration sets the JTAG speed to 500 kHz,
+  #   because the internal oscillator may not be very accurate.
+  #   The flash write speed is then around 13 kBytes/s.
+  #   We could increase the CPU clock temporarily before flashing the firmware in order to save time.
+  #
+  #   If the CPU is running at the normal speed of 84 MHz, the maximum JTAG clock would be 14 MHz then.
+  #   If the firmware from this project has been programmed already, you can use that maximum speed,
+  #   because the firmware increases F_CPU to 84 MHz on start-up before the short pause
+  #   for the eventual OpenOCD connection. There are some gotchas though:
+  #   - We cannot be sure that the firmware has actually increased the CPU clock.
+  #   - We are resetting now with software (instead of with the hardware SRST signal),
+  #     so the firmware will not run at all upon reset.
+  #
+  #   Note that high speeds may not be reliable, especially if you use non-professional cables.
+  #   You can use command-line option '--verify' (at the cost of a short extra delay)
+  #   to make sure that you can trust your setup.
+  #   Speeds over 10 MHz do not really bring any advantage, as the Flash memory becomes then the bottleneck.
+  local -r -i ADAPTER_SPEED_KHZ="500"
+
   case "$DEBUG_ADAPTER" in
 
     DebugDue)
@@ -1558,32 +1581,10 @@ do_program_and_debug ()
       #   I guess that Cortex-M3 does not have it either.
       #
       #  The JTAG connector on the Arduino Due, a 10-Pin Cortex Debug Connector, does not have a RTCK/RCLK pin.
-      #
-      # About the connection speed:
-      #
-      #   The maximum JTAG speed for this kind of chip is F_CPU/6. If the CPU is running at the normal speed of 84 MHz,
-      #   the maximum JTAG clock would be 14 MHz then. Note however that the SAM3X starts at 4 MHz upon reset,
-      #   so that maximum speed is 666 kHz. The standard OpenOCD configuration sets it to 500 kHz,
-      #   because the internal oscillator may not be very accurate.
-      #
-      #   If the firmware from this project has been programmed already, you can use the maximum speed,
-      #   because the firmware increases F_CPU to 84 MHz on start-up before the short pause
-      #   for the eventual OpenOCD connection.
-      #   Otherwise, you have the following options:
-      #   - Lower the speed to to 666 kHz, which makes programming and debugging slow.
-      #   - Program a first firmware version with tool 'bossac', which does the programming with the help of
-      #     the small ATmega16U2 AVR microcontroller next to the main Atmel SAM9XE microcontroller.
-      #   - Implement some clever OpenOCD logic (in Jim Tcl, triggered from this script) in order
-      #     to check the current CPU speed and increase the debug adapter speed accordingly.
-      #
-      #   High speeds may not be reliable, especially if you use non-professional cables.
-      #   You can use command-line option '--verify' (at the cost of a short extra delay)
-      #   to make sure that you can trust your setup.
-      #   Speeds over 10 MHz do not really bring any advantage, as the Flash memory becomes then the bottleneck.
       if $IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER; then
-        add_openocd_cmd "adapter speed 10000"
+        add_openocd_cmd "adapter speed $ADAPTER_SPEED_KHZ"
       else
-        add_openocd_cmd "adapter_khz 10000"
+        add_openocd_cmd "adapter_khz $ADAPTER_SPEED_KHZ"
       fi
       ;;
 
@@ -1591,9 +1592,9 @@ do_program_and_debug ()
       # Enabling RTCK/RCLK (with "adapter_khz 0") makes the Adapter hang.
       # See the notes above in the Olimex-ARM-USB-OCD-H section for more information about the debug adapter speed.
       if $IS_OPEN_OCD_VERSION_0_11_0_OR_HIGHER; then
-        add_openocd_cmd "adapter speed 10000"
+        add_openocd_cmd "adapter speed $ADAPTER_SPEED_KHZ"
       else
-        add_openocd_cmd "adapter_khz 10000"
+        add_openocd_cmd "adapter_khz $ADAPTER_SPEED_KHZ"
       fi
       ;;
 
