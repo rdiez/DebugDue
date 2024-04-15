@@ -91,8 +91,8 @@ Most basic functions you need to get started have been implemented: Busy wait lo
 Atmel and STM32 microcontrollers start with a low CPU frequency. One of the first
 initialisation tasks is to drastically increase this frequency. Without a short pause afterwards,
 JTAG probes that do not support the RCLK (adaptive clock speed) signal
-cannot connect to the board and stop the firmware early enough after reset,
-which can make debugging from the start difficult.
+cannot connect to the board and stop the firmware early enough after a hardware reset
+with the SRST signal, which can make debugging from the start difficult.
 
 =item * Firmware cross-compiled with the standard GCC and S<< L<< GNU Autotools|https://en.wikipedia.org/wiki/GNU_Autotools >> . >>
 
@@ -637,9 +637,12 @@ After this error, any OpenOCD command like I<< step >> is likely to fail with an
 
 The easiest way to overcome this problem is to flash the "EmptyFirmware" project (file F<< emptydue.bin >>) with I<< Bossac >>, see above for details.
 The EmptyFirmware, like the full DebugDue project, ramps up the CPU speed at the very beginning and then makes a short "busy" pause (without sleeping).
-This way, OpenOCD stands a good chance of connecting over JTAG right after resetting the board and stopping the CPU
+This way, OpenOCD stands a good chance of connecting over JTAG right after resetting the board with the hardware SRST signal and stopping the CPU
 before the firmware runs too far away. The very early pause location enables you to debug comfortably most of the firmware initialisation sequence.
 You should use the same technique in your own firmware, or it will be hard (or maybe downright impossible) to debug it over JTAG.
+
+Note that, if you use a software reset method (OpenOCD's "reset_config none"), you will not encounter such problems,
+but then you will need to manually reset the microcontroller peripherals. The code in this project implements such a method.
 
 =item 9) Prepare a comfortable development environment.
 

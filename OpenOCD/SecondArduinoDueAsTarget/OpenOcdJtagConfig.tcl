@@ -26,6 +26,8 @@
 #   microcontroller's peripherals upon connecting. As a result, if the firmware has run before, the USB peripheral
 #   will not work correctly anymore, so the "native USB port" will keep retring to connect,
 #   and the heartbeat LED will not blink. That is, the firmware will not operate correctly.
+#   Command "cortex_m reset_config sysresetreq" should be able to reset the peripherals,
+#   but it does not seem to work, see below for more details.
 #
 # - With OpenOCD v0.10.0, if you stop the firmware with GDB and then restart debugging, you get these messages:
 #     GDB attached to OpenOCD, halting the CPU...
@@ -39,13 +41,65 @@
 #     Error: Could not find MEM-AP to control the core
 #   However, debugging seems fine afterwards.
 
-reset_config  srst_only  srst_pulls_trst  srst_gates_jtag  srst_open_drain  connect_deassert_srst
+# I have used the SRST hardware signal to reset the Arduino Due for years with OpenOCD
+# versions 0.10.0 and 0.11.0, but something has changed in version 0.12.0, and it does not work anymore.
+# Instead of further researching the cause, I have decided to try switching to a software-triggered reset.
+# From the OpenOCD documentation:
+# "(For Cortex-M targets, this is not necessary. The target driver knows how to use trigger an NVIC reset when SRST is not available.)"
+# The advantage of this method is that you can debug from the very beginning,
+# and you do not need a pause in the Firmware start-up code in order to give OpenOCD enough time to connect
+# and be able to debug from the beginning.
+set ::DebugDue_UseSrstSignal 0
+
+if $::DebugDue_UseSrstSignal {
+  reset_config  srst_only  srst_pulls_trst  srst_gates_jtag  srst_open_drain  connect_deassert_srst
+} else {
+  reset_config  none
+}
 
 
-# We do have a system reset line. 'vectreset' is not supported on Cortex-M0, M0+ and M1,
-# and would not reset the peripherals. We could do that manually, but that would be more work,
-# and it is not certain that you can achieve a reset reliably that way.
+# The default setting 'vectreset' does not reset the peripherals. Besides, it is not supported on Cortex-M0, M0+ and M1,
+# but that is not a problem, as we have a Cortex-M3.
+# The trouble is, Atmel does not document whether SYSRESETREQ in register AIRCR does reset the peripherals or not.
+# The ARM documentation states "see you vendor documentation", but I couldn't find anything about this in the Atmel documentation.
+# Empirical observation suggests that SYSRESETREQ does not reset the peripherals, or at least the USB peripheral.
+# This is why we manually reset the peripherals by writing to the Reset Controller Control Register (RSTC_CR).
 cortex_m  reset_config  sysresetreq
+
+set ::REG_RSTC_CR  0x400E1A00
+
+# When using "reset init", OpenOCD already resets the CPU core, but according to the Atmel documentation:
+#   "Except for debug purposes, PERRST must always be used in conjunction with PROCRST (PERRST and PROCRST set both at 1 simultaneously)."
+# We are actually debugging, so we only need to reset the peripherals. If we reset the CPU too,
+# it will start executing instructions, instead of halting after reset.
+set ::REG_RSTC_CR_RESET_PERIPHERALS         0xA5000004
+set ::REG_RSTC_CR_RESET_CPU_AND_PERIPHERALS 0xA5000005
+set ::DebugDue_ResetOnlyPeripherals 1
+
+proc my_reset_init_proc { } {
+
+  # This routine is only used if we are not using the SRST signal,
+  # that is, if { ! $::DebugDue_UseSrstSignal } .
+
+  if $::DebugDue_ResetOnlyPeripherals {
+
+    echo "Resetting the microcontroller peripherals..."
+
+    mww $::REG_RSTC_CR $::REG_RSTC_CR_RESET_PERIPHERALS
+
+  } else {
+
+    echo "Resetting the microcontroller CPU and peripherals..."
+
+    mww $::REG_RSTC_CR $::REG_RSTC_CR_RESET_CPU_AND_PERIPHERALS
+  }
+}
+
+if { ! $::DebugDue_UseSrstSignal } {
+
+  sam3.cpu configure -event reset-init my_reset_init_proc
+}
+
 
 # The JTAG_RESET signal is connected to the NRSTB pin, and the AT91SAM3X8E datasheet states for that pin
 # a maximum "Filtered Pulse Width" (Tf) of 1 us and a minimum "Unfiltered Pulse Width" (Tuf) of 100 us.
@@ -55,10 +109,13 @@ cortex_m  reset_config  sysresetreq
 # The default is 0, and the documentation does not state how long OpenOCD waits, so that it could change
 # depending on the PC speed. 1 ms seems a good value.
 
-if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
-  adapter srst pulse_width 1
-} else {
-  adapter_nsrst_assert_width 1
+if $::DebugDue_UseSrstSignal {
+
+  if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
+    adapter srst pulse_width 1
+  } else {
+    adapter_nsrst_assert_width 1
+  }
 }
 
 
@@ -71,41 +128,52 @@ if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
 # and goes further. 5 ms seems to work well.
 #   adapter_nsrst_assert_width  milliseconds
 
-if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
-  adapter srst delay 5
-} else {
-  adapter_nsrst_delay 5
+if $::DebugDue_UseSrstSignal {
+
+  if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
+    adapter srst delay 5
+  } else {
+    adapter_nsrst_delay 5
+  }
 }
 
 
 proc arduino_due_reset_and_halt { } {
 
-  echo "Resetting and halting the CPU..."
+  echo "Resetting and halting the Arduino Due..."
 
-  # This function tries to stop the CPU as soon as possible after the reset.
-  # OpenOCD has a similar function called "soft_reset_halt". The description is:
-  #
-  #   "Requesting target halt and executing a soft reset. This is often used when a target
-  #    cannot be reset and halted. The target, after reset is released begins to execute code.
-  #    OpenOCD attempts to stop the CPU and then sets the program counter back to the
-  #    reset vector. Unfortunately the code that was executed may have left the hardware
-  #    in an unknown state."
-  #
-  # The problem with that routine is that, by resetting the program counter, it hides the fact
-  # that OpenOCD could not actually stop the CPU at the beginning. Hiding this from the developer
-  # is a bad idea in my opinion. That is why I am implementing a similar routine here,
-  # but without resetting the program counter, so that the developer always sees that the
-  # firmware has run a little before halting.
-  #
-  reset run
+  if { $::DebugDue_UseSrstSignal } {
 
-  # This 'sleep' makes OpenOCD somehow print the message "target halted due to debug-request, current mode: Thread"
-  # afterwards, and also seems to make GDB hang less when the user types 'stepi' afterwards. Without the 'sleep' below,
-  # the 'halt' command sometimes seems to get skipped. Note that this delay adds to the adapter_nsrst_delay above.
-  # Note also that this is not sleep() from Jim Tcl, but from OpenOCD, and the duration is in milliseconds.
-  sleep 1
+    # This function tries to stop the CPU as soon as possible after the reset.
+    # OpenOCD has a similar function called "soft_reset_halt". The description is:
+    #
+    #   "Requesting target halt and executing a soft reset. This is often used when a target
+    #    cannot be reset and halted. The target, after reset is released begins to execute code.
+    #    OpenOCD attempts to stop the CPU and then sets the program counter back to the
+    #    reset vector. Unfortunately the code that was executed may have left the hardware
+    #    in an unknown state."
+    #
+    # The problem with that routine is that, by resetting the program counter, it hides the fact
+    # that OpenOCD could not actually stop the CPU at the beginning. Hiding this from the developer
+    # is a bad idea in my opinion. That is why I am implementing a similar routine here,
+    # but without resetting the program counter, so that the developer always sees that the
+    # firmware has run a little before halting.
+    #
+    reset run
 
-  halt
+    # This 'sleep' makes OpenOCD somehow print the message "target halted due to debug-request, current mode: Thread"
+    # afterwards, and also seems to make GDB hang less when the user types 'stepi' afterwards. Without the 'sleep' below,
+    # the 'halt' command sometimes seems to get skipped. Note that this delay adds to the adapter_nsrst_delay above.
+    # Note also that this is not sleep() from Jim Tcl, but from OpenOCD, and the duration is in milliseconds.
+    sleep 1
+
+    halt
+
+  } else  {
+
+    # We have installed a hook in order to reset properly, see 'my_reset_init_proc'.
+    reset init
+  }
 }
 
 
