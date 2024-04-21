@@ -582,6 +582,7 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wfloat-equal"
 EXTRA_C_AND_CXX_FLAGS+=" -Wformat=2"  # Also enables '-Wformat-nonliteral'.
 EXTRA_C_AND_CXX_FLAGS+=" -Wformat-signedness"
 EXTRA_C_AND_CXX_FLAGS+=" -Wformat-truncation=2"
+EXTRA_C_AND_CXX_FLAGS+=" -Wformat-overflow=2"
 EXTRA_C_AND_CXX_FLAGS+=" -Wunknown-pragmas"
 EXTRA_C_AND_CXX_FLAGS+=" -Wattributes"
 EXTRA_C_AND_CXX_FLAGS+=" -Wtrampolines"
