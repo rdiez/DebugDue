@@ -51,7 +51,7 @@
 # and be able to debug from the beginning.
 set ::DebugDue_UseSrstSignal 0
 
-if $::DebugDue_UseSrstSignal {
+if { $::DebugDue_UseSrstSignal } {
   reset_config  srst_only  srst_pulls_trst  srst_gates_jtag  srst_open_drain  connect_deassert_srst
 } else {
   reset_config  none
@@ -81,7 +81,7 @@ proc my_reset_init_proc { } {
   # This routine is only used if we are not using the SRST signal,
   # that is, if { ! $::DebugDue_UseSrstSignal } .
 
-  if $::DebugDue_ResetOnlyPeripherals {
+  if { $::DebugDue_ResetOnlyPeripherals } {
 
     echo "Resetting the microcontroller peripherals..."
 
@@ -113,7 +113,7 @@ if { ! $::DebugDue_UseSrstSignal } {
 # The default is 0, and the documentation does not state how long OpenOCD waits, so that it could change
 # depending on the PC speed. 1 ms seems a good value.
 
-if $::DebugDue_UseSrstSignal {
+if { $::DebugDue_UseSrstSignal } {
 
   if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
     adapter srst pulse_width 1
@@ -132,7 +132,7 @@ if $::DebugDue_UseSrstSignal {
 # and goes further. 5 ms seems to work well.
 #   adapter_nsrst_assert_width  milliseconds
 
-if $::DebugDue_UseSrstSignal {
+if { $::DebugDue_UseSrstSignal } {
 
   if { $::DebugDue_IsOpenOcdVersion_0_11_0_OrHigher } {
     adapter srst delay 5

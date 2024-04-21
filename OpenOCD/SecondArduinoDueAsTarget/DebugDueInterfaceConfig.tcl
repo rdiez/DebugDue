@@ -1,7 +1,7 @@
 
 interface buspirate
 
-buspirate_port $DEBUGDUE_SERIAL_PORT
+buspirate_port $::DEBUGDUE_SERIAL_PORT
 
 buspirate_speed   fast  # No effect with the DebugDue firmware.
 
