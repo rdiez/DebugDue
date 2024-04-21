@@ -47,14 +47,14 @@ add_gdb_cmd ()
 }
 
 
-add_gdb_cmd_no_echo ()
-{
-  local CMD="$1"
-
-  local QUOTED
-  printf -v QUOTED "%q" "$CMD"
-  add_gdb_arg "--eval-command=$QUOTED"
-}
+# add_gdb_cmd_no_echo ()
+# {
+#   local CMD="$1"
+#
+#   local QUOTED
+#   printf -v QUOTED "%q" "$CMD"
+#   add_gdb_arg "--eval-command=$QUOTED"
+# }
 
 
 process_command_line_argument ()
