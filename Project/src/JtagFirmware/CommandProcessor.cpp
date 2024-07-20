@@ -743,20 +743,20 @@ void CCommandProcessor::ParseCommand ( const char * const cmdBegin,
 
   if ( IsCmd( cmdBegin, cmdEnd, CMDNAME_MEMORY_USAGE, false, false, &extraParamsFound ) )
   {
-    const unsigned stackAreaSize = uintptr_t( &__StackTop  ) - uintptr_t( &__StackLimit );
-    const unsigned heapAreaSize  = uintptr_t( &__HeapLimit ) - uintptr_t( &__end__      );
+    const size_t stackAreaSize = uintptr_t( &__StackTop  ) - uintptr_t( &__StackLimit );
+    const size_t heapAreaSize  = uintptr_t( &__HeapLimit ) - uintptr_t( &__end__      );
 
-    Printf( "Used stack (estimated): %zu from %u bytes." EOL,
+    Printf( "Used stack (estimated): %zu from %zu bytes." EOL,
              GetStackSizeUsageEstimate(),
              stackAreaSize );
 
     const struct mallinfo mi = mallinfo();
-    const unsigned usedFromArea = unsigned( mi.arena );
-    assert ( usedFromArea <= heapAreaSize );
 
-    Printf( "Heap: %zu allocated bytes, %u area size, %u area limit." EOL,
+    assert ( mi.arena <= heapAreaSize );
+
+    Printf( "Heap: %zu allocated bytes, %zu area size, %zu area limit." EOL,
             mi.uordblks,
-            usedFromArea,
+            mi.arena,
             heapAreaSize );
 
     return;
