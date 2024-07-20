@@ -153,6 +153,11 @@ void RuntimeStartupChecks ( void ) throw()
     Panic( "I do not want anybody to allocate memory with malloc() before starting the application code."  );
   }
 
+  if ( mi.arena != 0 )
+  {
+    Panic( "No malloc memory should have been used at all, not even temporarily (malloc and free before this point)." );
+  }
+
   // See the comments next to compilation option -fuse-cxa-atexit for more information.
   // You may of course have a different opinion or different needs with regards to initialisation and atexit,
   // in which case you need to remove this check.
