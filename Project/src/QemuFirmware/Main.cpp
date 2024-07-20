@@ -15,6 +15,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <malloc.h>
 
 #include <BareMetalSupport/DebugConsoleEol.h>
 #include <BareMetalSupport/DebugConsoleSerialSync.h>
@@ -71,6 +72,20 @@ void StartOfUserCode ( void )
   SerialSyncWriteStr( "Welcome to the Qemu Firmare debug console." EOL );
 
   PrintFirmwareSegmentSizesSync();
+
+
+  // It does not really make sense to dump malloc statistics here,
+  // because we have checked beforehand that no memory has been allocated.
+  if ( false )
+  {
+    const struct mallinfo mi = mallinfo();
+
+    SerialSyncWriteStr( "Malloc heap: allocated bytes: 0x" );
+    SerialSyncWriteUint32Hex( mi.uordblks );
+    SerialSyncWriteStr( ", area size: 0x" );
+    SerialSyncWriteUint32Hex( mi.arena );
+    SerialSyncWriteStr( "." EOL );
+  }
 
 
   // ------ Main loop ------
