@@ -61,7 +61,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
-VERSION_SET := VersionSet13
+VERSION_SET := VersionSet14
 
 ifeq ($(VERSION_SET),VersionSet7)
 
@@ -139,6 +139,17 @@ else ifeq ($(VERSION_SET),VersionSet13)
   NEWLIB_VERSION := 4.3.0.20230120
   PICOLIBC_VERSION := 1.8.5
   GDB_VERSION := 13.2
+
+else ifeq ($(VERSION_SET),VersionSet14)
+
+  BINUTILS_VERSION := 2.42
+  GMP_VERSION := 6.3.0
+  MPFR_VERSION := 4.2.1
+  MPC_VERSION := 1.3.1
+  GCC_VERSION := 13.3.0
+  NEWLIB_VERSION := 4.4.0.20231231
+  PICOLIBC_VERSION := 1.8.6
+  GDB_VERSION := 15.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
