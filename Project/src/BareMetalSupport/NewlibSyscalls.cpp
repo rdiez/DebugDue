@@ -24,6 +24,7 @@
 #include <assert.h>  // For the function prototype of Newlib's __assert_func().
 #include <stdio.h>
 #include <stdlib.h>  // For abort().
+#include <stdint.h>  // For uint8_t.
 
 #include <BareMetalSupport/LinkScriptSymbols.h>
 
