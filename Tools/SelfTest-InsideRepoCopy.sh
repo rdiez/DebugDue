@@ -664,6 +664,8 @@ declare -r LIBC_VARIANTS="${DEBUGDUE_LIBC_VARIANTS:-newlib picolibc}"
 
 read -r -a LIBC_VARIANTS_ARRAY <<< "$LIBC_VARIANTS"
 
+echo "C runtime libraries to build: ${LIBC_VARIANTS_ARRAY[*]}"
+
 declare -r -i LIBC_VARIANTS_ARRAY_COUNT="${#LIBC_VARIANTS_ARRAY[@]}"
 
 if $SHOULD_LINT; then
@@ -709,8 +711,7 @@ if $SHOULD_BUILD_FIRMWARES; then
     read -r -a TOOLCHAIN_PATHS_ARRAY <<< "$TOOLCHAIN_PATHS"
 
     if false; then
-      echo "Libcs: ${LIBC_VARIANTS_ARRAY[*]}"
-      echo "Toolchains: ${TOOLCHAIN_PATHS_ARRAY[*]}"
+      echo "Toolchains to build the DebugDue firmwares with: ${TOOLCHAIN_PATHS_ARRAY[*]}"
     fi
 
     declare -r -i TOOLCHAIN_PATHS_ARRAY_COUNT="${#TOOLCHAIN_PATHS_ARRAY[@]}"
