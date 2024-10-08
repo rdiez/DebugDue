@@ -158,6 +158,7 @@ get_make_parallel_args ()
 
   if $SHOULD_ADD_PARALLEL_FLAG; then
     # This is probably not the best heuristic for make -j , but it's better than nothing.
+    local PARALLEL_COUNT
     PARALLEL_COUNT="$(( $(getconf _NPROCESSORS_ONLN) + 1 ))"
     PARALLEL_ARGS="-j $PARALLEL_COUNT  --output-sync=recurse"
   else
