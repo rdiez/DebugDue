@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2022 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2024 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 # ------- Standard Configuration -------
@@ -19,7 +19,7 @@ RUN_AND_REPORT_TOOL_PATH := $(MAKEFILE_TOOLS_DIR)/RunAndReport.sh
 
 
 # Variable CROSS_TOOLCHAIN_BUILD_DIR is often overriden on the 'make' command line,
-# so checking just THIS_MAKEFILE_DIR is not enough.
+# so checking just THIS_MAKEFILE_DIR would not be enough.
 $(call check_variable_non_empty_and_contains_no_whitespace,CROSS_TOOLCHAIN_BUILD_DIR)
 
 
@@ -1044,12 +1044,14 @@ ifeq ($(BUILD_GMP_MPFR_MPC),1)
   GDB_BUILD_FLAGS += --with-gmp="$(CROSS_TOOLCHAIN_DIR)"
 endif
 
-# We cannot use INSTALL_TARGET here, because unfortunately GDB does not support the 'install-strip' target,
-# at least as of versions 8.1 and 9.1. The error message is about not finding makefile recipes for targets
-# 'install-strip', or 'install-strip-readline' and 'install-strip-sim'.
-# I reported this issue, and the fix is targetted at GDB version 10.1:
-#   https://sourceware.org/bugzilla/show_bug.cgi?id=24572
-GDB_INSTALL_TARGET := install
+# If you are using GDB versions prior to 10.1:
+#   We cannot use INSTALL_TARGET here, because unfortunately GDB does not support the 'install-strip' target,
+#   at least as of versions 8.1 and 9.1. The error message is about not finding makefile recipes for targets
+#   'install-strip', or 'install-strip-readline' and 'install-strip-sim'.
+#   I reported this issue, and the fix is targetted at GDB version 10.1:
+#     https://sourceware.org/bugzilla/show_bug.cgi?id=24572
+#   As a workaround, use target 'install'.
+GDB_INSTALL_TARGET := install-strip
 
 
 # ----------------- Create the directory where the toolchain build files (object files, etc) will land -----------------
