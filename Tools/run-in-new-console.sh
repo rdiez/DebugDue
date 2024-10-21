@@ -7,7 +7,7 @@ set -o pipefail
 # set -x  # Enable tracing of this script.
 
 
-declare -r VERSION_NUMBER="1.17"
+declare -r VERSION_NUMBER="1.18"
 declare -r SCRIPT_NAME="run-in-new-console.sh"
 
 declare -r RUN_IN_NEW_CONSOLE_TERMINAL_TYPE_ENV_VAR_NAME="RUN_IN_NEW_CONSOLE_TERMINAL_TYPE"
@@ -290,7 +290,7 @@ parse_command_line_arguments ()
              fi
 
              process_command_line_argument
-           fi;
+           fi
 
            ((OPTIND+=OPT_ARG_COUNT))
          fi
@@ -458,15 +458,15 @@ ENABLE_ERROR_CHECKING="set -o errexit && set -o nounset && set -o pipefail"
 if [ $REMAIN_OPEN_ON_SUCCESS -eq 0 ]; then
 
   if [ $AUTOCLOSE_ON_ERROR -eq 0 ]; then
-    CMD3+="; EXIT_CODE=\"\$?\" && $PRINT_EMPTY_LINE && $ENABLE_ERROR_CHECKING && if [ \$EXIT_CODE -ne 0 ]; then while true; do read -p \"Process failed with status code \$EXIT_CODE. Type 'exit' and press Enter to exit: \" USER_INPUT; if [[ \$USER_INPUT = \"exit\" ]]; then break; fi; done; fi"
+    CMD3+="; EXIT_CODE=\"\$?\" && $PRINT_EMPTY_LINE && $ENABLE_ERROR_CHECKING && if [ \$EXIT_CODE -ne 0 ]; then while true; do read -p \"Process failed with status code \$EXIT_CODE. Type 'exit' and press Enter to exit: \" USER_INPUT; if [[ \${USER_INPUT^^} = \"EXIT\" ]]; then break; fi; done; fi"
   fi
 
 else
 
   if [ $AUTOCLOSE_ON_ERROR -eq 0 ]; then
-    CMD3+="; EXIT_CODE=\"\$?\" && $PRINT_EMPTY_LINE && $ENABLE_ERROR_CHECKING && while true; do read -p \"Process terminated with status code \$EXIT_CODE. Type 'exit' and press Enter to exit: \" USER_INPUT; if [[ \$USER_INPUT = \"exit\" ]]; then break; fi; done"
+    CMD3+="; EXIT_CODE=\"\$?\" && $PRINT_EMPTY_LINE && $ENABLE_ERROR_CHECKING && while true; do read -p \"Process terminated with status code \$EXIT_CODE. Type 'exit' and press Enter to exit: \" USER_INPUT; if [[ \${USER_INPUT^^} = \"EXIT\" ]]; then break; fi; done"
   else
-    CMD3+="; EXIT_CODE=\"\$?\" && $PRINT_EMPTY_LINE && $ENABLE_ERROR_CHECKING && if [ \$EXIT_CODE -eq 0 ]; then while true; do read -p \"Process terminated with status code \$EXIT_CODE. Type 'exit' and press Enter to exit: \" USER_INPUT; if [[ \$USER_INPUT = \"exit\" ]]; then break; fi; done; fi"
+    CMD3+="; EXIT_CODE=\"\$?\" && $PRINT_EMPTY_LINE && $ENABLE_ERROR_CHECKING && if [ \$EXIT_CODE -eq 0 ]; then while true; do read -p \"Process terminated with status code \$EXIT_CODE. Type 'exit' and press Enter to exit: \" USER_INPUT; if [[ \${USER_INPUT^^} = \"EXIT\" ]]; then break; fi; done; fi"
   fi
 
 fi
