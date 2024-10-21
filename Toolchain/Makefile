@@ -29,7 +29,8 @@ TARGET_NAME_CLEAN := clean
 TARGET_NAME_CHECK := check
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET    := download-tarballs-from-internet
 TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER := download-tarballs-from-file-server
-TARGET_NAME_TEST_MAKEFLAGS := test-makeflags
+TARGET_NAME_TEST_MAKEFLAGS_NORMAL  := test-makeflags-normal
+TARGET_NAME_TEST_MAKEFLAGS_INSTALL := test-makeflags-install
 
 
 # These paths are normally supplied by the user (when needed) as command-line arguments,
@@ -300,10 +301,13 @@ TARGET_ARCH := arm-none-eabi
 PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 
 
+# ------- MAKEFLAGS filtering -------
+
 # If you are not calling recursive makefiles, but running other unrelated makefiles, you do not normally
 # want to pass the MAKEFLAGS you got. For example, the top-level makefile is often called with options
 # '--no-builtin-variables' and '--warn-undefined-variables', which could break other makefiles.
 # Therefore, we want to clean MAKEFLAGS beforehand.
+#
 # However, we still want to pass on those flags related to GNU Make's job server. They look like this:
 # - In GNU Make version 3.81:  MAKEFLAGS: --jobserver-fds=3,4 -j -- SOMEVAR=SOMEVALUE ...
 # - In GNU Make version 4.2.1: MAKEFLAGS: -j3 --jobserver-auth=3,4 -Orecurse -- SOMEVAR=SOMEVALUE ...
@@ -319,13 +323,38 @@ PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 #
 # We also want to pass flag '--output-sync=xxx' (aka '-Oxxx'), if present.
 #
-# Perhaps we should run the "make install" commands without any parallel flags at all, just in case.
+# GNU Make has an exception for MAKEFLAGS: if it is defined in the environment,
+# it takes precedence over MAKEFLAGS specified in the makefile.
+# However, we will be overriding this variable in the environment when running rules.
+# This may surprise the user, but I haven't found any other way yet to deal
+# with the flags and the job server. The safest bet is to avoid setting MAKEFLAGS
+# in the enviroment when using this makefile.
+# I tried to check with $(origin MAKEFLAGS) whether MAKEFLAGS was defined in the environment,
+# but the origin function always returns 'file' for this variable, at least with GNU Make 4.4.1 .
+#
+# Note that we cannot use ':=' kind of assignments below, because GNU Make adds
+# options like '--jobserver-auth=' to MAKEFLAGS later on, when executing a rule.
+# Use target $(TARGET_NAME_TEST_MAKEFLAGS_NORMAL) to test this logic.
 
 EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS = $(strip $(filter -j%,$(MAKEFLAGS)) \
                                                 $(filter --jobserver-fds=%,$(MAKEFLAGS)) \
                                                 $(filter --jobserver-auth=%,$(MAKEFLAGS)) \
                                                 $(filter -O%,$(MAKEFLAGS)))
+
 EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS = export MAKEFLAGS="$(EXTRACT_SELECTED_FLAGS_FROM_MAKEFLAGS)"
+
+# In the past, when we only had conventional spinning disks, it was considered a bad idea to run
+# makefile 'install' targets in parallel. However, if you have a modern SSD, or if you are installing
+# to a high-latency network drive, a parallel installation may actually be faster.
+#
+# The trouble is, the number of parallel jobs is usually adjusted according to the number of CPUs,
+# and is not suitable for disk or network activities. GNU Make's job server can only
+# coordinate based on a single limit, as it has no concept of job type. We cannot just set
+# a fixed number of jobs for the install targets, because many of them may run in parallel,
+# so we would run the risk of not honouring the intended limit.
+# Therefore, just disable parallel execution for makefile 'install' targets.
+
+CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS := export MAKEFLAGS=""
 
 
 # ------- Build directory definitions -------
@@ -1117,10 +1146,18 @@ $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
 	echo "The Binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
 	echo "The Binutils build has finished."
 
+# Note that Binutils' 'install' makefile target has a race condition bug at least up to version 2.43.1,
+# so that, if you run it in parallel, you get sporadic errors like this:
+#   GEN      doc/asconfig.texi
+#   chmod: cannot access 'doc/asconfig.texi': No such file or directory
+# I reported the bug here:
+#   https://sourceware.org/bugzilla/show_bug.cgi?id=32254
+# Therefore, it is imperative that we use CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS here.
+
 $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Binutils ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="BinutilsInstall" \
 	    --userFriendlyName="BinUtils Install" \
@@ -1133,7 +1170,7 @@ $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 $(BINUTILS_INSTALL_SENTINEL_PHASE_1): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Binutils to separate phase 1 directory..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="BinutilsPhase1Install" \
 	    --userFriendlyName="BinUtils Phase 1 Install" \
@@ -1207,7 +1244,7 @@ $(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
 $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GMP ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="GmpInstall" \
 	    --userFriendlyName="GMP Install" \
@@ -1282,7 +1319,7 @@ $(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
 $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo && \
 	echo "Installing MPFR ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="MpfrInstall" \
 	    --userFriendlyName="MPFR Install" \
@@ -1358,7 +1395,7 @@ $(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
 $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo && \
 	echo "Installing MPC ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="MpcInstall" \
 	    --userFriendlyName="MPC Install" \
@@ -1449,16 +1486,18 @@ $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
 	echo "The GCC phase 1 build has finished."
 
+# We can use here targets 'install-gcc' or 'install-strip-gcc'.
+
 $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GCC phase 1 ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="GccPhase1Install" \
 	    --userFriendlyName="GCC Phase 1 Install" \
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Install.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Install.report" \
-	  $(MAKE) -C "$(GCC1_OBJ_DIR)" install-gcc && \
+	  $(MAKE) -C "$(GCC1_OBJ_DIR)" $(INSTALL_TARGET)-gcc && \
 	echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
 	echo "The GCC phase 1 installation has finished."
 
@@ -1526,7 +1565,7 @@ $(NEWLIB_MAKE_SENTINEL): $(NEWLIB_MAKEFILE)
 $(NEWLIB_INSTALL_SENTINEL): $(NEWLIB_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Newlib ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
 	  "$(RUN_AND_REPORT_TOOL_PATH)" \
 	      --id="NewlibInstall" \
@@ -1603,10 +1642,13 @@ $(PICOLIBC_MAKE_SENTINEL): $(PICOLIBC_CONFIGURE_SENTINEL)
 	echo "The Picolibc build has finished." >"$(PICOLIBC_MAKE_SENTINEL)" && \
 	echo "The Picolibc build has finished."
 
+# CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS below is actually intended for GNU Make,
+# not for Meson, but other such build tools could also use GNU Make's job server.
+
 $(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
 	echo && \
 	echo "Installing Picolibc ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	PATH=$(PHASE_1_PATH_DIR):$$PATH \
 	  "$(RUN_AND_REPORT_TOOL_PATH)" \
 	      --id="PicolibcInstall" \
@@ -1684,7 +1726,7 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GCC phase 2 ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	PATH=$(PATH_DIR):$$PATH \
 	  "$(RUN_AND_REPORT_TOOL_PATH)" \
 	      --id="GccPhase2Install" \
@@ -1773,7 +1815,7 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo && \
 	echo "Installing GDB ..." && \
-	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
+	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
 	    --id="GDbInstall" \
 	    --userFriendlyName="GDB Install" \
@@ -1791,7 +1833,8 @@ gdb: $(GDB_INSTALL_SENTINEL)
 
 .PHONY: $(TARGET_NAME_ALL) $(TARGET_NAME_HELP) $(TARGET_NAME_CLEAN)
 .PHONY: $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_INTERNET) $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER)
-.PHONY: $(TARGET_NAME_TEST_MAKEFLAGS)
+.PHONY: $(TARGET_NAME_TEST_MAKEFLAGS_NORMAL)
+.PHONY: $(TARGET_NAME_TEST_MAKEFLAGS_INSTALL)
 .PHONY: $(TARGET_NAME_CHECK)
 
 .DEFAULT_GOAL := help
@@ -1963,8 +2006,13 @@ $(TARGET_NAME_DOWNLOAD_TARBALLS_FROM_FILE_SERVER):
 	fi
 	@echo "Finished downloading tarballs from the file server."
 
-$(TARGET_NAME_TEST_MAKEFLAGS):
-	@$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && echo "MAKEFLAGS passed in the environment: $$MAKEFLAGS"
+
+$(TARGET_NAME_TEST_MAKEFLAGS_NORMAL):
+	@$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && echo "MAKEFLAGS passed in the environment for normal targets: $$MAKEFLAGS"
+
+$(TARGET_NAME_TEST_MAKEFLAGS_INSTALL):
+	@$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && echo "MAKEFLAGS passed in the environment for 'install' targets: $$MAKEFLAGS"
+
 
 $(TARGET_NAME_CHECK): $(BINUTILS_CHECK_SENTINEL)
 

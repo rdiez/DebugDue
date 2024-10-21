@@ -210,15 +210,16 @@ test_basic_functions_of_toolchain_makefile ()
           stdout  "$LOG_FILES_DIRNAME/toolchain-make-usual-help.txt"
 
 
-  # Check that "make test-makeflags" works.
+  # Check that "make test-makeflags-normal" works.
+  # We could also test "make test-makeflags-install", but its implementation is trivial.
   printf -v L_CMD \
-         "make %s  %s  test-makeflags" \
+         "make %s  %s  test-makeflags-normal" \
          "$USUAL_MAKE_ARGS" \
          "$PARALLEL_ARGS"
 
-  run_cmd "Testing 'make test-makeflags'..." \
+  run_cmd "Testing 'make test-makeflags-normal'..." \
           "$L_CMD" \
-          stdout  "$LOG_FILES_DIRNAME/toolchain-make-test-makeflags.txt"
+          stdout  "$LOG_FILES_DIRNAME/toolchain-make-test-makeflags-normal.txt"
 
 
   run_cmd "Testing 'make clean' with nothing to clean..." \
