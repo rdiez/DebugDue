@@ -1334,10 +1334,10 @@ $(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo "Checking MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
-	    --id="MpfrMake" \
-	    --userFriendlyName="MPFR Make" \
-	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.log" \
-	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.report" \
+	    --id="MpfrCheck" \
+	    --userFriendlyName="MPFR Check" \
+	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrCheck.log" \
+	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrCheck.report" \
 	  $(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
 	echo "The MPFR check has finished." >"$(MPFR_CHECK_SENTINEL)" && \
 	echo "The MPFR check has finished."
@@ -1746,8 +1746,8 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	PATH=$(PATH_DIR):$$PATH \
 	  "$(RUN_AND_REPORT_TOOL_PATH)" \
-	      --id="GccPhase2Install" \
-	      --userFriendlyName="GCC Phase 2 Install" \
+	      --id="GccPhase2Check" \
+	      --userFriendlyName="GCC Phase 2 Check" \
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.report" \
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
@@ -1787,7 +1787,7 @@ $(GDB_MAKEFILE): $(GDB_HELP_SENTINEL)
 	mkdir --parents -- "$(GDB_OBJ_DIR)" && \
 	pushd "$(GDB_OBJ_DIR)" >/dev/null && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
-	    --id="GDbConfigure" \
+	    --id="GdbConfigure" \
 	    --userFriendlyName="GDB Configure" \
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigure.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbConfigure.report" \
@@ -1804,7 +1804,7 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	echo "Building GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
-	    --id="GDbMake" \
+	    --id="GdbMake" \
 	    --userFriendlyName="GDB Make" \
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbMake.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbMake.report" \
@@ -1817,7 +1817,7 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "Installing GDB ..." && \
 	$(CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS) && \
 	"$(RUN_AND_REPORT_TOOL_PATH)" \
-	    --id="GDbInstall" \
+	    --id="GdbInstall" \
 	    --userFriendlyName="GDB Install" \
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbInstall.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbInstall.report" \
