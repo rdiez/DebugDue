@@ -226,12 +226,12 @@ EXTRA_LD_FLAGS=""        # Flags for the linker.
 
 AC_MSG_CHECKING(whether to generate a debug build)
 AC_ARG_ENABLE([debug],
-              [AS_HELP_STRING([--enable-debug=[[yes/no]]],
+              [AS_HELP_STRING([--enable-debug[[=yes/no]]],
                               [generate a debug build with assertions and no optimization [default=no]])],
               [case "${enableval}" in
                yes) debug_build=true ;;
                no)  debug_build=false ;;
-               *) AC_MSG_ERROR([bad value ${enableval} for --enable-debug]) ;;
+               *) AC_MSG_ERROR([Option --enable-debug has invalid value "${enableval}".]) ;;
                esac],
               debug_build=false)
 

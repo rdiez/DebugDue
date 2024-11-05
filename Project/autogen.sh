@@ -52,3 +52,5 @@ else
   eval "$CMD"
 
 fi
+
+echo "Finished generating the configuration script. Run \"./configure --help\" for more information."
