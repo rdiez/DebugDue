@@ -707,6 +707,7 @@ COMMON_GCC_OPTIONS += --enable-lto
 # For more information about the following patch, see:
 #  Bug 107500 - Useless atexit entry for ~constant_init in eh_globals.cc
 #  https://gcc.gnu.org/bugzilla/show_bug.cgi?id=107500
+# This patch should no longer be necessary in GCC version 12.4 .
 GCC_12_EH_GLOBALS_ATEXIT_PATCH_FILENAME := Gcc12EhGlobalsAtexit.patch
 
 

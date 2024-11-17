@@ -1,5 +1,5 @@
 
-# Copyright (C) 2012-2017 R. Diez - see the DebugDue project for licensing information.
+# Copyright (C) 2012-2024 R. Diez - see the DebugDue project for licensing information.
 
 AUTOMAKE_OPTIONS := foreign subdir-objects
 
@@ -259,6 +259,8 @@ firmware_elf_LDFLAGS += -Wl,--entry=BareMetalSupport_Reset_Handler
 if USE_GOLD_LINKER
   firmware_elf_LDFLAGS += -fuse-ld=gold
 endif
+
+# firmware_elf_LDFLAGS += -Wl,--trace -Wl,--trace  # Pass this flag twice in order to list archive members.
 
 $(ELF_FILENAME): $(LINKER_SCRIPT_FILENAME)
 
