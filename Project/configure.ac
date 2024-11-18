@@ -420,21 +420,30 @@ EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 
 # With -fuse-cxa-atexit, which tends to be the default (see config option --enable-__cxa_atexit),
 # GCC will register the destructors of static objects dynamically with __cxa_atexit, which is a kind of atexit().
+#
 # Depending on the size of your application and on your libc configuration, those registrations will either
 # consume extra RAM, or only the first 32 registrations will succeeded, and the rest will be discarded.
 # See _ATEXIT_SIZE 32 for ANSI conformance.
+#
 # Assuming that you do not hit an eventual discard limit, this makes the destructions of static C++ objects
 # conform to the C++ standard. The main aspect here is the order of destruction, but the whole construction order
 # of static C++ objects is problematic anyway, so it is best to avoid code that depends on the correct order.
 # With -fno-use-cxa-atexit, all such destructors are preregistered in the fini array and will not consume RAM,
 # only program memory (ROM or Flash memory). However, the destruction order is not guaranteed
 # to be correct according to the C++ standard.
+#
 # Alternatively, if your firmware never exits, you may use something like _LITE_EXIT and drop all destruction.
 # But it is always a good idea to provide a termination path, even if only manually triggered for debug purposes.
 # Code that properly terminates can be migrated later on to other platforms that do terminate.
 # And having a proper termination path makes it easier to detect and analyse memory leaks.
+#
 # Even with -fno-use-cxa-atexit, static objects inside functions will still register
 # their destructors with atexit(), so it is best to avoid them.
+#
+# I am now poisoning all atexit-related functions with linker option --wrap=atexit etc. in Makefile.am.
+# With this trick, it should be easier to locate all static destructors I am trying to avoid,
+# because the whole construction and destruction order is iffy anyway. Search the Internet
+# for "C++ static initialization order fiasco" for more information.
 EXTRA_CXX_FLAGS+=" -fno-use-cxa-atexit"
 
 # These flags may save a little program space:

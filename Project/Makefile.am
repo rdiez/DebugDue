@@ -262,6 +262,18 @@ endif
 
 # firmware_elf_LDFLAGS += -Wl,--trace -Wl,--trace  # Pass this flag twice in order to list archive members.
 
+# Wrap all atexit-related functions, but do not provide the corresponding wrapper implementations.
+# Attempting to use the wrapped functions will then generate a linker error like this:
+#   undefined reference to `__wrap_atexit'
+# This usually means that you have a static object instance, either at global level or inside a function,
+# which registered a destructor to be called later. That is actually legal, but I am trying
+# to avoid it, see the notes in configure.ac next to compiler option '-fno-use-cxa-atexit' for more information.
+firmware_elf_LDFLAGS += -Wl,--wrap=atexit
+firmware_elf_LDFLAGS += -Wl,--wrap=on_exit
+firmware_elf_LDFLAGS += -Wl,--wrap=__cxa_atexit
+firmware_elf_LDFLAGS += -Wl,--wrap=__aeabi_atexit
+firmware_elf_LDFLAGS += -Wl,--wrap=__register_exitproc
+
 $(ELF_FILENAME): $(LINKER_SCRIPT_FILENAME)
 
 
