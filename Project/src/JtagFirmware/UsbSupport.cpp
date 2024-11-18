@@ -82,8 +82,12 @@ bool MyUsbCallback_cdc_enable ( const uint8_t port )
   if ( TRACE_USB_CONNECTION_NOTIFICATIONS )
     SerialPrintStr( "MyUsbCallback_cdc_enable()" EOL );
 
-  assert( port == USB_CALLBACK_PORT_NUMBER );
-  UNUSED_IN_RELEASE( port );
+  // With this 'if' we reference both 'port' and 'USB_CALLBACK_PORT_NUMBER'.
+  // Otherwise, we would get "unused" warnings for both of them in release builds.
+  if ( port != USB_CALLBACK_PORT_NUMBER )
+  {
+    assert( false );
+  }
 
   assert( s_isUsbCableConnected );
   assert( !s_isCdcInterfaceEnabled );
