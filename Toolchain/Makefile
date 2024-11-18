@@ -417,6 +417,7 @@ endif
 COMMON_CFLAGS_FOR_TARGET += -fno-omit-frame-pointer
 COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
 COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
+COMMON_CFLAGS_FOR_TARGET += -fno-use-cxa-atexit
 
 COMMON_CFLAGS_FOR_LIBC :=
 
@@ -826,8 +827,8 @@ ifeq ($(TARGET_LIBC), newlib)
   #   There is at least one, see _atexit0 and _global_atexit0.
   NEWLIB_CFG_FLAGS += --enable-newlib-global-atexit
 
-  # We are trying to completely eliminate the need for atexit(), so we will not be needed dynamic allocation for it anyway.
-  # We are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
+  # We are trying to completely eliminate the need for atexit(), so we will not need dynamic allocation for it anyway.
+  # We are using --enable-newlib-global-atexit above, the project is building with -fno-use-cxa-atexit
   # and the firmware is checking on start-up that there are no atexit entries,
   # so much of the atexit() support shold be optimised away in any case.
   NEWLIB_CFG_FLAGS += --disable-newlib-atexit-dynamic-alloc
@@ -994,8 +995,8 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().
   PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
 
-  # We are trying to completely eliminate the need for atexit(), so we will not be needed dynamic allocation for it anyway.
-  # We are using --enable-newlib-global-atexit here, the project is building with -fno-use-cxa-atexit
+  # We are trying to completely eliminate the need for atexit(), so we will not need dynamic allocation for it anyway.
+  # We are using newlib-global-atexit=true below, the project is building with -fno-use-cxa-atexit
   # and the firmware is checking on start-up that there are no atexit entries,
   # so much of the atexit() support shold be optimised away in any case.
   PICOLIBC_CFG_FLAGS += -Dnewlib-atexit-dynamic-alloc=false
