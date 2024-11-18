@@ -1449,6 +1449,8 @@ endif
 
 ifeq ($(INSTALL_GCC_PHASE_1_TO_SEPARATE_DIR),1)
   $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL_PHASE_1)
+  # Serialise the execution of Binutils' makefile, in order to prevent concurrency problems.
+  $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_INSTALL_SENTINEL_PHASE_1)
 else
   $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL)
 endif
