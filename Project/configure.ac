@@ -433,6 +433,8 @@ EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 # But it is always a good idea to provide a termination path, even if only manually triggered for debug purposes.
 # Code that properly terminates can be migrated later on to other platforms that do terminate.
 # And having a proper termination path makes it easier to detect and analyse memory leaks.
+# Even with -fno-use-cxa-atexit, static objects inside functions will still register
+# their destructors with atexit(), so it is best to avoid them.
 EXTRA_CXX_FLAGS+=" -fno-use-cxa-atexit"
 
 # These flags may save a little program space:
