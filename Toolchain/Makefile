@@ -376,16 +376,17 @@ CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES := $(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainBu
 # - Your our application, so you will have to keep the CFLAGS/CXXFLAGS in your
 #   own makefile in sync with this one.
 
-COMMON_CFLAGS_FOR_TARGET :=
+COMMON_C_AND_CXX_FLAGS_FOR_TARGET :=
+COMMON_CXXFLAGS_FOR_TARGET :=
 
 
 # --- Debug oder Release Toolchain.
 
 ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 0)
-  COMMON_CFLAGS_FOR_TARGET += -g -Os
+  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -g -Os
   TOOLCHAIN_KIND := Release (non-debug) toolchain.
 else ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 1)
-  COMMON_CFLAGS_FOR_TARGET += -g -Og -DDEBUG
+  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -g -Og -DDEBUG
   TOOLCHAIN_KIND := Debug toolchain.
 else
   $(error Variable ENABLE_DEBUG_TOOLCHAIN has invalid value "$(ENABLE_DEBUG_TOOLCHAIN)")
@@ -397,13 +398,13 @@ endif
 FLAGS_NO_HARDWARE_FP := --without-fp --with-float=soft
 
 ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m0)
-  COMMON_CFLAGS_FOR_TARGET += -mcpu=cortex-m0 -mthumb
+  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -mcpu=cortex-m0 -mthumb
   GCC_FLOATING_POINT_FLAGS := $(FLAGS_NO_HARDWARE_FP)
 else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m3)
-  COMMON_CFLAGS_FOR_TARGET += -mcpu=cortex-m3 -mthumb
+  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -mcpu=cortex-m3 -mthumb
   GCC_FLOATING_POINT_FLAGS := $(FLAGS_NO_HARDWARE_FP)
 else ifeq ($(TOOLCHAIN_TARGET_CPU), cortex-m4f)
-  COMMON_CFLAGS_FOR_TARGET += -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
+  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -mcpu=cortex-m4 -mthumb -mfpu=fpv4-sp-d16 -mfloat-abi=hard
   GCC_FLOATING_POINT_FLAGS := # No flags needed here.
 else
   $(error Variable TOOLCHAIN_TARGET_CPU has invalid value "$(TOOLCHAIN_TARGET_CPU)")
@@ -414,21 +415,22 @@ endif
 
 # Frame pointers are generally useful in order to investigate crash dumps or to debug an optimised build.
 # They do cost a little in terms of stack space, code space and performance, though.
-COMMON_CFLAGS_FOR_TARGET += -fno-omit-frame-pointer
-COMMON_CFLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
-COMMON_CFLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
-COMMON_CFLAGS_FOR_TARGET += -fno-use-cxa-atexit
+COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -fno-omit-frame-pointer
+COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -fdata-sections      # Keeps data in separate data sections, so they can be discarded if unused.
+COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -ffunction-sections  # Keeps functions in separate data sections, so they can be discarded if unused.
 
-COMMON_CFLAGS_FOR_LIBC :=
+COMMON_CXXFLAGS_FOR_TARGET += -fno-use-cxa-atexit  # This impacts static destructors, see this option in the project's configure.ac for more information.
+
+COMMON_C_AND_CXX_FLAGS_FOR_LIBC :=
 
 # GCC options '-flto -ffat-lto-objects' makes static libraries optimal for both LTO and non-LTO builds.
 # In a small test firmware that barely uses any libc routines, I saw a reduction in size of around 200 bytes,
 # so these LTO settings do have an effect.
 #
-# You would normally place the LTO flags in COMMON_CFLAGS_FOR_TARGET, in order to build GCC's libstdc++
+# You would normally place the LTO flags in COMMON_C_AND_CXX_FLAGS_FOR_TARGET, in order to build GCC's libstdc++
 # in the same way, but I started just by building Newlib and Picolibc with those flags like this:
 #
-#   COMMON_CFLAGS_FOR_LIBC := -flto -ffat-lto-objects
+#   COMMON_C_AND_CXX_FLAGS_FOR_LIBC := -flto -ffat-lto-objects
 #
 # However, as soon as the firmware grew a little, I started getting "undefined reference" linker errors for
 # 'toupper', 'vsnprintf', 'strchr' and so on. I was testing with GCC 11.2.
@@ -443,19 +445,19 @@ COMMON_CFLAGS_FOR_LIBC :=
 #
 # I then tried building GCC's libstdc++ too with the same LTO flags like this:
 #
-#   COMMON_CFLAGS_FOR_TARGET += -flto -ffat-lto-objects
+#   COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -flto -ffat-lto-objects
 #
 # But I got "undefined reference" linker errors too for 'malloc', 'free', 'abort'
 # and a bunch of weird C++ symbols like 'unwind_phase2', 'class_type_info.cc.825a3992' or 'eh_arm.cc.87ac54f2'.
 
 # Newlib's standard assert() implementation ends up calling fiprintf(), which pulls in loads of C runtime I/O functions,
 # and we don't want that in our memory-constrained embedded environment.
-COMMON_CFLAGS_FOR_LIBC += -DHAVE_ASSERT_FUNC
+COMMON_C_AND_CXX_FLAGS_FOR_LIBC += -DHAVE_ASSERT_FUNC
 
 # Newlib's standard abort() implementation calls raise(), which pulls some signal-handling code
 # that is useless in our embedded environment. GCC's C++ exception handling support library calls abort(),
 # so we should provide our own space-saving implementation.
-COMMON_CFLAGS_FOR_LIBC += -DABORT_PROVIDED
+COMMON_C_AND_CXX_FLAGS_FOR_LIBC += -DABORT_PROVIDED
 
 
 # ------- Binutils configuration -------
@@ -643,8 +645,13 @@ GCC2_MAKE_SENTINEL    := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Make)
 GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Install)
 GCC2_CHECK_SENTINEL   := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Check)
 
-GCC_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET)
+GCC_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET)
+
 # GCC_C_AND_CXX_FLAGS_FOR_TARGET += -H  # Print the name of each header file included, useful during development of this makefile.
+
+GCC_CFLAGS_FOR_TARGET   := $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET)
+GCC_CXXFLAGS_FOR_TARGET := $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET) $(COMMON_CXXFLAGS_FOR_TARGET)
+
 
 COMMON_GCC_OPTIONS =
 COMMON_GCC_OPTIONS += $(CONFIG_CACHE_OPTION)
@@ -735,8 +742,12 @@ ifeq ($(TARGET_LIBC), newlib)
   # of this patch stored next to the latest one.
   NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibRemoveStrerrorMessages.patch
 
-  # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_CFLAGS_FOR_TARGET)
-  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET) $(COMMON_CFLAGS_FOR_LIBC)
+  # NOTE: Newlib's switch --enable-target-optspace would add "-g -Os" to the compilation flags, but we have already done that in $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET)
+
+  NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET) $(COMMON_C_AND_CXX_FLAGS_FOR_LIBC)
+  NEWLIB_CFLAGS_FOR_TARGET   := $(NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET)
+  # This variable is probably unnecessary, as Newlib has no C++ files.
+  NEWLIB_CXXFLAGS_FOR_TARGET := $(NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET) $(COMMON_CXXFLAGS_FOR_TARGET)
 
   NEWLIB_CFG_FLAGS =
 
@@ -890,7 +901,7 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CFG_FLAGS += -Dlibdir="$(TARGET_ARCH)/lib"
 
   # Note that we will be overriding these optimisation flags anyway
-  # with the -Ox and -g flags in COMMON_CFLAGS_FOR_TARGET.
+  # with the -Ox and -g flags in COMMON_C_AND_CXX_FLAGS_FOR_TARGET.
   # The reasons for the override is too share those flags with the Newlib counterpart.
   PICOLIBC_CFG_FLAGS += -Doptimization=s  # This is equivalent to '-Os'.
   PICOLIBC_CFG_FLAGS += -Ddebug=true      # Generate debug information, equivalent to '-g'.
@@ -1009,7 +1020,7 @@ ifeq ($(TARGET_LIBC), picolibc)
   PICOLIBC_CPU_FAMILY := arm
   PICOLIBC_CPU_ENDIANNESS := little
 
-  PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_CFLAGS_FOR_TARGET) $(COMMON_CFLAGS_FOR_LIBC)
+  PICOLIBC_C_FLAGS_FOR_TARGET := $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET) $(COMMON_C_AND_CXX_FLAGS_FOR_LIBC)
 
   # Meson unconditionally adds compiler flag -D_FILE_OFFSET_BITS=64,
   # which is wrong for our bare-meta, 32-bit platform
@@ -1545,8 +1556,8 @@ $(NEWLIB_MAKEFILE): $(NEWLIB_HELP_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	      --userFriendlyName="Newlib Configure" \
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibConfigure.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibConfigure.report" \
-	    CFLAGS_FOR_TARGET="$(NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET)" \
-	    CXXFLAGS_FOR_TARGET="$(NEWLIB_C_AND_CXX_FLAGS_FOR_TARGET)" \
+	    CFLAGS_FOR_TARGET="$(NEWLIB_CFLAGS_FOR_TARGET)" \
+	    CXXFLAGS_FOR_TARGET="$(NEWLIB_CXXFLAGS_FOR_TARGET)" \
 	    $(NEWLIB_SRC_DIR)/configure \
 	      $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
@@ -1719,8 +1730,8 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Make.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Make.report" \
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" \
-	      CFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" \
-	      CXXFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" && \
+	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
+	      CXXFLAGS_FOR_TARGET="$(GCC_CXXFLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
 	echo "The GCC phase 2 build has finished."
 
@@ -1755,8 +1766,8 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Check.report" \
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
-	      CFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" \
-	      CXXFLAGS_FOR_TARGET="$(GCC_C_AND_CXX_FLAGS_FOR_TARGET)" && \
+	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
+	      CXXFLAGS_FOR_TARGET="$(GCC_CXXFLAGS_FOR_TARGET)" && \
 	echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
 	echo "The GCC phase 2 check has finished."
 
