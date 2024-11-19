@@ -1,5 +1,5 @@
 
-// Copyright (C) 2012-2020 R. Diez
+// Copyright (C) 2012-2024 R. Diez
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the Affero GNU General Public License version 3
@@ -158,38 +158,64 @@ void RuntimeStartupChecks ( void ) throw()
     Panic( "No malloc memory should have been used at all, not even temporarily (malloc and free before this point)." );
   }
 
-  // See the comments next to compilation option -fuse-cxa-atexit for more information.
-  // You may of course have a different opinion or different needs with regards to initialisation and atexit,
-  // in which case you need to remove this check.
 
-  #ifdef _PICOLIBC__
+  #if POISON_ATEXIT
 
-    // Unfortunately, we cannot access _atexit here, because the corresponding private header file is not accessible.
-    //   assert( _atexit == nullptr );
-
-  #elif defined( _GLOBAL_ATEXIT )
-
-    // Newlib up to at least version 4.1.0 defines _GLOBAL_ATEXIT.
+    // All atexit-related calls end up calling __register_exitproc(). With the following code,
+    // I tried to check that __register_exitproc() exists. This is so that we notice if Newlib decides
+    // to rename that routine. However, checking the address is not nullptr is not enough
+    // to actually make sure the symbol exists. If we actually use the address,
+    // then __register_exitproc() gets pulled into the executable, which we want to avoid.
     //
-    // _GLOBAL_REENT is _global_impure_ptr.
-    // _GLOBAL_ATEXIT can be either _global_atexit or _GLOBAL_REENT->_atexit, therefore _global_impure_ptr->_atexit .
-    // If not nullptr, then I guess that _GLOBAL_ATEXIT->_ind will not be 0 either.
-
-    if ( _GLOBAL_ATEXIT != nullptr )
+    // Note also that we cannot do the same check with atexit() and the other related functions,
+    // because we would then get this linker error:  undefined reference to `__wrap___register_exitproc'
+    //
+    if ( false )
     {
-      Panic( UNEXPECTED_ENTRIES_IN_THE_ATEXIT_TABLE_ERR_MSG );
+      extern int __real___register_exitproc;  // The exact type does not really matter.
+      assert(  & __real___register_exitproc != nullptr );  // This check is not enough, see above for more information.
+
+      // If we take the address of the function, then it gets pulled into the executable,
+      // see the comment further above.
+       const void * const addr = & __real___register_exitproc;
+       UNUSED_ALWAYS( addr );
     }
 
-  #else
+    // See the comments next to compilation option -fuse-cxa-atexit for more information.
+    // You may of course have a different opinion or different needs with regards to initialisation and atexit,
+    // in which case you need to remove this check.
 
-    // Newlib from at least version 4.3.0.20230120 makes __atexit accessible.
+    #ifdef _PICOLIBC__
 
-    if ( __atexit != nullptr )
-    {
-      Panic( UNEXPECTED_ENTRIES_IN_THE_ATEXIT_TABLE_ERR_MSG );
-    }
+      // Unfortunately, we cannot access _atexit here, because the corresponding private header file is not accessible.
+      //   assert( _atexit == nullptr );
 
-  #endif
+    #elif defined( _GLOBAL_ATEXIT )
+
+      // Newlib up to at least version 4.1.0 defines _GLOBAL_ATEXIT.
+      //
+      // _GLOBAL_REENT is _global_impure_ptr.
+      // _GLOBAL_ATEXIT can be either _global_atexit or _GLOBAL_REENT->_atexit, therefore _global_impure_ptr->_atexit .
+      // If not nullptr, then I guess that _GLOBAL_ATEXIT->_ind will not be 0 either.
+
+      if ( _GLOBAL_ATEXIT != nullptr )
+      {
+        Panic( UNEXPECTED_ENTRIES_IN_THE_ATEXIT_TABLE_ERR_MSG );
+      }
+
+    #else
+
+      // Newlib from at least version 4.3.0.20230120 makes __atexit accessible.
+
+      if ( __atexit != nullptr )
+      {
+        Panic( UNEXPECTED_ENTRIES_IN_THE_ATEXIT_TABLE_ERR_MSG );
+      }
+
+    #endif
+
+  #endif  // #if POISON_ATEXIT
+
 
   // I haven't patched strerror() in Picolibc yet.
   #ifndef _PICOLIBC__

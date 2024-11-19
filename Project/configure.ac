@@ -444,7 +444,13 @@ EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 # With this trick, it should be easier to locate all static destructors I am trying to avoid,
 # because the whole construction and destruction order is iffy anyway. Search the Internet
 # for "C++ static initialization order fiasco" for more information.
+#
+# If you disable -fno-use-cxa-atexit, keep in mind that GCC's libstdc++
+# in the toolchain was built with that option too.
+#
+POISON_ATEXIT=true
 EXTRA_CXX_FLAGS+=" -fno-use-cxa-atexit"
+
 
 # These flags may save a little program space:
 if false; then
@@ -683,6 +689,8 @@ PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
 USE_GOLD_LINKER=false  # The newer Gold Linker does not seem compatible yet with the linker script files for the traditional linker,
                        # at least for a bare-metal firmware like this one.
 PUBLISH_BOOLEAN_VARIABLE(USE_GOLD_LINKER)
+
+PUBLISH_BOOLEAN_VARIABLE(POISON_ATEXIT)
 
 
 # --- Set the final variables.
