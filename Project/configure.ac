@@ -451,6 +451,41 @@ EXTRA_C_AND_CXX_FLAGS+=" -ffunction-sections -fdata-sections"
 POISON_ATEXIT=true
 EXTRA_CXX_FLAGS+=" -fno-use-cxa-atexit"
 
+# We are disabling run-time type information (RTTI) here.
+# If you need it in your projects, remove or comment out the -fno-rtti line below.
+#
+# Most embedded software does not need RTTI. Disabling it saves some code space,
+# as <typeinfo for MyClass> and <typeinfo name for MyClass> records are no longer generated.
+#
+# The flip side is that you lose the typeid operator, the std::type_info class
+# and dynamic_cast (mostly).
+#
+# Note that some amount of RTTI will still remain even if RTTI is disabled,
+# as GCC's libsupc++ needs to be compiled with RTTI.
+# GCC's libstdc++ is also usually compiled with RTTI when building the toolchain.
+#
+# GCC as of version 14.2 is unable to optimise away unused virtual functions,
+# see this bug report:
+#   Bug 117672 - Remove unused virtual methods
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=117672
+# That lack of optimisation will make some unused RTTI remain in the binary.
+# For example, unused virtual methods for std::type_info::name() will
+# make the corresponding unused class names stay.
+#
+# Furthermore, some RTTI will still be generated as needed for any thrown C++
+# exception types, even if RTTI is disabled.
+#
+# The main reason I disable RTTI is the "typeinfo name" records, which embed all class names
+# in the binary. That is a silly thing to do. You only need the class names in the binary
+# for special troubleshooting purposes during development, if at all, because
+# the debug information is normally enough.
+#
+# In my opinion, the compiler should be able to generate RTTI but remove the class names.
+# Therefore, I have created a feature request here:
+#   Bug 117683 - provide a way to remove all C++ class names from the binary
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=117683
+#
+EXTRA_CXX_FLAGS+=" -fno-rtti"
 
 # These flags may save a little program space:
 if false; then
