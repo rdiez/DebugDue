@@ -314,7 +314,6 @@ Step 1, clean operation and configuration options:
 Step 2, build operations:
   --build    Runs "make" for the default target. Generates the autoconf
              files beforehand if necessary.
-  --install  Runs "make install". Normally not needed.
   --atmel-software-framework="<path>"  Directory where the ASF is installed.
                                        Only needed if the project requires it.
   --show-build-commands  Show the full compilation commands during the build.
@@ -600,7 +599,6 @@ process_command_line_argument ()
 
     build) BUILD_SPECIFIED=true;;
     enable-ccache) ENABLE_CCACHE_SPECIFIED=true;;
-    install) INSTALL_SPECIFIED=true;;
     disassemble) DISASSEMBLE_SPECIFIED=true;;
     program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
     program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
@@ -920,11 +918,7 @@ do_build ()
     quote_and_append_args MAKE_CMD "$EXTRA_ARG"
   done
 
-  # After all 'make' options, append the targets.
-
-  if $INSTALL_SPECIFIED; then
-    quote_and_append_args MAKE_CMD "install"
-  fi
+  # After all 'make' options, append any targets the user requested.
 
   if $DISASSEMBLE_SPECIFIED; then
     quote_and_append_args MAKE_CMD "disassemble"
@@ -1724,7 +1718,7 @@ do_run_in_qemu ()
 
   # This check is not strictly necessary, but Qemu is not usually installed by default
   # and it provides a more user-friendly error message. We could even suggest
-  # the Ubunut/Debian package to install.
+  # the Ubuntu/Debian package to install.
   if ! type "$QEMU_TOOL" >/dev/null 2>&1 ;
   then
     abort "Could not find Qemu program \"$QEMU_TOOL\"."
@@ -1865,7 +1859,6 @@ USER_LONG_OPTIONS_SPEC+=( [clean]=0 )
 USER_LONG_OPTIONS_SPEC+=( [enable-configure-cache]=0 )
 USER_LONG_OPTIONS_SPEC+=( [build]=0 )
 USER_LONG_OPTIONS_SPEC+=( [enable-ccache]=0 )
-USER_LONG_OPTIONS_SPEC+=( [install]=0 )
 USER_LONG_OPTIONS_SPEC+=( [disassemble]=0 )
 USER_LONG_OPTIONS_SPEC+=( [program-over-jtag]=0 )
 USER_LONG_OPTIONS_SPEC+=( [program-with-bossac]=0 )
@@ -1894,7 +1887,6 @@ ENABLE_CONFIGURE_CACHE_SPECIFIED=false
 CONFIGURE_CACHE_FILENAME=""
 BUILD_SPECIFIED=false
 ENABLE_CCACHE_SPECIFIED=false
-INSTALL_SPECIFIED=false
 DISASSEMBLE_SPECIFIED=false
 PROGRAM_OVER_JTAG_SPECIFIED=false
 PROGRAM_WITH_BOSSAC_SPECIFIED=false
@@ -1915,7 +1907,6 @@ fi
 
 if $CLEAN_SPECIFIED || \
    $BUILD_SPECIFIED || \
-   $INSTALL_SPECIFIED || \
    $PROGRAM_OVER_JTAG_SPECIFIED || \
    $PROGRAM_WITH_BOSSAC_SPECIFIED || \
    $DEBUG_SPECIFIED; then
@@ -1923,8 +1914,6 @@ if $CLEAN_SPECIFIED || \
 else
   abort "No operation requested. Specify --help for usage information."
 fi
-
-check_only_one "Only one build operation can be specified." $BUILD_SPECIFIED $INSTALL_SPECIFIED
 
 check_only_one "Only one program operation can be specified." $PROGRAM_OVER_JTAG_SPECIFIED $PROGRAM_WITH_BOSSAC_SPECIFIED
 
@@ -1963,7 +1952,7 @@ fi
 
 TARGET_ARCH="arm-none-eabi"
 
-if $BUILD_SPECIFIED || $INSTALL_SPECIFIED; then
+if $BUILD_SPECIFIED; then
   NEED_TOOLCHAIN=true
 else
   NEED_TOOLCHAIN=false
@@ -2001,7 +1990,7 @@ fi
 
 # ---------  Step 2: Build ---------
 
-if $BUILD_SPECIFIED || $INSTALL_SPECIFIED; then
+if $BUILD_SPECIFIED; then
   do_autogen_if_necessary
 
   create_dir_if_not_exists "$PROJECT_OBJ_DIR"
