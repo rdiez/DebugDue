@@ -1,5 +1,16 @@
 
-# Copyright (C) 2012-2021 R. Diez - see the DebugDue project for licensing information.
+# Copyright (C) 2012-2025 R. Diez - see the DebugDue project for licensing information.
+
+# Unfortunately, we cannot enable the usual automatic error detection in the shell.
+# Without it, it is almost impossible to write robust scripts.
+# The Autoconf maintainers are aware of this limitation:
+#   Enabling shell error handling in configure.ac
+#   https://lists.gnu.org/archive/html/autoconf/2024-11/msg00001.html
+if false; then
+  set -o errexit  # Alias set -e
+  set -o nounset  # Alias set -u
+  set -o pipefail # Now part of the POSIX/IEEE Std 1003.1-2024 specification too
+fi
 
 # By default, if you change the firmware version number below, the next 'make' invocation
 # will rebuild the 'configure' script. This script will have the updated version number
