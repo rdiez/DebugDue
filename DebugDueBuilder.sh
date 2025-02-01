@@ -2003,6 +2003,10 @@ fi
 
 # ---------  Step 3 and 4: Program and Debug ---------
 
+if $CACHE_PROGRAMMED_FILE_SPECIFIED && ! $PROGRAM_OVER_JTAG_SPECIFIED && ! $PROGRAM_WITH_BOSSAC_SPECIFIED; then
+  abort "Option '--cache-programmed-file' is only valid when programming the firmware."
+fi
+
 if [[ $PROJECT_NAME_LOWERCASE = "qemufirmware" ]]; then
 
   if $PROGRAM_OVER_JTAG_SPECIFIED || $PROGRAM_WITH_BOSSAC_SPECIFIED; then
