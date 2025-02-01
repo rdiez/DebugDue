@@ -493,36 +493,36 @@ build_firmwares ()
   # Build once without '--disassemble', which is the normal scenario.
   run_cmd "Building DebugDue, debug build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build" \
-          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-debug.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-build-debug.txt"
 
   # Build the same firmware, but this time with '--disassemble'.
   # This should just generate a file new files on the existing build output directory.
   run_cmd "Building DebugDue, debug build with disassemble..." \
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble" \
-          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-debug-disassemble.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-build-debug-disassemble.txt"
 
   # Build all other firmwares with '--disassemble', so that it is easy to compare
   # the performance of different toolchains variants (like the firmware section sizes).
 
   run_cmd "Building DebugDue, release build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=release --build --disassemble" \
-          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-release.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-build-release.txt"
 
   run_cmd "Building EmptyFirmware, debug build..." \
           "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build --disassemble" \
-          both  "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-debug.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-build-debug.txt"
 
   run_cmd "Building EmptyFirmware, release build..." \
           "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=release --build --disassemble" \
-          both "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-release.txt"
+          both "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-build-release.txt"
 
   run_cmd "Building QemuFirmware, debug build..." \
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build --disassemble" \
-          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-debug.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-build-debug.txt"
 
   run_cmd "Building QemuFirmware, release build..." \
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build --disassemble" \
-          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-release.txt"
+          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-build-release.txt"
 
   popd >/dev/null
 }
