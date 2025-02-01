@@ -664,7 +664,6 @@ mkdir --parents -- "$LOG_FILES_DIRNAME"
 
 
 declare -r SHOULD_LINT="${DEBUGDUE_SHOULD_LINT:-true}"
-declare -r SHOULD_BUILD_TOOLCHAINS="${DEBUGDUE_SHOULD_BUILD_TOOLCHAINS:-true}"
 declare -r SHOULD_BUILD_FIRMWARES="${DEBUGDUE_SHOULD_BUILD_FIRMWARES:-true}"
 
 
@@ -683,7 +682,8 @@ fi
 
 declare -a TOOLCHAIN_BIN_DIR_ARRAY=()
 
-if $SHOULD_BUILD_TOOLCHAINS; then
+# The calling script always passes DEBUGDUE_SHOULD_BUILD_TOOLCHAINS in the environment.
+if $DEBUGDUE_SHOULD_BUILD_TOOLCHAINS; then
 
   pushd "$COPY_OF_REPOSITORY/Toolchain" >/dev/null
 

@@ -92,24 +92,32 @@ eval "$CMD"
 
 popd >/dev/null
 
-
-# About option '--link': Use hard links to prevent copying big files around.
-#                        The user will probably not be modifying the downloaded tarballs.
-
 echo
-echo "Copying all tarballs..."
 
-mkdir -- "$ROTATED_DIR/TarballsSource"
+declare -r DEBUGDUE_SHOULD_BUILD_TOOLCHAINS="${DEBUGDUE_SHOULD_BUILD_TOOLCHAINS:-true}"
+export DEBUGDUE_SHOULD_BUILD_TOOLCHAINS  # This is for SelfTest-InsideRepoCopy.sh .
 
-printf -v CMD \
-       "cp --recursive --link -- %q/* %q/" \
-       "$GIT_REPOSITORY_BASE/Toolchain/Tarballs" \
-       "$ROTATED_DIR/TarballsSource"
+if $DEBUGDUE_SHOULD_BUILD_TOOLCHAINS; then
 
-echo "$CMD"
-eval "$CMD"
+  echo "Copying all tarballs..."
 
-echo
+  mkdir -- "$ROTATED_DIR/TarballsSource"
+
+  # About option '--link': Use hard links to prevent copying big files around.
+  #                        The user will probably not be modifying the downloaded tarballs.
+
+  printf -v CMD \
+         "cp --recursive --link -- %q/* %q/" \
+         "$GIT_REPOSITORY_BASE/Toolchain/Tarballs" \
+         "$ROTATED_DIR/TarballsSource"
+
+  echo "$CMD"
+  eval "$CMD"
+
+  echo
+
+fi
+
 echo "Starting the self-test inside the copy of the repository..."
 
 exec -- "$COPY_OF_REPOSITORY/Tools/SelfTest-InsideRepoCopy.sh" "$ROTATED_DIR"
