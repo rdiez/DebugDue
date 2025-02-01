@@ -1919,10 +1919,11 @@ if [ ${#ARGS[@]} -ne 0 ]; then
 fi
 
 
-if $CLEAN_SPECIFIED || \
-   $BUILD_SPECIFIED || \
-   $PROGRAM_OVER_JTAG_SPECIFIED || \
+if $CLEAN_SPECIFIED               || \
+   $BUILD_SPECIFIED               || \
+   $PROGRAM_OVER_JTAG_SPECIFIED   || \
    $PROGRAM_WITH_BOSSAC_SPECIFIED || \
+   $SIMULATE_SPECIFIED            || \
    $DEBUG_SPECIFIED; then
   :
 else
