@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2024 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2025 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 # ------- Standard Configuration -------
@@ -44,8 +44,8 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 # ------- User Configuration -------
 
 # - Binutils: https://www.gnu.org/software/binutils/
-# - Building the GMP, MPFR and MPC is optional. If you do not build them,
-#   the ones installed on the host system are used instead.
+# - Building the GMP, MPFR and MPC is optional, see BUILD_GMP_MPFR_MPC.
+#   If you do not build them, the ones installed on the host system are used instead.
 #   The corresponding package names in Ubuntu/Debian are libgmp-dev, libmpfr-dev and libmpc-dev.
 #   This makefile can either build these 3 libraries itself, or none of them.
 #   - GMP:  https://gmplib.org/
@@ -62,7 +62,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
-VERSION_SET := VersionSet15
+VERSION_SET := VersionSet16
 
 ifeq ($(VERSION_SET),VersionSet7)
 
@@ -162,6 +162,23 @@ else ifeq ($(VERSION_SET),VersionSet15)
   NEWLIB_VERSION := 4.4.0.20231231
   PICOLIBC_VERSION := 1.8.8
   GDB_VERSION := 15.2
+
+else ifeq ($(VERSION_SET),VersionSet16)
+
+  # These versions are only taken into consideration if BUILD_GMP_MPFR_MPC == 1.
+  GMP_VERSION := 6.3.0
+  MPFR_VERSION := 4.2.1
+  MPC_VERSION := 1.3.1
+
+  # This version is only taken into consideration if TARGET_LIBC == newlib.
+  NEWLIB_VERSION := 4.5.0.20241231
+
+  # This version is only taken into consideration if TARGET_LIBC == picolibc.
+  PICOLIBC_VERSION := 1.8.8
+
+  BINUTILS_VERSION := 2.43.1
+  GCC_VERSION := 14.2.0
+  GDB_VERSION := 16.1
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
