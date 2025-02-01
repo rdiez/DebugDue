@@ -524,6 +524,14 @@ build_firmwares ()
           "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --build --disassemble" \
           both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-build-release.txt"
 
+  run_cmd "Running QemuFirmware, debug build, under the simulator..." \
+          "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --simulate" \
+          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-simulate-debug.txt"
+
+  run_cmd "Running QemuFirmware, release build, under the simulator..." \
+          "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=release --simulate" \
+          both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-simulate-release.txt"
+
   popd >/dev/null
 }
 
