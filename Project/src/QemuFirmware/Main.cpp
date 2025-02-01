@@ -98,14 +98,16 @@ void StartOfUserCode ( void )
     RuntimeTerminationChecks();
   }
 
-  if ( true )
+  // We need to exit the simulation, because script SelfTest.sh
+  // runs the simulation and expects it to exit.
+  if ( false )
   {
     SerialSyncWriteStr( "Wait forever consuming CPU cycles (busy wait)." EOL );
     ForeverHangAfterPanic();
   }
   else
   {
-    // We could exit the simulation here with this call:
+    SerialSyncWriteStr( "The firmware finished running. Exiting the simulation." EOL );
     Angel_ExitApp();
   }
 }
