@@ -349,6 +349,7 @@ Step 3, program operations:
                        DebugDue, Flyswatter2 or Olimex-ARM-USB-OCD-H.
 
 Step 4, debug operations:
+  --simulate  Run the firmware under a simulator.
   --debug  Starts the firmware under the debugger (GDB connected to
            OpenOCD over JTAG).
   --debugger-type="<type>"  Debugger types are "gdb" and "ddd" (a graphical
@@ -603,6 +604,7 @@ process_command_line_argument ()
     program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
     program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
     cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
+    simulate) SIMULATE_SPECIFIED=true;;
     debug) DEBUG_SPECIFIED=true;;
     debug-from-the-start) DEBUG_FROM_THE_START_SPECIFIED=true;;
     show-build-commands) SHOW_BUILD_COMMANDS=true;;
@@ -1709,9 +1711,11 @@ do_program_and_debug ()
 
 do_run_in_qemu ()
 {
-  # Build the GDB command upfront. If something is wrong, it is not worth starting Qemu.
-  local GDB_CMD
-  build_gdb_command "QEMU"
+  if $DEBUG_SPECIFIED; then
+    # Build the GDB command upfront. If something is wrong, it is not worth starting Qemu.
+    local GDB_CMD
+    build_gdb_command "QEMU"
+  fi
 
 
   local -r QEMU_TOOL="qemu-system-arm"
@@ -1748,13 +1752,15 @@ do_run_in_qemu ()
 
   quote_and_append_args  QEMU_CMD  "-semihosting"
 
-  # OpenOCD uses port number 3333 by default, so use the same port here. If you wish to change it,
-  # you will need to pass it as an argument to script DebuggerStarterHelper.sh too.
-  local -r GDB_PORT_NUMBER="3333"
+  if $DEBUG_SPECIFIED; then
+    # OpenOCD uses port number 3333 by default, so use the same port here. If you wish to change it,
+    # you will need to pass it as an argument to script DebuggerStarterHelper.sh too.
+    local -r GDB_PORT_NUMBER="3333"
 
-  quote_and_append_args  QEMU_CMD  "-gdb"  "tcp::$GDB_PORT_NUMBER"
+    quote_and_append_args  QEMU_CMD  "-gdb"  "tcp::$GDB_PORT_NUMBER"
 
-  quote_and_append_args  QEMU_CMD  -S  # Do not start the CPU, wait for GDB to connect.
+    quote_and_append_args  QEMU_CMD  -S  # Do not start the CPU, wait for GDB to connect.
+  fi
 
   quote_and_append_args  QEMU_CMD  -kernel  "$ELF_FILEPATH"
 
@@ -1790,29 +1796,33 @@ do_run_in_qemu ()
   parse_job_id "$LAST_JOB_STATUS"
   local QEMU_JOB_SPEC="$CAPTURED_JOB_SPEC"
 
-  echo
-  echo "Running debugger script:"
-  echo "$GDB_CMD"
+  if $DEBUG_SPECIFIED; then
 
-  set +o errexit
-  eval "$GDB_CMD"
-  local GDB_CMD_EXIT_CODE="$?"
-  set -o errexit
+    echo
+    echo "Running debugger script:"
+    echo "$GDB_CMD"
 
-  if (( GDB_CMD_EXIT_CODE != 0 )); then
-    abort "The debugger script failed with an exit code of $GDB_CMD_EXIT_CODE."
+    set +o errexit
+    eval "$GDB_CMD"
+    local GDB_CMD_EXIT_CODE="$?"
+    set -o errexit
+
+    if (( GDB_CMD_EXIT_CODE != 0 )); then
+      abort "The debugger script failed with an exit code of $GDB_CMD_EXIT_CODE."
+    fi
+
+    echo
+    echo "The debugger script has terminated. Shutting down Qemu..."
+
+    # There are other ways to terminate Qemu. We could use SIGINT instead of SIGTERM.
+    # Or we could connect to the operating system inside (if there is one) and issue a shutdown
+    # from within the VM. But that does not apply here, as we are debugging the VM and it could
+    # be frozen at this time, for example, in a breakpoint.
+    # Alternatively, we could connect to Qemu's monitor socket and send command "system_powerdown",
+    # see Qemu options '-monitor' and '-qmp'.
+    kill -s SIGTERM  "$QEMU_JOB_SPEC"
+
   fi
-
-  echo
-  echo "The debugger script has terminated. Shutting down Qemu..."
-
-  # There are other ways to terminate Qemu. We could use SIGINT instead of SIGTERM.
-  # Or we could connect to the operating system inside (if there is one) and issue a shutdown
-  # from within the VM. But that does not apply here, as we are debugging the VM and it could
-  # be frozen at this time, for example, in a breakpoint.
-  # Alternatively, we could connect to Qemu's monitor socket and send command "system_powerdown",
-  # see Qemu options '-monitor' and '-qmp'.
-  kill -s SIGTERM  "$QEMU_JOB_SPEC"
 
   echo "Waiting for the Qemu child process to terminate..."
 
@@ -1826,7 +1836,9 @@ do_run_in_qemu ()
     abort "Qemu failed with exit code $QEMU_EXIT_CODE."
   fi
 
-  echo "The debug session terminated successfully."
+  if $DEBUG_SPECIFIED; then
+    echo "The debug session terminated successfully."
+  fi
 }
 
 
@@ -1864,6 +1876,7 @@ USER_LONG_OPTIONS_SPEC+=( [program-over-jtag]=0 )
 USER_LONG_OPTIONS_SPEC+=( [program-with-bossac]=0 )
 USER_LONG_OPTIONS_SPEC+=( [verify]=0 )
 USER_LONG_OPTIONS_SPEC+=( [cache-programmed-file]=0 )
+USER_LONG_OPTIONS_SPEC+=( [simulate]=0 )
 USER_LONG_OPTIONS_SPEC+=( [debug]=0 )
 USER_LONG_OPTIONS_SPEC+=( [debug-from-the-start]=0 )
 USER_LONG_OPTIONS_SPEC+=( [show-build-commands]=0 )
@@ -1891,6 +1904,7 @@ DISASSEMBLE_SPECIFIED=false
 PROGRAM_OVER_JTAG_SPECIFIED=false
 PROGRAM_WITH_BOSSAC_SPECIFIED=false
 CACHE_PROGRAMMED_FILE_SPECIFIED=false
+SIMULATE_SPECIFIED=false
 DEBUG_SPECIFIED=false
 DEBUG_FROM_THE_START_SPECIFIED=false
 SHOW_BUILD_COMMANDS=false
@@ -2013,11 +2027,15 @@ if [[ $PROJECT_NAME_LOWERCASE = "qemufirmware" ]]; then
     abort "Cannot program a Qemu firmware. You can only run it with option '--debug'."
   fi
 
-  if $DEBUG_SPECIFIED; then
+  if $SIMULATE_SPECIFIED || $DEBUG_SPECIFIED; then
     do_run_in_qemu
   fi
 
 else
+
+  if $SIMULATE_SPECIFIED; then
+    abort "Project \"$PROJECT \"does not support simulation."
+  fi
 
   SAME_FILE_THEREFORE_SKIP_PROGRAMMING=false
   CACHE_FILE_EXISTS_BUT_DIFFERENT=false
