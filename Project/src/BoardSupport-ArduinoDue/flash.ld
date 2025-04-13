@@ -52,7 +52,7 @@ SECTIONS
 
     KEEP(*(.vectors .vectors.*))
     *(.text .text.* .gnu.linkonce.t.*)  /* All ".gnu.linkonce" sections are used for C++ "vague linkage" */
-    *(.glue_7t) *(.glue_7)
+    *(.glue_7t) *(.glue_7)  /* .glue_7 is used for ARM code calling Thumb code, and .glue_7t is used for Thumb code calling ARM code. They should be empty. */
     *(.rodata .rodata* .gnu.linkonce.r.*)
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     *(.eh_frame*)  /* Although .eh_frame sections are apparently still generated, ARM does not use it, so we do not need to KEEP() it. */
