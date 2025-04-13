@@ -108,8 +108,6 @@ SECTIONS
     KEEP(*(.fini_array))
     __fini_array_end = .;
 
-    . = ALIGN(4);
-    _efixed = .;            /* End of text section */
   } > FLASH
 
   /* This is the exception index table. It is mainly needed for C++ exception support. Option "-funwind-tables"
