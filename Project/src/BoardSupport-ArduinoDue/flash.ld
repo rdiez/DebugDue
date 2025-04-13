@@ -57,6 +57,12 @@ SECTIONS
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     *(.eh_frame*)  /* Although .eh_frame sections are apparently still generated, ARM does not use it, so we do not need to KEEP() it. */
 
+    *(.vfp11_veneer)  /* VFP11 bugfixes s.a. http://sourceware.org/ml/binutils/2006-12/msg00196.html . I should be empty. */
+    *(.v4_bx)  /* ARMv4 interworking fixup for missing BX. I should be empty. */
+    *(.iplt .igot.plt)  /* STT_GNU_IFUNC symbols. I should be empty. */
+    *(.rel.*)  /* Dynamic relocations. I should be empty. */
+    *(.tm_clone_table)  /* This has to do with transactional memory. I should be empty. */
+
 
     /* Support C constructors and destructors in both user code and the C runtime library.
        This also provides support for C++ constructors and destructors. */

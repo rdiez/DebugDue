@@ -243,6 +243,10 @@ firmware_elf_LDFLAGS += -Wl,--gc-sections
 firmware_elf_LDFLAGS += -Wl,--warn-common
 firmware_elf_LDFLAGS += -Wl,--sort-section=alignment  # Reduces the overall padding needed.
 
+# It is not strictly necessary to account for every section, and it can be somewhat cumbersome.
+# However, I think it is a good practice which can prevent surprises and hard-to-find problems in the long run.
+firmware_elf_LDFLAGS += -Wl,--orphan-handling=warn
+
 if !USE_GOLD_LINKER
   # The Gold linker does not support --warn-section-align , at least in Gold version 1.14 (bundled with GNU Binutils 2.28).
   firmware_elf_LDFLAGS += -Wl,--warn-section-align
