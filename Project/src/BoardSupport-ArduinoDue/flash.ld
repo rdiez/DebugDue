@@ -28,7 +28,7 @@
 
 
  This linker script file was taken from the Arduino software version 1.5.2,
- with some changes by rdiez.
+ with quite a lot of changes by rdiez.
 */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
@@ -36,10 +36,10 @@ OUTPUT_ARCH(arm)
 
 MEMORY
 {
-  rom (rx)    : ORIGIN = 0x00080000, LENGTH = 0x00080000 /* Flash, 512K */
+  FLASH (rx)     : ORIGIN = 0x00080000, LENGTH = 0x00080000 /* Flash, 512K */
   /* sram0 (rwx) : ORIGIN = 0x20000000, LENGTH = 0x00010000 / * sram0, 64K */
   /* sram1 (rwx) : ORIGIN = 0x20080000, LENGTH = 0x00008000 / * sram1, 32K */
-  ram (rwx)   : ORIGIN = 0x20070000, LENGTH = 0x00018000 /* sram, 96K */
+  RAM (rwx)   : ORIGIN = 0x20070000, LENGTH = 0x00018000 /* sram, 96K */
 }
 
 SECTIONS
@@ -110,7 +110,7 @@ SECTIONS
 
     . = ALIGN(4);
     _efixed = .;            /* End of text section */
-  } > rom
+  } > FLASH
 
   /* This is the exception index table. It is mainly needed for C++ exception support. Option "-funwind-tables"
      also generates these tables, which are useful if your C code wants to print a stack backtrace.
@@ -120,7 +120,7 @@ SECTIONS
   .ARM.exidx :
   {
     *(.ARM.exidx* .gnu.linkonce.armexidx.*)
-  } > rom
+  } > FLASH
   __exidx_end = .;
 
 
@@ -135,14 +135,15 @@ SECTIONS
 
   StackAlignment = 8;  /* Must be at least 4. There is an optional flag in the Cortex-M3 core to reduce alignment from 8 to 4,
                           so I think that 8 is a good choice here. */
-  . = ORIGIN( ram );
+  . = ORIGIN( RAM );
 
   .stackArea ALIGN( StackAlignment ) (NOLOAD):
   {
       __StackLimit = .;
       KEEP(*(.placeInStackArea))
       __StackTop = .;
-  } > ram
+  } > RAM
+
 
   /* After some time working on linker script files, you develop acute paranoia.
      Therefore, check that the stack values look plausible. */
@@ -151,6 +152,11 @@ SECTIONS
   StackAssert3 = ASSERT( __StackTop > __StackLimit, "Wrong stack area address.");
 
 
+  /**
+   * Location counter can end up 2-byte aligned with narrow Thumb code but
+   * __etext is assumed by startup code to be the LMA of a section in RAM
+   * which must be 4-byte aligned
+   */
   .relocate : AT (__etext)
   {
     . = ALIGN(4);
@@ -161,21 +167,21 @@ SECTIONS
 
     . = ALIGN(4);
     __data_end__ = .;
-  } > ram
+  } > RAM
 
   /* .bss section which is used for uninitialized data */
   .bss ALIGN(4) (NOLOAD) :
   {
-    . = ALIGN(4);
     __bss_start__ = .;
     *(.bss)
     *(.bss.*)
     *(COMMON)
     . = ALIGN(4);
     __bss_end__ = .;
-  } > ram
+  } > RAM
+
 
   . = ALIGN(8);
   __end__ = . ;  /* Symbol __end__ marks the start of the malloc heap. */
-  __HeapLimit = ORIGIN(ram) + LENGTH(ram);
+  __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
 }

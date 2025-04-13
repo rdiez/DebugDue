@@ -21,7 +21,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * With some changes by rdiez.
+ * With quite a lot of changes by rdiez.
  */
 
 OUTPUT_FORMAT("elf32-littlearm", "elf32-littlearm", "elf32-littlearm")
@@ -102,6 +102,10 @@ SECTIONS
     KEEP(*(.eh_frame*))
   } > FLASH
 
+  /* This is the exception index table. It is mainly needed for C++ exception support. Option "-funwind-tables"
+     also generates these tables, which are useful if your C code wants to print a stack backtrace.
+     The whole .ARM.exidx group is sorted by the linker, and I think duplicates are also collapsed together,
+     so has to go in its own output section. */
   __exidx_start = .;  /* libgcc references __exidx_start and __exidx_end, but that seems to be specific to the ARM architecture. */
   .ARM.exidx :
   {
@@ -143,7 +147,6 @@ SECTIONS
    * __etext is assumed by startup code to be the LMA of a section in RAM
    * which must be 4-byte aligned
    */
-
   .relocate : AT (__etext)
   {
     . = ALIGN(4);
@@ -156,9 +159,9 @@ SECTIONS
     __data_end__ = .;
   } > RAM
 
-  .bss :
+  /* .bss section which is used for uninitialized data */
+  .bss ALIGN(4) (NOLOAD) :
   {
-    . = ALIGN(4);
     __bss_start__ = .;
     *(.bss)
     *(.bss.*)
@@ -169,6 +172,6 @@ SECTIONS
 
 
   . = ALIGN(8);
-  __end__ = .;   /* Symbol __end__ marks the start of the malloc heap. */
+  __end__ = . ;  /* Symbol __end__ marks the start of the malloc heap. */
   __HeapLimit = ORIGIN(RAM) + LENGTH(RAM);
 }
