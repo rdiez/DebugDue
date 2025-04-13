@@ -46,6 +46,7 @@ SECTIONS
 {
   .text :
   {
+    /* This segment must be 4-byte aligned as defined in ARM ELF File Format specification. */
     . = ALIGN(4);
     _sfixed = .;
 

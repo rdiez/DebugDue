@@ -37,11 +37,13 @@ SECTIONS
 {
   .text :
   {
+    /* This segment must be 4-byte aligned as defined in ARM ELF File Format specification. */
+    . = ALIGN(4);
     _sfixed = .;
 
-    KEEP(*(.vectors))
-    *(.text*)
-
+    KEEP(*(.vectors .vectors.*))
+    *(.text .text.* .gnu.linkonce.t.*)  /* All ".gnu.linkonce" sections are used for C++ "vague linkage" */
+    *(.rodata .rodata* .gnu.linkonce.r.*)
     *(.ARM.extab* .gnu.linkonce.armextab.*)
 
 
@@ -96,8 +98,6 @@ SECTIONS
     KEEP(*(SORT(.fini_array.*)))
     KEEP(*(.fini_array))
     __fini_array_end = .;
-
-    *(.rodata*)
 
     KEEP(*(.eh_frame*))
   } > FLASH
