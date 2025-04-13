@@ -45,6 +45,7 @@ SECTIONS
     *(.text .text.* .gnu.linkonce.t.*)  /* All ".gnu.linkonce" sections are used for C++ "vague linkage" */
     *(.rodata .rodata* .gnu.linkonce.r.*)
     *(.ARM.extab* .gnu.linkonce.armextab.*)
+    *(.eh_frame*)  /* Although .eh_frame sections are apparently still generated, ARM does not use it, so we do not need to KEEP() it. */
 
 
     /* Support C constructors and destructors in both user code and the C runtime library.
@@ -99,7 +100,6 @@ SECTIONS
     KEEP(*(.fini_array))
     __fini_array_end = .;
 
-    KEEP(*(.eh_frame*))
   } > FLASH
 
   /* This is the exception index table. It is mainly needed for C++ exception support. Option "-funwind-tables"

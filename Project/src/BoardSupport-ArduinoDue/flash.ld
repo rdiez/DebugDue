@@ -55,6 +55,7 @@ SECTIONS
     *(.glue_7t) *(.glue_7)
     *(.rodata .rodata* .gnu.linkonce.r.*)
     *(.ARM.extab* .gnu.linkonce.armextab.*)
+    *(.eh_frame*)  /* Although .eh_frame sections are apparently still generated, ARM does not use it, so we do not need to KEEP() it. */
 
 
     /* Support C constructors and destructors in both user code and the C runtime library.
