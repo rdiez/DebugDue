@@ -325,6 +325,9 @@ Step 2, build operations:
                   You can specify --make-arg several times.
   --build-output-base-dir="<path>"  Where the build output will land.
                                     Defaults to '$DEFAULT_BUILD_OUTPUT_BASE_SUBDIR'.
+  --compare-with-bin-file="<path>"  Compare the resulting .bin file with the given one.
+                                    This is useful to check that changes to the build script
+                                    or to the linker script file does not change the binary.
 
   The default is not to build anything. If you then debug your firmware,
   make sure that the existing binary matches the code on the target.
@@ -670,6 +673,13 @@ process_command_line_argument ()
         abort "Option --debug-adapter has an empty value."
       fi
       DEBUG_ADAPTER="$OPTARG"
+      ;;
+
+    compare-with-bin-file)
+      if [[ $OPTARG = "" ]]; then
+        abort "Option --compare-with-bin-file has an empty value."
+      fi
+      COMPARE_WITH_BIN_FILE="$OPTARG"
       ;;
 
     project)
@@ -1857,6 +1867,7 @@ DEBUGGER_TYPE="$DEFAULT_DEBUGGER_TYPE"
 PATH_TO_BOSSAC="$DEFAULT_PATH_TO_BOSSAC"
 BUILD_OUTPUT_BASE_DIR="$DEFAULT_BUILD_OUTPUT_BASE_DIR"
 DEBUG_ADAPTER="$DEFAULT_DEBUG_ADAPTER"
+COMPARE_WITH_BIN_FILE=""
 
 
 USER_SHORT_OPTIONS_SPEC=""
@@ -1892,6 +1903,7 @@ USER_LONG_OPTIONS_SPEC+=( [project]=1 )
 USER_LONG_OPTIONS_SPEC+=( [make-arg]=1 )
 USER_LONG_OPTIONS_SPEC+=( [build-output-base-dir]=1 )
 USER_LONG_OPTIONS_SPEC+=( [debug-adapter]=1 )
+USER_LONG_OPTIONS_SPEC+=( [compare-with-bin-file]=1 )
 
 
 CLEAN_SPECIFIED=false
@@ -2015,6 +2027,37 @@ if $BUILD_SPECIFIED; then
   do_build
 fi
 
+if [ -n "$COMPARE_WITH_BIN_FILE" ]; then
+
+  if [ ! -f "$COMPARE_WITH_BIN_FILE" ]; then
+    abort "Reference file \"$COMPARE_WITH_BIN_FILE\" specified with option --compare-with-bin-file does not exist or is not a regular file."
+  fi
+
+  # If you only re-order the sections in the linker script file, the files will usually keep the same size,
+  # so generate a different error message if their sizes differ.
+
+  BIN_FILE_SIZE=$(stat --format=%s "$BIN_FILEPATH")
+  REF_FILE_SIZE=$(stat --format=%s "$COMPARE_WITH_BIN_FILE")
+
+  if (( BIN_FILE_SIZE != REF_FILE_SIZE )); then
+    printf -v TMP "%'d vs %'d bytes" "$BIN_FILE_SIZE" "$REF_FILE_SIZE"
+    abort "Error comparing the project's binary \"$BIN_FILEPATH\" with the reference file \"$COMPARE_WITH_BIN_FILE\": The files sizes differ ($TMP)."
+  fi
+
+  echo "Comparing the project's .bin file with the reference file..."
+  set +o errexit
+  cmp --quiet -- "$BIN_FILEPATH" "$COMPARE_WITH_BIN_FILE"
+  declare -i REF_CMP_EXIT_CODE="$?"
+  set -o errexit
+
+  case "$REF_CMP_EXIT_CODE" in
+    0) : ;; # Both files have the same content, so nothing to do here.
+    1) abort "Error comparing the project's binary \"$BIN_FILEPATH\" with the reference file \"$COMPARE_WITH_BIN_FILE\": The files have the same size, but their contents differ.";;
+    *) abort "Error comparing the project's binary \"$BIN_FILEPATH\" with the reference file \"$COMPARE_WITH_BIN_FILE\": cmp exited with a status code of $REF_CMP_EXIT_CODE";;
+  esac
+
+fi
+
 
 # ---------  Step 3 and 4: Program and Debug ---------
 
@@ -2046,8 +2089,8 @@ else
     if $CACHE_PROGRAMMED_FILE_SPECIFIED; then
       if [ -e "$CACHED_PROGRAMMED_FILE_FILENAME" ]; then
         set +o errexit
-        cmp --quiet "$CACHED_PROGRAMMED_FILE_FILENAME" "$BIN_FILEPATH"
-        CMP_EXIT_CODE="$?"
+        cmp --quiet -- "$CACHED_PROGRAMMED_FILE_FILENAME" "$BIN_FILEPATH"
+        declare -i CMP_EXIT_CODE="$?"
         set -o errexit
 
         case "$CMP_EXIT_CODE" in
