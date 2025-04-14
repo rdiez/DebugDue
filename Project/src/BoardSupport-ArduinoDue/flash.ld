@@ -25,6 +25,7 @@ SECTIONS
     _sfixed = .;
 
     KEEP(*(.vectors .vectors.*))
+    /* If you have a CPU cache to worry about, you can group here sections .text.startup.* , .text.hot.* and the like. */
     *(.text .text.*)
     *(SORT(.text.sorted.*))
     *(.gnu.linkonce.t.*)  /* All ".gnu.linkonce" sections are used for C++ "vague linkage" */
@@ -98,6 +99,7 @@ SECTIONS
      also generates these tables, which are useful if your C code wants to print a stack backtrace.
      The whole .ARM.exidx group is sorted by the linker, and I think duplicates are also collapsed together,
      so has to go in its own output section. */
+  . = ALIGN(4); /* I am not sure whether this alignment is necessary. */
   __exidx_start = .;  /* libgcc references __exidx_start and __exidx_end, but that seems to be specific to the ARM architecture. */
   .ARM.exidx :
   {
@@ -169,7 +171,7 @@ SECTIONS
 
 
   /* Account for all debug sections. This is only necessary if you use ldd's option --orphan-handling=warn .
-     The sections name were copied from binutil's 2.43.1 file ld/ldscripts/armelf.x . */
+     The sections name were copied from binutils' 2.43.1 file ld/ldscripts/armelf.x . */
   /* Stabs debugging sections.  */
   .stab          0 : { *(.stab) }
   .stabstr       0 : { *(.stabstr) }
