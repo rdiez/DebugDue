@@ -249,12 +249,21 @@ test_building_toolchain ()
   local -r TOOLCHAIN_LOG_FILE_PREFIX="$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-"
   local -r TOOLCHAIN_DEST_DIR="$ROTATED_DIR/${TOOLCHAIN_LIBC_DIR_PREFIX}$L_LIBC_NAME"
 
-  # The calling script always passes DEBUGDUE_TOOLCHAIN_VERSION_SET in the environment.
   local COMMON_TOOLCHAIN_ARGS
   printf -v COMMON_TOOLCHAIN_ARGS \
-         "TARGET_LIBC=%q  VERSION_SET=%q" \
-         "$L_LIBC_NAME" \
-         "$DEBUGDUE_TOOLCHAIN_VERSION_SET"
+         "TARGET_LIBC=%q" \
+         "$L_LIBC_NAME"
+
+  # The calling script always passes DEBUGDUE_TOOLCHAIN_VERSION_SET in the environment,
+  # but it may be empty.
+  if [ -n "$DEBUGDUE_TOOLCHAIN_VERSION_SET" ]; then
+    local L_TMP
+    printf -v L_TMP \
+           "VERSION_SET=%q" \
+           "$DEBUGDUE_TOOLCHAIN_VERSION_SET"
+    COMMON_TOOLCHAIN_ARGS+="  $L_TMP"
+  fi
+
 
   local L_CMD
 
