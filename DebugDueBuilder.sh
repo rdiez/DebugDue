@@ -1465,7 +1465,7 @@ check_open_ocd_version ()
 
   echo "OpenOCD version found: $OPENOCD_VERSION_NUMBER_FOUND"
 
-  local -r CHECK_VERSION_TOOL="$DEBUGDUE_ROOT_DIR/Tools/CheckVersion.sh"
+  local -r CHECK_VERSION_TOOL="$DEBUGDUE_ROOT_DIR/Toolchain/Tools/CheckVersion.sh"
 
 
   local IS_VER_0_12_0_OR_HIGHER_BOOL
