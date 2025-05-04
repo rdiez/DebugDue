@@ -62,6 +62,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
+# VersionSet17 is not the default yet, as GCC 15.1 is rather new.
 VERSION_SET := VersionSet16
 
 ifeq ($(VERSION_SET),VersionSet7)
@@ -170,15 +171,30 @@ else ifeq ($(VERSION_SET),VersionSet16)
   MPFR_VERSION := 4.2.1
   MPC_VERSION := 1.3.1
 
+  NEWLIB_VERSION := 4.5.0.20241231
+
+  PICOLIBC_VERSION := 1.8.8
+
+  BINUTILS_VERSION := 2.43.1
+  GCC_VERSION := 14.2.0
+  GDB_VERSION := 16.1
+
+else ifeq ($(VERSION_SET),VersionSet17)
+
+  # These versions are only taken into consideration if BUILD_GMP_MPFR_MPC == 1.
+  GMP_VERSION := 6.3.0
+  MPFR_VERSION := 4.2.2
+  MPC_VERSION := 1.3.1
+
   # This version is only taken into consideration if TARGET_LIBC == newlib.
   NEWLIB_VERSION := 4.5.0.20241231
 
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
   PICOLIBC_VERSION := 1.8.8
 
-  BINUTILS_VERSION := 2.43.1
-  GCC_VERSION := 14.2.0
-  GDB_VERSION := 16.1
+  BINUTILS_VERSION := 2.44
+  GCC_VERSION := 15.1.0
+  GDB_VERSION := 16.3
 
 else
   $(error Invalid configuration set "$(VERSION_SET)")
@@ -199,8 +215,9 @@ IS_GCC_11_X  := $(filter 11.%,$(GCC_VERSION))
 IS_GCC_12_X  := $(filter 12.%,$(GCC_VERSION))
 IS_GCC_13_X  := $(filter 13.%,$(GCC_VERSION))
 IS_GCC_14_X  := $(filter 14.%,$(GCC_VERSION))
+IS_GCC_15_X  := $(filter 15.%,$(GCC_VERSION))
 
-ifeq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X), $(IS_GCC_14_X) )" ""
+ifeq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X), $(IS_GCC_14_X) , $(IS_GCC_15_X) )" ""
   $(error Unsupported GCC version)
 endif
 
@@ -710,7 +727,7 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   ifneq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
     # The patch for GCC version 5.1.0 works up to GCC version 12.x .
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
-  else ifneq "$(or $(IS_GCC_13_X), $(IS_GCC_14_X) )" ""
+  else ifneq "$(or $(IS_GCC_13_X), $(IS_GCC_14_X), $(IS_GCC_15_X) )" ""
     # Without --enable-libstdcxx-static-eh-pool, libstdc++ calls getenv() on start-up to query
     # an eventual environment variable named GLIBCXX_TUNABLES, in case the configured pool size
     # is overridden to a non-zero amount and the pool must be allocated with malloc().
@@ -1001,7 +1018,8 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Picolibc offers semihosting support, but this project has its own simplified semihost routines.
   PICOLIBC_CFG_FLAGS += -Dsemihost=false
 
-  # We will not be using any iconv support.
+  # We will not be using any iconv support. If you do not set 'newlib-iconv-encodings' to 'none',
+  # all available encodings will be included.
   PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
 
   # We will be using these tables defined in the linker script file:

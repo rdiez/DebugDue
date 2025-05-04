@@ -249,6 +249,13 @@ test_building_toolchain ()
   local -r TOOLCHAIN_LOG_FILE_PREFIX="$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-"
   local -r TOOLCHAIN_DEST_DIR="$ROTATED_DIR/${TOOLCHAIN_LIBC_DIR_PREFIX}$L_LIBC_NAME"
 
+  # The calling script always passes DEBUGDUE_TOOLCHAIN_VERSION_SET in the environment.
+  local COMMON_TOOLCHAIN_ARGS
+  printf -v COMMON_TOOLCHAIN_ARGS \
+         "TARGET_LIBC=%q  VERSION_SET=%q" \
+         "$L_LIBC_NAME" \
+         "$DEBUGDUE_TOOLCHAIN_VERSION_SET"
+
   local L_CMD
 
   local -r SHOULD_SKIP_TARBALL_DOWNLOAD_TEST="${DEBUGDUE_SKIP_TARBALL_DOWNLOAD_TEST:-false}"
@@ -262,9 +269,9 @@ test_building_toolchain ()
     local -r DOWNLOADED_TARBALLS_DIRNAME="$TOOLCHAIN_DEST_DIR/DownloadedTarballs"
 
     printf -v L_CMD \
-           "make %s  TARGET_LIBC=%q  TARBALLS_DOWNLOAD_DIR=%q  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
+           "make %s  %s  TARBALLS_DOWNLOAD_DIR=%q  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
            "$USUAL_MAKE_ARGS" \
-           "$L_LIBC_NAME" \
+           "$COMMON_TOOLCHAIN_ARGS" \
            "$DOWNLOADED_TARBALLS_DIRNAME" \
            "$ROTATED_DIR/TarballsSource"
 
@@ -276,9 +283,9 @@ test_building_toolchain ()
     # so we will not be using it later on to build the toolchain.
 
     printf -v L_CMD \
-           "make %s  TARGET_LIBC=%q  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
+           "make %s  %s  PATH_TO_TARBALLS_ON_FILE_SERVER=%q  download-tarballs-from-file-server" \
            "$USUAL_MAKE_ARGS" \
-           "$L_LIBC_NAME" \
+           "$COMMON_TOOLCHAIN_ARGS" \
            "$ROTATED_DIR/TarballsSource"
 
     run_cmd "Testing downloading tarballs from a file server to the default directory..." \
@@ -303,10 +310,10 @@ test_building_toolchain ()
     local -r INSTALLATION_DIR="$TOOLCHAIN_DEST_DIR/Toolchain-Bin"
 
     printf -v L_CMD \
-           "make  %s  %s  TARGET_LIBC=%q TARBALLS_DOWNLOAD_DIR=%q  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  all" \
+           "make  %s  %s  %s  TARBALLS_DOWNLOAD_DIR=%q  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  all" \
            "$USUAL_MAKE_ARGS" \
            "$PARALLEL_ARGS" \
-           "$L_LIBC_NAME" \
+           "$COMMON_TOOLCHAIN_ARGS" \
            "$DOWNLOADED_TARBALLS_DIRNAME" \
            "$INSTALLATION_DIR" \
            "$BUILD_DIR"
@@ -340,10 +347,10 @@ test_building_toolchain ()
     if ! $SHOULD_SKIP_TOOLCHAIN_CHECK; then
 
       printf -v L_CMD \
-             "make %s  %s  TARGET_LIBC=%q  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  check" \
+             "make %s  %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  check" \
              "$USUAL_MAKE_ARGS" \
              "$PARALLEL_ARGS" \
-             "$L_LIBC_NAME" \
+             "$COMMON_TOOLCHAIN_ARGS" \
              "$INSTALLATION_DIR" \
              "$BUILD_DIR"
 
@@ -367,10 +374,10 @@ test_building_toolchain ()
     local -r INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC="$TOOLCHAIN_DEST_DIR/Toolchain-WithoutGmpMpfrMpc-Bin"
 
     printf -v L_CMD \
-           "make %s  %s  TARGET_LIBC=%q TARBALLS_DOWNLOAD_DIR=%q CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  all" \
+           "make %s  %s  %s TARBALLS_DOWNLOAD_DIR=%q CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  all" \
            "$USUAL_MAKE_ARGS" \
            "$PARALLEL_ARGS" \
-           "$L_LIBC_NAME" \
+           "$COMMON_TOOLCHAIN_ARGS" \
            "$DOWNLOADED_TARBALLS_DIRNAME" \
            "$INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC" \
            "$BUILD_DIR_WITHOUT_GMP_MPFR_MPC"
@@ -388,10 +395,10 @@ test_building_toolchain ()
     if ! $SHOULD_SKIP_TOOLCHAIN_CHECK; then
 
       printf -v L_CMD \
-             "make %s  %s  TARGET_LIBC=%q  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  check" \
+             "make %s  %s  %s  CROSS_TOOLCHAIN_DIR=%q  CROSS_TOOLCHAIN_BUILD_DIR=%q  BUILD_GMP_MPFR_MPC=0  check" \
              "$USUAL_MAKE_ARGS" \
              "$PARALLEL_ARGS" \
-             "$L_LIBC_NAME" \
+             "$COMMON_TOOLCHAIN_ARGS" \
              "$INSTALLATION_DIR_WITHOUT_GMP_MPFR_MPC" \
              "$BUILD_DIR_WITHOUT_GMP_MPFR_MPC"
 

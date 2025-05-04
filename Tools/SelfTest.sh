@@ -97,6 +97,11 @@ echo
 declare -r DEBUGDUE_SHOULD_BUILD_TOOLCHAINS="${DEBUGDUE_SHOULD_BUILD_TOOLCHAINS:-true}"
 export DEBUGDUE_SHOULD_BUILD_TOOLCHAINS  # This is for SelfTest-InsideRepoCopy.sh .
 
+# Pass the exact VERSION_SET to build, as the latest one may not be the default.
+# This happens often with the first major GCC version, as it is usually considered
+# to new to trust straight away.
+export DEBUGDUE_TOOLCHAIN_VERSION_SET="VersionSet17"
+
 if $DEBUGDUE_SHOULD_BUILD_TOOLCHAINS; then
 
   echo "Copying all tarballs..."
