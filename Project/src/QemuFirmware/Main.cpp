@@ -17,6 +17,8 @@
 #include <stdint.h>
 #include <malloc.h>
 
+#include <stdexcept>
+
 #include <BareMetalSupport/DebugConsoleEol.h>
 #include <BareMetalSupport/DebugConsoleSerialSync.h>
 #include <BareMetalSupport/BoardInitUtils.h>
@@ -90,6 +92,24 @@ void StartOfUserCode ( void )
 
   // ------ Main loop ------
 
+  if ( false )  // Enable to test exception handling.
+  {
+    try
+    {
+      volatile int a = 1;  // 'volatile' so that the compiler is not tempted to optimise the whole try/catch away.
+
+      if ( a == 1 )
+      {
+        throw std::runtime_error("Exception test 1");
+      }
+    }
+    catch ( const std::exception & ex )
+    {
+      SerialSyncWriteStr( "Exception thrown and caught: <" );
+      SerialSyncWriteStr( ex.what() );
+      SerialSyncWriteStr( ">" EOL );
+    }
+  }
 
   SerialSyncWriteStr( "Place your application code here." EOL );
 
