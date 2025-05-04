@@ -93,4 +93,4 @@ extern "C"
   void Panic ( const char * msg )  throw()__attribute__ ((__noreturn__));
 
   void ForeverHangAfterPanic ( void )  throw()__attribute__ ((__noreturn__));
-};
+}
