@@ -190,7 +190,7 @@ else ifeq ($(VERSION_SET),VersionSet17)
   NEWLIB_VERSION := 4.5.0.20241231
 
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
-  PICOLIBC_VERSION := 1.8.8
+  PICOLIBC_VERSION := 1.8.9
 
   BINUTILS_VERSION := 2.44
   GCC_VERSION := 15.1.0
@@ -916,6 +916,14 @@ PICOLIBC_TAR_FILE := picolibc-$(PICOLIBC_VERSION).tar.xz
 
 ifeq ($(TARGET_LIBC), picolibc)
 
+  # Convert a Picolibc version number like 1.8.10-2 to 1.8.10.2 ,
+  # because that is the format which CheckVersion.sh understands.
+  PICOLIBC_VERSION_DOTS := $(subst -,.,$(PICOLIBC_VERSION))
+
+  CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
+
+  IS_PICOLIB_1_8_9_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.9")
+
   PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
   PICOLIBC_SRC_DIR   := $(PICOLIBC_UNTAR_DIR)
   PICOLIBC_OBJ_DIR   := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)-obj
@@ -1018,9 +1026,13 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Picolibc offers semihosting support, but this project has its own simplified semihost routines.
   PICOLIBC_CFG_FLAGS += -Dsemihost=false
 
-  # We will not be using any iconv support. If you do not set 'newlib-iconv-encodings' to 'none',
-  # all available encodings will be included.
-  PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
+  ifeq "$(IS_PICOLIB_1_8_9_OR_LATER)" "false"
+    # We will not be using any iconv support. If you do not set 'newlib-iconv-encodings' to 'none',
+    # all available encodings will be included.
+    # The whole iconv support was removed from Picolibc 1.8.9.
+    PICOLIBC_CFG_FLAGS += -Dnewlib-iconv-encodings=none
+  endif
+
 
   # We will be using these tables defined in the linker script file:
   #   __preinit_array_start/__preinit_array_end  (there is no postfini array)
