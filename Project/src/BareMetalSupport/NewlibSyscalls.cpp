@@ -13,11 +13,11 @@
 // You should have received a copy of the Affero GNU General Public License version 3
 // along with this program. If not, see http://www.gnu.org/licenses/ .
 
-#include <newlib.h>  // For _PICOLIBC__, if we are actually using Picolibc.
+#include <newlib.h>  // For __PICOLIBC__, if we are actually using Picolibc.
 
 #include <unistd.h>  // For _exit(). For Picolibc, for sbrk() and getpid() too.
 
-#ifdef _PICOLIBC__
+#ifdef __PICOLIBC__
   #include <signal.h>  // For kill().
 #endif
 
@@ -35,7 +35,7 @@
 #include <Misc/AssertionUtils.h>
 
 
-#ifndef _PICOLIBC__
+#ifndef __PICOLIBC__
 
   // In the case of Newlib's nano allocator, the prototype for _sbrk() is declared within _sbrk_r(),
   // so there is no header file we could include for it.
@@ -52,7 +52,7 @@ static uint8_t * s_heapEndAddr = (uint8_t *) &__end__;  // At the beginning the 
 
 
 void *
-  #ifdef _PICOLIBC__
+  #ifdef __PICOLIBC__
     sbrk
   #else
     _sbrk
@@ -167,7 +167,7 @@ extern "C" void _exit ( int status )
 
 
 int
-  #ifdef _PICOLIBC__
+  #ifdef __PICOLIBC__
     kill
   #else
     _kill
@@ -182,7 +182,7 @@ int
 
 
 pid_t
-  #ifdef _PICOLIBC__
+  #ifdef __PICOLIBC__
     getpid
   #else
     _getpid
@@ -230,7 +230,7 @@ extern "C" void __assert_func ( const char * const filename,
 
 
 // I haven't written support for ASSERT_TYPE for Picolibc yet.
-#ifndef _PICOLIBC__
+#ifndef __PICOLIBC__
 
 #ifndef INCLUDE_USER_IMPLEMENTATION_OF_ASSERT
   #error "INCLUDE_USER_IMPLEMENTATION_OF_ASSERT should be defined at this point."
@@ -259,4 +259,4 @@ extern "C" void __assert_func_generic_err_msg ( void )
 
 #endif  // #ifndef NDEBUG
 
-#endif  // #ifndef _PICOLIBC__
+#endif  // #ifndef __PICOLIBC__

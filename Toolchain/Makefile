@@ -190,7 +190,7 @@ else ifeq ($(VERSION_SET),VersionSet17)
   NEWLIB_VERSION := 4.5.0.20241231
 
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
-  PICOLIBC_VERSION := 1.8.9
+  PICOLIBC_VERSION := 1.8.10
 
   BINUTILS_VERSION := 2.44
   GCC_VERSION := 15.1.0
@@ -922,7 +922,8 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
 
-  IS_PICOLIB_1_8_9_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.9")
+  IS_PICOLIB_1_8_9_OR_LATER  := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.9")
+  IS_PICOLIB_1_8_10_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.10")
 
   PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
   PICOLIBC_SRC_DIR   := $(PICOLIBC_UNTAR_DIR)
@@ -987,10 +988,15 @@ ifeq ($(TARGET_LIBC), picolibc)
   # There aren't even thousands separators as in printf( "%'d" ), as of Picolib 1.7.6 (March 2022).
   PICOLIBC_CFG_FLAGS += -Dtinystdio=true
 
-  # Our bare-metal firmware does not use anything like fopen/fdopen.
-  # Picolibc version 1.8.2 has a bug and does not build with posix-io=false .
-  ifneq "$(PICOLIBC_VERSION)" "1.8.2"
-    PICOLIBC_CFG_FLAGS += -Dposix-io=false
+  # Our bare-metal firmware does not use anything like fopen/fdopen, so this option does not matter much.
+  # Picolibc version 1.8.2 has a bug and does not build with 'posix-io=false'.
+  # Picolibc version 1.8.10 and above do not have this option anymore,
+  # because POSIX flags like O_RDONLY are always supported in fopen() etc.
+  ifeq "$(IS_PICOLIB_1_8_10_OR_LATER)" "false"
+    ifneq "$(PICOLIBC_VERSION)" "1.8.2"
+      # Note that option 'posix-io' only applies to tinystdio.
+      PICOLIBC_CFG_FLAGS += -Dposix-io=false
+    endif
   endif
 
   # Enable C99 support in I/O functions like printf/scanf.
@@ -1004,11 +1010,22 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Enable long long (normally 64-bits) type support in I/O functions like printf/scanf.
   PICOLIBC_CFG_FLAGS += -Dio-long-long=true
 
-  PICOLIBC_CFG_FLAGS += -Dnewlib-multithread=false
+  ifeq "$(IS_PICOLIB_1_8_10_OR_LATER)" "true"
+    PICOLIBC_CFG_FLAGS += -Dsingle-thread=true
+  else
+    PICOLIBC_CFG_FLAGS += -Dnewlib-multithread=false
+  endif
 
-  # You can actually enable newlib-retargetable-locking even if there is no threading support,
-  # but then your firmware has to provide routines like __retarget_lock_acquire_recursive().
-  PICOLIBC_CFG_FLAGS += -Dnewlib-retargetable-locking=false
+  ifeq "$(IS_PICOLIB_1_8_10_OR_LATER)" "true"
+    # Option 'stdio-locking' only applies to only applies to tinystdio.
+    # In the case of Newlib stdio, option single-thread is honoured.
+    # Note that stdio-locking=true is ignored if single-thread=true.
+    PICOLIBC_CFG_FLAGS += -Dstdio-locking=false
+  else
+    # You can actually enable newlib-retargetable-locking even if there is no threading support,
+    # but then your firmware has to provide routines like __retarget_lock_acquire_recursive().
+    PICOLIBC_CFG_FLAGS += -Dnewlib-retargetable-locking=false
+  endif
 
   PICOLIBC_CFG_FLAGS += -Dthread-local-storage=false
 
@@ -1040,14 +1057,23 @@ ifeq ($(TARGET_LIBC), picolibc)
   #   __fini_array_start / __fini_array_end
   # Rather than using those tables directly, we will be calling __libc_init_array() and __libc_fini_array().
   # This option makes __libc_init_array() and __libc_fini_array() available in Picolibc.
-  # Newlib auto-detects this setting by looking in the compilation result for a section header called INIT_ARRAY
-  PICOLIBC_CFG_FLAGS += -Dnewlib-initfini-array=true
+  # Newlib auto-detects this setting by looking in the compilation result for a section header called INIT_ARRAY.
+  ifeq "$(IS_PICOLIB_1_8_10_OR_LATER)" "true"
+    PICOLIBC_CFG_FLAGS += -Dinitfini-array=true
+  else
+    PICOLIBC_CFG_FLAGS += -Dnewlib-initfini-array=true
+  endif
 
   # _init() and _fini() are special functions generated dynamically during linking and associated with
   # sections .init and .fini defined in the linker script file.
   # We are not using _init() and _fini(), but only the tables defined by __init_array_start etc.
   # _init() and _fini() are deprecated anyway. The linker script file checks that these routines are (almost) empty.
-  PICOLIBC_CFG_FLAGS += -Dnewlib-initfini=false
+  ifeq "$(IS_PICOLIB_1_8_10_OR_LATER)" "true"
+    PICOLIBC_CFG_FLAGS += -Dinitfini=false
+  else
+    PICOLIBC_CFG_FLAGS += -Dnewlib-initfini=false
+  endif
+
 
   # We will be calling __libc_init_array() and __libc_fini_array() ourselves.
   # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().

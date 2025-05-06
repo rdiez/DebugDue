@@ -22,7 +22,7 @@
 #include <string.h>
 #include <errno.h>
 
-#ifdef _PICOLIBC__
+#ifdef __PICOLIBC__
   // Unfortunately, we cannot access this private header here:
   //   #include <atexit.h>
   // So there is no way to get the declaration for _atexit.
@@ -38,7 +38,7 @@
 
 
 // Check that the assertion patch for Newlib was applied.
-#ifdef _PICOLIBC__
+#ifdef __PICOLIBC__
   // I haven't got such a patch for Picolibc yet.
 #else
   static_assert( IS_ASSERT_TYPE_HONOURED );
@@ -185,7 +185,7 @@ void RuntimeStartupChecks ( void ) throw()
     // You may of course have a different opinion or different needs with regards to initialisation and atexit,
     // in which case you need to remove this check.
 
-    #ifdef _PICOLIBC__
+    #ifdef __PICOLIBC__
 
       // Unfortunately, we cannot access _atexit here, because the corresponding private header file is not accessible.
       //   assert( _atexit == nullptr );
@@ -218,7 +218,7 @@ void RuntimeStartupChecks ( void ) throw()
 
 
   // I haven't patched strerror() in Picolibc yet.
-  #ifndef _PICOLIBC__
+  #ifndef __PICOLIBC__
 
   // Check whether the patch to remove all strerror() strings is working properly.
   // "n/a" means "not available".
@@ -227,13 +227,13 @@ void RuntimeStartupChecks ( void ) throw()
     Panic( "strerror() does not deliver the expected patched string." );
   }
 
-  #endif  // #ifndef _PICOLIBC__
+  #endif  // #ifndef __PICOLIBC__
 }
 
 
 void RuntimeTerminationChecks ( void ) throw()
 {
-  #ifdef _PICOLIBC__
+  #ifdef __PICOLIBC__
 
     // Unfortunately, we cannot access _atexit here, because the corresponding private header file is not accessible.
     //   assert( _atexit == nullptr );
