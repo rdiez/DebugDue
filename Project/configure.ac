@@ -530,6 +530,18 @@ AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/src/UserImplementationOfAssert"
 EXTRA_CPP_FLAGS+=" -DINCLUDE_USER_IMPLEMENTATION_OF_ASSERT"
 EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
 
+
+# With Picolibc, you force a particular Ctype implementation by
+# setting _PICOLIBC_CTYPE_SMALL to 1 (select an algorithmic implementation),
+# or to 0 (select array-based implementation).
+# However, trying to enable this option is automatically ignored for C++,
+# at least in Picolibc version 1.8.10, because it breaks libstdc++'s ctype implementation.
+# I looked at the header files in Picolibc 1.8.10, and I am afraid that
+# you may get both implementations in the same executable when the project contains
+# both C and C++ files. Therefore, just in case, make sure it is always disabled.
+EXTRA_CPP_FLAGS+=" -D_PICOLIBC_CTYPE_SMALL=0"
+
+
 # Needed by NewlibSyscalls.cpp.
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
