@@ -62,8 +62,8 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
-# VersionSet17 is not the default yet, as GCC 15.1 is rather new.
-VERSION_SET := VersionSet16
+# VersionSet18 is not the default yet, as GCC 15.1 is rather new.
+VERSION_SET := VersionSet17
 
 ifeq ($(VERSION_SET),VersionSet8)
 
@@ -125,6 +125,19 @@ else ifeq ($(VERSION_SET),VersionSet16)
   GDB_VERSION := 16.1
 
 else ifeq ($(VERSION_SET),VersionSet17)
+
+  GMP_VERSION := 6.3.0
+  MPFR_VERSION := 4.2.2
+  MPC_VERSION := 1.3.1
+
+  NEWLIB_VERSION := 4.5.0.20241231
+  PICOLIBC_VERSION := 1.8.10
+
+  BINUTILS_VERSION := 2.44
+  GCC_VERSION := 14.3.0
+  GDB_VERSION := 16.3
+
+else ifeq ($(VERSION_SET),VersionSet18)
 
   # These versions are only taken into consideration if BUILD_GMP_MPFR_MPC == 1.
   GMP_VERSION := 6.3.0
