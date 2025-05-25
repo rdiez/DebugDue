@@ -65,18 +65,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 # VersionSet17 is not the default yet, as GCC 15.1 is rather new.
 VERSION_SET := VersionSet16
 
-ifeq ($(VERSION_SET),VersionSet7)
-
-  BINUTILS_VERSION := 2.36.1
-  GMP_VERSION := 6.2.1
-  MPFR_VERSION := 4.1.0
-  MPC_VERSION := 1.2.1
-  GCC_VERSION := 10.3.0
-  NEWLIB_VERSION := 4.1.0
-  PICOLIBC_VERSION := picolibc-not-supported-yet
-  GDB_VERSION := 10.2
-
-else ifeq ($(VERSION_SET),VersionSet8)
+ifeq ($(VERSION_SET),VersionSet8)
 
   BINUTILS_VERSION := 2.37
   GMP_VERSION := 6.2.1
@@ -87,17 +76,6 @@ else ifeq ($(VERSION_SET),VersionSet8)
   PICOLIBC_VERSION := picolibc-not-supported-yet
   GDB_VERSION := 11.1
 
-else ifeq ($(VERSION_SET),VersionSet9)
-
-  BINUTILS_VERSION := 2.37
-  GMP_VERSION := 6.2.1
-  MPFR_VERSION := 4.1.0
-  MPC_VERSION := 1.2.1
-  GCC_VERSION := 11.2.0
-  NEWLIB_VERSION := 4.1.0
-  PICOLIBC_VERSION := picolibc-not-supported-yet
-  GDB_VERSION := 11.2
-
 else ifeq ($(VERSION_SET),VersionSet10)
 
   BINUTILS_VERSION := 2.38
@@ -105,17 +83,6 @@ else ifeq ($(VERSION_SET),VersionSet10)
   MPFR_VERSION := 4.1.0
   MPC_VERSION := 1.2.1
   GCC_VERSION := 11.2.0
-  NEWLIB_VERSION := 4.1.0
-  PICOLIBC_VERSION := 1.8.2
-  GDB_VERSION := 12.1
-
-else ifeq ($(VERSION_SET),VersionSet11)
-
-  BINUTILS_VERSION := 2.39
-  GMP_VERSION := 6.2.1
-  MPFR_VERSION := 4.1.0
-  MPC_VERSION := 1.2.1
-  GCC_VERSION := 12.2.0
   NEWLIB_VERSION := 4.1.0
   PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 12.1
@@ -131,17 +98,6 @@ else ifeq ($(VERSION_SET),VersionSet12)
   PICOLIBC_VERSION := 1.8.2
   GDB_VERSION := 13.2
 
-else ifeq ($(VERSION_SET),VersionSet13)
-
-  BINUTILS_VERSION := 2.41
-  GMP_VERSION := 6.3.0
-  MPFR_VERSION := 4.2.1
-  MPC_VERSION := 1.3.1
-  GCC_VERSION := 13.2.0
-  NEWLIB_VERSION := 4.3.0.20230120
-  PICOLIBC_VERSION := 1.8.5
-  GDB_VERSION := 13.2
-
 else ifeq ($(VERSION_SET),VersionSet14)
 
   BINUTILS_VERSION := 2.42
@@ -152,17 +108,6 @@ else ifeq ($(VERSION_SET),VersionSet14)
   NEWLIB_VERSION := 4.4.0.20231231
   PICOLIBC_VERSION := 1.8.6
   GDB_VERSION := 15.1
-
-else ifeq ($(VERSION_SET),VersionSet15)
-
-  BINUTILS_VERSION := 2.43.1
-  GMP_VERSION := 6.3.0
-  MPFR_VERSION := 4.2.1
-  MPC_VERSION := 1.3.1
-  GCC_VERSION := 14.2.0
-  NEWLIB_VERSION := 4.4.0.20231231
-  PICOLIBC_VERSION := 1.8.8
-  GDB_VERSION := 15.2
 
 else ifeq ($(VERSION_SET),VersionSet16)
 
