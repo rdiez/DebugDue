@@ -539,6 +539,9 @@ EXTRA_CPP_FLAGS+=" -DASSERT_TYPE=$ASSERT_TYPE"
 # I looked at the header files in Picolibc 1.8.10, and I am afraid that
 # you may get both implementations in the same executable when the project contains
 # both C and C++ files. Therefore, just in case, make sure it is always disabled.
+# For more information, see:
+#   _PICOLIBC_CTYPE_SMALL silently overridden for C++
+#   https://github.com/picolibc/picolibc/issues/1043
 EXTRA_CPP_FLAGS+=" -D_PICOLIBC_CTYPE_SMALL=0"
 
 
