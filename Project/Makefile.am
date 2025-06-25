@@ -90,7 +90,7 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   # It turns out that this was an Automake issue, see Automate bug number 20082.
   # It has been fixed on 2023-11-21 with this commit:
   #   https://git.savannah.gnu.org/cgit/automake.git/commit/?h=8cdbdda5aec652c356fe6dbba96810202176ae75
-  # The fix landed in Autoconf 1.17.
+  # The fix landed in Automake 1.17.
   libAtmelSoftwareFramework_a_AR := $(AR) cr
 
   firmware_elf_LDADD += libAtmelSoftwareFramework.a
