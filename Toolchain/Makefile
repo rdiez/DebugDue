@@ -2008,7 +2008,10 @@ $(TARGET_NAME_CLEAN):
 	echo "Finished. You may want to delete the toolchain installation directory you specified originally with variable CROSS_TOOLCHAIN_DIR."
 
 
-GNU_MIRROR_BASE_URL := http://ftpmirror.gnu.org
+# If a mirror has not downloaded yet the latest version of some component,
+# you can revert to the main GNU server like this:
+#   GNU_MIRROR_BASE_URL := https://ftp.gnu.org/gnu
+GNU_MIRROR_BASE_URL := https://ftpmirror.gnu.org
 
 DOWNLOAD_TARBALL_TOOL_PATH := $(MAKEFILE_TOOLS_DIR)/DownloadTarball.sh
 
