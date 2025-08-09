@@ -50,7 +50,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #   This makefile can either build these 3 libraries itself, or none of them.
 #   - GMP:  https://gmplib.org/
 #   - MPFR: https://www.mpfr.org/
-#   - MPC:  http://www.multiprecision.org/mpc/
+#   - MPC:  https://www.multiprecision.org/mpc/
 #
 # You can check out GCC's contrib/download_prerequisites for inspiration
 # on libraries and version numbers. Unfortunately, that script looks
@@ -62,8 +62,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
-# VersionSet18 is not the default yet, as GCC 15.1 is rather new.
-VERSION_SET := VersionSet17
+VERSION_SET := VersionSet18
 
 ifeq ($(VERSION_SET),VersionSet8)
 
@@ -150,8 +149,8 @@ else ifeq ($(VERSION_SET),VersionSet18)
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
   PICOLIBC_VERSION := 1.8.10
 
-  BINUTILS_VERSION := 2.44
-  GCC_VERSION := 15.1.0
+  BINUTILS_VERSION := 2.45
+  GCC_VERSION := 15.2.0
   GDB_VERSION := 16.3
 
 else
