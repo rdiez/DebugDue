@@ -8,7 +8,7 @@ set -o pipefail
 
 
 declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
-declare -r VERSION_NUMBER="1.09"
+declare -r VERSION_NUMBER="1.10"
 
 declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
@@ -344,13 +344,17 @@ TEMP_FILENAME="$DOWNLOAD_IN_PROGRESS_PATH/$NAME_ONLY"
 
 echo "Downloading URL \"$URL\"..."
 
-# Optional flags: --silent, --ftp-pasv, --ftp-method nocwd
+# Optional flags: --silent (then with --show-error), --ftp-pasv, --ftp-method nocwd
 #
 # About option '--stderr -': Some users consider anything written to stderr to be a warning
 # or an error that needs the user's attention. Curl writes its progress indication to stderr,
 # but that is not warning or error to worry about, so redirect the progress indication to stdout.
+#
+# Option --location makes curl follow redirects.
+#
+# Option --fail makes curl return an non-zero exit code if the server reports an error, like file not found.
 
-curl --location --show-error --stderr - --url "$URL" --output "$TEMP_FILENAME"
+curl --location --fail --stderr - --url "$URL" --output "$TEMP_FILENAME"
 
 if [[ ${UNPACK_TO_DIR:-} != "" ]]; then
 
