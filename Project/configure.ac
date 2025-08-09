@@ -298,7 +298,7 @@ fi
 
 # Generate debugging information.
 #
-# Level 3 makes debugging information include extra data like preprocessor macro definitions (#define symbols).
+# Debugging information level 3 (-g3) includes extra data like preprocessor macro definitions (#define symbols).
 # Therefore, I would normally use -g3 . Unfortunately, GDB 10.1 exhibits a very high CPU load and
 # extreme memory consumption on programs built with -g3 , especially when building with LTO,
 # at least when cross-compiling for ARM Cortex-M3 with GCC 10.3 . See this bug report for more details:
@@ -306,6 +306,31 @@ fi
 #
 # I have also noticed in the past that including preprocessor macro definitions with -g3
 # does not really work with LTO builds, at least with GCC version 8.3.0 . So this area seems problematic.
+# This is still the case in July 2025 with GCC 15.2, Binutils 2.45 and GDB 16.3.
+# See these bug reports for more details:
+#   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=117696
+#   https://sourceware.org/bugzilla/show_bug.cgi?id=32381
+# If preprocessor macros do not work, there is little reason to use -g3 over -g2.
+#
+# These are example GDB commands in order to test whether GDB does find
+# the -g3 preprocessor macro definitions in the .elf debugging information:
+# - For a macro defined in a source file:
+#   info macro assert
+# - For a macro passed with -D as a compiler option, or predefined by GCC:
+#   info macro ASSERT_MSG_BUFSIZE
+# - For a macro predefined by GCC:
+#   info macro __GNUC__
+#
+# Some test results and size statistics with QemuFirmware:
+# - With GCC 14.3, Binutils 2.44, GDB 16.3:
+#   -g2 debug   build     firmware.elf: 316.516 bytes
+#   -g3 debug   build     firmware.elf: 427.908 bytes  "info macro xxx" works
+#   -g2 release build LTO firmware.elf:  73.664 bytes
+#   -g3 release build     firmware.elf: 256.304 bytes  "info macro xxx" works
+#   -g3 release build LTO firmware.elf: 180.600 bytes  "info macro xxx" does not work, and this is unexpected
+# - With GCC 15.2, Binutils 2.45, GDB 16.3:
+#   -g3 release build     firmware.elf: 257.100 bytes  "info macro xxx" works
+#   -g3 release build LTO firmware.elf: 181.132 bytes  "info macro xxx" does not work, and this is unexpected
 
 BUILD_FLAGS+=" -g2"
 
