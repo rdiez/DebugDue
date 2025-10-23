@@ -468,7 +468,10 @@ do_configure_if_necessary ()
     local CONFIG_CMD=""
 
     quote_and_append_args CONFIG_CMD "CONFIG_SHELL=/bin/bash"
+
     quote_and_append_args CONFIG_CMD "$CONFIGURE_SCRIPT_PATH"
+
+    quote_and_append_args CONFIG_CMD "--enable-option-checking=fatal"
 
     if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
       echo "Using configure cache file \"$CONFIGURE_CACHE_FILENAME\"."
@@ -1980,9 +1983,9 @@ fi
 TARGET_ARCH="arm-none-eabi"
 
 if $BUILD_SPECIFIED; then
-  NEED_TOOLCHAIN=true
+  declare -r NEED_TOOLCHAIN=true
 else
-  NEED_TOOLCHAIN=false
+  declare -r NEED_TOOLCHAIN=false
 fi
 
 if $NEED_TOOLCHAIN; then
@@ -1991,7 +1994,7 @@ if $NEED_TOOLCHAIN; then
 fi
 
 
-CONFIGURE_SCRIPT_PATH="$PROJECT_SRC_DIR/configure"
+declare -r CONFIGURE_SCRIPT_PATH="$PROJECT_SRC_DIR/configure"
 
 # Convert to lowercase.
 DEBUGGER_TYPE="${DEBUGGER_TYPE,,}"
