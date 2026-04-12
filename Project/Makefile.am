@@ -24,6 +24,29 @@ dist_data_DATA :=  # See "dist_data_DATA += ..." statements below.
 
 noinst_LIBRARIES :=
 
+# This dependency is used to recompile all sources if the generated makefile changes.
+#
+# This will undoubtedly recompile too often, because Autoconf is not smart enough
+# to leave files "configure" and "Makefile" untouched if the new contents are the same.
+# I have asked about this limitation in Autoconf's mailing list:
+#   Avoid modifying 'configure' or 'makefile' if no changes
+#   2026-04-03
+#   https://lists.gnu.org/archive/html/autoconf/2026-04/msg00002.html
+#
+# Automake does not have any dependency injection for all targets,
+# so we have to manually make all object files depend on the generated makefile.
+# Note that the xxx_OBJECTS variables are not documented in the Automake manual,
+# so they could theoretically change in the future without notice,
+# but I raised this question in Automake's mailing list and was told
+# such a fundamental change is very unlikely:
+#   Automatically rebuild everything when the makefile changes
+#   2026-04-03
+#   https://lists.gnu.org/archive/html/automake/2026-04/msg00000.html
+#
+# The easiest way to test whether this dependency works well
+# is to change the project's version number in configure.ac , in the AC_INIT command.
+MANUAL_MAKEFILE_DEPENDENCY := Makefile
+
 
 # ------------------------------------
 # Include paths.
@@ -81,6 +104,8 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   # Build the ASF into a separate library, so that you can adjust the compilation flags
   # just for the ASF files, for example, in order to selectively turn some compilation warnings off.
   noinst_LIBRARIES += libAtmelSoftwareFramework.a
+
+  $(libAtmelSoftwareFramework_a_OBJECTS): $(MANUAL_MAKEFILE_DEPENDENCY)
 
   # Prevent the annoying warning:  ar: `u' modifier ignored since `D' is the default (see `U')
   # By default, Automake is using $(AR) $(ARFLAGS), and ARFLAGS defaults to "cru".
@@ -221,12 +246,7 @@ firmware_elf_SOURCES += src/BareMetalSupport/NewlibSyscalls.cpp
 
 # ------------------------------------
 
-# Make all sources recompile if this makefile changes. This will undoubtedly recompile
-# too often, but it is the easiest and safest way I could find yet. Note that xxx_OBJECTS
-# variables are not documented in the Automake manual, so they could change in the future.
-# The way I have tested this is to change the project's version number in configure.ac
-# and check that a new firmware binary with the new version number gets built automatically.
-$(firmware_elf_OBJECTS): Makefile
+$(firmware_elf_OBJECTS): $(MANUAL_MAKEFILE_DEPENDENCY)
 
 LINKER_SCRIPT_FILENAME := $(abs_srcdir)/src/$(BOARD_SUPPORT_DIR)/flash.ld
 
