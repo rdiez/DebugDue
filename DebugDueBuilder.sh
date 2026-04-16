@@ -464,104 +464,111 @@ do_autogen_if_necessary ()
 
 do_configure_if_necessary ()
 {
-  local MAKEFILE_PATH="$PROJECT_OBJ_DIR/Makefile"
+  local MAKEFILE_FILENAME_ONLY="Makefile"
+  local MAKEFILE_PATH="$PROJECT_OBJ_DIR/$MAKEFILE_FILENAME_ONLY"
 
   if ! [ -f "$MAKEFILE_PATH" ]; then
-    echo "File \"$MAKEFILE_PATH\" does not exist, running the configure step..."
-
-    pushd "$PROJECT_OBJ_DIR" >/dev/null
-
-    local CONFIG_CMD=""
-
-    quote_and_append_args CONFIG_CMD "CONFIG_SHELL=/bin/bash"
-
-    quote_and_append_args CONFIG_CMD "$CONFIGURE_SCRIPT_PATH"
-
-    quote_and_append_args CONFIG_CMD "--enable-option-checking=fatal"
-
-    if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
-      echo "Using configure cache file \"$CONFIGURE_CACHE_FILENAME\"."
-      quote_and_append_args CONFIG_CMD "--cache-file=$CONFIGURE_CACHE_FILENAME"
-    else
-      # If the cache file to use comes as a command-line argument, then the user
-      # is responsible for the cache file's lifetime.
-      # This script will only delete its local, default cache file
-      # if it has not been told to use it.
-      delete_file_if_exists "$DEFAULT_CONFIGURE_CACHE_FILENAME"
-    fi
-
-    quote_and_append_args CONFIG_CMD "--prefix=$PROJECT_BIN_DIR"
-
-    if [[ $BUILD_TYPE = debug ]]; then
-      quote_and_append_args CONFIG_CMD "--enable-debug=yes"
-      # echo "Creating a debug build..."
-    else
-      quote_and_append_args CONFIG_CMD "--enable-debug=no"
-      # echo "Creating a release build..."
-    fi
-
-    if [ -n "$ASF_DIR" ]; then
-      quote_and_append_args CONFIG_CMD "--with-atmel-software-framework=$ASF_DIR"
-    fi
-
-    quote_and_append_args CONFIG_CMD "--with-project=$PROJECT_NAME"
-
-    quote_and_append_args CONFIG_CMD "--host=$TARGET_ARCH"
-    # I have not figured out yet how to get the value passed as --host to configure.ac ,
-    # so I am passing it again in a separate command-line option.
-    quote_and_append_args CONFIG_CMD "--with-target-arch=$TARGET_ARCH"
-
-    # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
-    # they will complain about a missing plug-in to process object files compiled for LTO.
-    # I reported this issue to the Autoconf project:
-    #   sr #110475: ranlib: plugin needed to handle lto object
-    #   https://savannah.gnu.org/support/index.php?110475
-    quote_and_append_args CONFIG_CMD "AR=$TARGET_ARCH-gcc-ar"
-    quote_and_append_args CONFIG_CMD "RANLIB=$TARGET_ARCH-gcc-ranlib"
-
-    if $ENABLE_CCACHE_SPECIFIED; then
-
-      # You probably do not want to turn ccache on unconditionally. The price of a cache miss
-      # in a normal compilation can be as high as 20 %. There are many more disk writes during
-      # compilation, so pressure increases on the system's disk cache.
-      #
-      # Therefore, ccache only helps if you recompile often with the same results.
-      # For example, if you rebuild many times from scratch during testing of
-      # your application's build script. And you are always using the same compiler.
-      #
-      # It also helps if your changes end up generating the same preprocessor output
-      # for many of the recompiled files. For example, if you amend just comments,
-      # or you change something under #ifdef DEBUG in a header file included by many
-      # source files, but you are compiling a release build at the moment.
-      #
-      # Using ccache also means more admin work. You should check every now and then
-      # whether your cache hits are high enough. Otherwise, you may have to increase
-      # your global cache size, or you will actually be losing performance.
-      #
-      # Beware that ccache is not completely reliable: adding a new header file
-      # may change the compilation results, and ccache may not realise.
-      # This corner case is documented in ccache's user manual.
-
-      CCACHE_NAME="ccache"
-      if type "$CCACHE_NAME" >/dev/null 2>&1 ; then
-        quote_and_append_args CONFIG_CMD "CC=$CCACHE_NAME $TARGET_ARCH-gcc"
-        quote_and_append_args CONFIG_CMD "CXX=$CCACHE_NAME $TARGET_ARCH-g++"
-      else
-        abort "Tool '$CCACHE_NAME' not found."
-      fi
-    fi
-
-    echo "$CONFIG_CMD"
-    eval "$CONFIG_CMD"
-
-    if ! [ -f "$MAKEFILE_PATH" ]; then
-      abort "File \"$MAKEFILE_PATH\" is not where it is expected to be."
-    fi
-
-    popd >/dev/null
-
-    echo "Finished running the configure step."
+    echo "The generated file \"$MAKEFILE_FILENAME_ONLY\" does not exist, so running the 'configure' step..."
+    do_configure
+    return
   fi
+}
+
+
+do_configure ()
+{
+  pushd "$PROJECT_OBJ_DIR" >/dev/null
+
+  local CONFIG_CMD=""
+
+  quote_and_append_args CONFIG_CMD "CONFIG_SHELL=/bin/bash"
+
+  quote_and_append_args CONFIG_CMD "$CONFIGURE_SCRIPT_PATH"
+
+  quote_and_append_args CONFIG_CMD "--enable-option-checking=fatal"
+
+  if $ENABLE_CONFIGURE_CACHE_SPECIFIED; then
+    echo "Using configure cache file \"$CONFIGURE_CACHE_FILENAME\"."
+    quote_and_append_args CONFIG_CMD "--cache-file=$CONFIGURE_CACHE_FILENAME"
+  else
+    # If the cache file to use comes as a command-line argument, then the user
+    # is responsible for the cache file's lifetime.
+    # This script will only delete its local, default cache file
+    # if it has not been told to use it.
+    delete_file_if_exists "$DEFAULT_CONFIGURE_CACHE_FILENAME"
+  fi
+
+  quote_and_append_args CONFIG_CMD "--prefix=$PROJECT_BIN_DIR"
+
+  if [[ $BUILD_TYPE = debug ]]; then
+    quote_and_append_args CONFIG_CMD "--enable-debug=yes"
+    # echo "Creating a debug build..."
+  else
+    quote_and_append_args CONFIG_CMD "--enable-debug=no"
+    # echo "Creating a release build..."
+  fi
+
+  if [ -n "$ASF_DIR" ]; then
+    quote_and_append_args CONFIG_CMD "--with-atmel-software-framework=$ASF_DIR"
+  fi
+
+  quote_and_append_args CONFIG_CMD "--with-project=$PROJECT_NAME"
+
+  quote_and_append_args CONFIG_CMD "--host=$TARGET_ARCH"
+  # I have not figured out yet how to get the value passed as --host to configure.ac ,
+  # so I am passing it again in a separate command-line option.
+  quote_and_append_args CONFIG_CMD "--with-target-arch=$TARGET_ARCH"
+
+  # Use GCC's wrappers for 'ar' and 'ranlib'. Otherwise, when using the binutils versions directly,
+  # they will complain about a missing plug-in to process object files compiled for LTO.
+  # I reported this issue to the Autoconf project:
+  #   sr #110475: ranlib: plugin needed to handle lto object
+  #   https://savannah.gnu.org/support/index.php?110475
+  quote_and_append_args CONFIG_CMD "AR=$TARGET_ARCH-gcc-ar"
+  quote_and_append_args CONFIG_CMD "RANLIB=$TARGET_ARCH-gcc-ranlib"
+
+  if $ENABLE_CCACHE_SPECIFIED; then
+
+    # You probably do not want to turn ccache on unconditionally. The price of a cache miss
+    # in a normal compilation can be as high as 20 %. There are many more disk writes during
+    # compilation, so pressure increases on the system's disk cache.
+    #
+    # Therefore, ccache only helps if you recompile often with the same results.
+    # For example, if you rebuild many times from scratch during testing of
+    # your application's build script. And you are always using the same compiler.
+    #
+    # It also helps if your changes end up generating the same preprocessor output
+    # for many of the recompiled files. For example, if you amend just comments,
+    # or you change something under #ifdef DEBUG in a header file included by many
+    # source files, but you are compiling a release build at the moment.
+    #
+    # Using ccache also means more admin work. You should check every now and then
+    # whether your cache hits are high enough. Otherwise, you may have to increase
+    # your global cache size, or you will actually be losing performance.
+    #
+    # Beware that ccache is not completely reliable: adding a new header file
+    # may change the compilation results, and ccache may not realise.
+    # This corner case is documented in ccache's user manual.
+
+    CCACHE_NAME="ccache"
+    if type "$CCACHE_NAME" >/dev/null 2>&1 ; then
+      quote_and_append_args CONFIG_CMD "CC=$CCACHE_NAME $TARGET_ARCH-gcc"
+      quote_and_append_args CONFIG_CMD "CXX=$CCACHE_NAME $TARGET_ARCH-g++"
+    else
+      abort "Tool '$CCACHE_NAME' not found."
+    fi
+  fi
+
+  echo "$CONFIG_CMD"
+  eval "$CONFIG_CMD"
+
+  if ! [ -f "$MAKEFILE_PATH" ]; then
+    abort "File \"$MAKEFILE_PATH\" is not where it is expected to be."
+  fi
+
+  popd >/dev/null
+
+  echo "Finished running the configure step."
 }
 
 
