@@ -40,6 +40,7 @@ user_config ()
 
 
 declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
+declare -r SCRIPT_FILENAME_ABS="${BASH_SOURCE[0]}"
 
 declare -r EXIT_CODE_SUCCESS=0
 declare -r EXIT_CODE_ERROR=1
@@ -469,6 +470,14 @@ do_configure_if_necessary ()
 
   if ! [ -f "$MAKEFILE_PATH" ]; then
     echo "The generated file \"$MAKEFILE_FILENAME_ONLY\" does not exist, so running the 'configure' step..."
+    do_configure
+    return
+  fi
+
+  # This script passes some hard-coded parameters to 'configure', so that, if this script changes,
+  # we should run the 'configure' step again.
+  if [[ "$SCRIPT_FILENAME_ABS" -nt "$MAKEFILE_PATH" ]]; then
+    echo "File \"$SCRIPT_NAME\" is newer than generated file \"$MAKEFILE_FILENAME_ONLY\", so running the 'configure' step..."
     do_configure
     return
   fi
