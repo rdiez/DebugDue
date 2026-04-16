@@ -289,8 +289,7 @@ the steps are run if requested.
 
 Step 1, clean operation and configuration options:
   --clean  Deletes the -obj and -bin directories for the given build type
-           and the 'configure' script, if they exist, so that the
-           next build will start from scratch.
+           if they exist, so that the next build will start from scratch.
   --enable-configure-cache  Enables the cache file when invoking
            autoconf's 'configure' script. This will save some time
            when rebuilding from scratch.
@@ -432,9 +431,16 @@ check_only_one ()
 do_clean ()
 {
   echo "Cleaning the project's output directories..."
+
   delete_dir_if_exists "$PROJECT_OBJ_DIR"
   delete_dir_if_exists "$PROJECT_BIN_DIR"
-  delete_file_if_exists "$CONFIGURE_SCRIPT_PATH"
+
+  # Do not delete the generated 'configure' script, as other projects may be using it.
+  # For example, you could build all projects in parallel, so that they all
+  # use the same 'configure' script.
+  if false; then
+    delete_file_if_exists "$CONFIGURE_SCRIPT_PATH"
+  fi
 }
 
 
