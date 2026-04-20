@@ -42,6 +42,9 @@ user_config ()
 declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
 declare -r SCRIPT_FILENAME_ABS="${BASH_SOURCE[0]}"
 
+declare -r -i BOOLEAN_TRUE=0
+declare -r -i BOOLEAN_FALSE=1
+
 declare -r EXIT_CODE_SUCCESS=0
 declare -r EXIT_CODE_ERROR=1
 
@@ -445,41 +448,98 @@ do_clean ()
 }
 
 
+# If this script changes, the safest thing to do is to rebuild everything from scratch.
+# For example, this script passes some hard-coded parameters to 'configure', so that,
+# if this script changes, we should run the 'configure' step again.
+# Normally, the generated 'Makefile' would automatically regenerate the 'configure' script
+# if configure.ac has changed, but that would be too late, as this script would have
+# run the existing (old) 'configure' script already.
+
+declare -r CHECK_TIMESTAMPS="true"
+
+
+check_whether_file_out_of_date ()
+{
+  local SRC_FILE_PATH="$1"
+  local TARGET_FILE_PATH="$2"
+
+  if ! [ -f "$SRC_FILE_PATH" ]; then
+    abort "File \"$SRC_FILE_PATH\" does not exist or is not a regular file."
+  fi
+
+  # All users of this routine check beforehand whether the target file exists.
+
+  if ! [ -f "$TARGET_FILE_PATH" ]; then
+    abort "File \"$TARGET_FILE_PATH\" does not exist or is not a regular file."
+  fi
+
+  if [[ "$SRC_FILE_PATH" -nt "$TARGET_FILE_PATH" ]]; then
+    echo "File \"$TARGET_FILE_PATH\" is out of date, as \"$SRC_FILE_PATH\" is newer."
+    return "$BOOLEAN_TRUE"
+  fi
+
+  return "$BOOLEAN_FALSE"
+}
+
+
 do_autogen_if_necessary ()
 {
   if ! [ -f "$CONFIGURE_SCRIPT_PATH" ]; then
-    echo "File \"$CONFIGURE_SCRIPT_PATH\" does not exist, running the autotools..."
-
-    pushd "$PROJECT_SRC_DIR" >/dev/null
-    ./autogen.sh
-    popd >/dev/null
-
-    if ! [ -f "$CONFIGURE_SCRIPT_PATH" ]; then
-      abort "File \"$CONFIGURE_SCRIPT_PATH\" is not where it is expected to be."
-    fi
-
-    echo "Finished running the autotools."
+    echo "Generated file '$CONFIGURE_SCRIPT_FILENAME_ONLY' does not exist."
+    do_autogen
+    return
   fi
+
+  if $CHECK_TIMESTAMPS; then
+    # We could check the timestamp of other files like "$PROJECT_SRC_DIR/autogen.sh".
+    if check_whether_file_out_of_date "$SCRIPT_FILENAME_ABS" "$CONFIGURE_SCRIPT_PATH"; then
+      do_autogen
+      return
+    fi
+  fi
+}
+
+
+do_autogen ()
+{
+  if $CHECK_TIMESTAMPS; then
+    # Apparently, Autoconf does not update the timestamp on the generated file 'configure' script
+    # if it has not changed, under some circumstances which I haven't been able to pin-point yet.
+    # So we need to delete it beforehand, or we will rerun the autotools every time.
+    # There are probably smarter solutions, like using a separate sentinel file.
+    if [ -e "$CONFIGURE_SCRIPT_PATH" ]; then
+      echo "Deleting previous '$CONFIGURE_SCRIPT_FILENAME_ONLY' script..."
+      rm -- "$CONFIGURE_SCRIPT_PATH"
+    fi
+  fi
+
+  echo "Running the autotools..."
+
+  pushd "$PROJECT_SRC_DIR" >/dev/null
+  ./autogen.sh
+  popd >/dev/null
+
+  if ! [ -f "$CONFIGURE_SCRIPT_PATH" ]; then
+    abort "The generated '$CONFIGURE_SCRIPT_FILENAME_ONLY' script is not where it is expected to be at: $CONFIGURE_SCRIPT_PATH"
+  fi
+
+  echo "Finished running the autotools."
 }
 
 
 do_configure_if_necessary ()
 {
-  local MAKEFILE_FILENAME_ONLY="Makefile"
-  local MAKEFILE_PATH="$PROJECT_OBJ_DIR/$MAKEFILE_FILENAME_ONLY"
-
   if ! [ -f "$MAKEFILE_PATH" ]; then
-    echo "The generated file \"$MAKEFILE_FILENAME_ONLY\" does not exist, so running the 'configure' step..."
+    echo "The generated file '$MAKEFILE_FILENAME_ONLY' does not exist, so running the '$CONFIGURE_SCRIPT_FILENAME_ONLY' step..."
     do_configure
     return
   fi
 
-  # This script passes some hard-coded parameters to 'configure', so that, if this script changes,
-  # we should run the 'configure' step again.
-  if [[ "$SCRIPT_FILENAME_ABS" -nt "$MAKEFILE_PATH" ]]; then
-    echo "File \"$SCRIPT_NAME\" is newer than generated file \"$MAKEFILE_FILENAME_ONLY\", so running the 'configure' step..."
-    do_configure
-    return
+  if $CHECK_TIMESTAMPS; then
+    if check_whether_file_out_of_date "$SCRIPT_FILENAME_ABS" "$MAKEFILE_PATH"; then
+      do_configure
+      return
+    fi
   fi
 }
 
@@ -568,16 +628,17 @@ do_configure ()
     fi
   fi
 
+  echo "Running the '$CONFIGURE_SCRIPT_FILENAME_ONLY' script..."
   echo "$CONFIG_CMD"
   eval "$CONFIG_CMD"
 
   if ! [ -f "$MAKEFILE_PATH" ]; then
-    abort "File \"$MAKEFILE_PATH\" is not where it is expected to be."
+    abort "Generated file '$MAKEFILE_FILENAME_ONLY' is not where it is expected to be at: $MAKEFILE_PATH"
   fi
 
   popd >/dev/null
 
-  echo "Finished running the configure step."
+  echo "Finished running the '$CONFIGURE_SCRIPT_FILENAME_ONLY' step."
 }
 
 
@@ -2015,8 +2076,8 @@ if $NEED_TOOLCHAIN; then
   check_whether_compiler_is_present
 fi
 
-
-declare -r CONFIGURE_SCRIPT_PATH="$PROJECT_SRC_DIR/configure"
+declare -r CONFIGURE_SCRIPT_FILENAME_ONLY="configure"
+declare -r CONFIGURE_SCRIPT_PATH="$PROJECT_SRC_DIR/$CONFIGURE_SCRIPT_FILENAME_ONLY"
 
 # Convert to lowercase.
 DEBUGGER_TYPE="${DEBUGGER_TYPE,,}"
@@ -2043,13 +2104,18 @@ fi
 # ---------  Step 2: Build ---------
 
 if $BUILD_SPECIFIED; then
+
   do_autogen_if_necessary
 
   create_dir_if_not_exists "$PROJECT_OBJ_DIR"
 
+  declare -r MAKEFILE_FILENAME_ONLY="Makefile"
+  declare -r MAKEFILE_PATH="$PROJECT_OBJ_DIR/$MAKEFILE_FILENAME_ONLY"
+
   do_configure_if_necessary
 
   do_build
+
 fi
 
 if [ -n "$COMPARE_WITH_BIN_FILE" ]; then
