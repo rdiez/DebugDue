@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2014-2022 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
+# Copyright (c) 2014-2026 R. Diez - Licensed under the GNU AGPLv3 - see below for more information.
 
 set -o errexit
 set -o nounset
@@ -315,10 +315,12 @@ Step 1, clean operation and configuration options:
                     for details about ccache.
 
 Step 2, build operations:
+  --autogen  Regenerates the autoconf files, so that the next build will
+             rebuild everything from scratch.
   --build    Runs "make" for the default target. Generates the autoconf
              files beforehand if necessary.
   --atmel-software-framework="<path>"  Directory where the ASF is installed.
-                                       Only needed if the project requires it.
+                                       Only needed if the selected project requires it.
   --show-build-commands  Show the full compilation commands during the build.
   --disassemble  Generate extra information files from the just-built ELF file:
                  complete disassembly, list of objects sorted by size,
@@ -687,6 +689,7 @@ process_command_line_argument ()
       CONFIGURE_CACHE_FILENAME="$OPTARG"
       ;;
 
+    autogen) AUTOGEN_SPECIFIED=true;;
     build) BUILD_SPECIFIED=true;;
     enable-ccache) ENABLE_CCACHE_SPECIFIED=true;;
     disassemble) DISASSEMBLE_SPECIFIED=true;;
@@ -1966,6 +1969,7 @@ USER_LONG_OPTIONS_SPEC+=( [version]=0 )
 USER_LONG_OPTIONS_SPEC+=( [license]=0 )
 USER_LONG_OPTIONS_SPEC+=( [clean]=0 )
 USER_LONG_OPTIONS_SPEC+=( [enable-configure-cache]=0 )
+USER_LONG_OPTIONS_SPEC+=( [autogen]=0 )
 USER_LONG_OPTIONS_SPEC+=( [build]=0 )
 USER_LONG_OPTIONS_SPEC+=( [enable-ccache]=0 )
 USER_LONG_OPTIONS_SPEC+=( [disassemble]=0 )
@@ -1996,6 +2000,7 @@ CLEAN_SPECIFIED=false
 VERIFY_SPECIFIED=false
 ENABLE_CONFIGURE_CACHE_SPECIFIED=false
 CONFIGURE_CACHE_FILENAME=""
+AUTOGEN_SPECIFIED=false
 BUILD_SPECIFIED=false
 ENABLE_CCACHE_SPECIFIED=false
 DISASSEMBLE_SPECIFIED=false
@@ -2018,6 +2023,7 @@ fi
 
 
 if $CLEAN_SPECIFIED               || \
+   $AUTOGEN_SPECIFIED             || \
    $BUILD_SPECIFIED               || \
    $PROGRAM_OVER_JTAG_SPECIFIED   || \
    $PROGRAM_WITH_BOSSAC_SPECIFIED || \
@@ -2101,7 +2107,14 @@ if $CLEAN_SPECIFIED; then
 fi
 
 
-# ---------  Step 2: Build ---------
+# ---------  Step 2: Autogen ---------
+
+if $AUTOGEN_SPECIFIED; then
+  do_autogen
+fi
+
+
+# ---------  Step 3: Build ---------
 
 if $BUILD_SPECIFIED; then
 
@@ -2150,7 +2163,7 @@ if [ -n "$COMPARE_WITH_BIN_FILE" ]; then
 fi
 
 
-# ---------  Step 3 and 4: Program and Debug ---------
+# ---------  Step 4 and 5: Program and Debug ---------
 
 if $CACHE_PROGRAMMED_FILE_SPECIFIED && ! $PROGRAM_OVER_JTAG_SPECIFIED && ! $PROGRAM_WITH_BOSSAC_SPECIFIED; then
   abort "Option '--cache-programmed-file' is only valid when programming the firmware."
