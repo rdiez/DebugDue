@@ -173,8 +173,9 @@ IS_GCC_12_X  := $(filter 12.%,$(GCC_VERSION))
 IS_GCC_13_X  := $(filter 13.%,$(GCC_VERSION))
 IS_GCC_14_X  := $(filter 14.%,$(GCC_VERSION))
 IS_GCC_15_X  := $(filter 15.%,$(GCC_VERSION))
+IS_GCC_16_X  := $(filter 16.%,$(GCC_VERSION))
 
-ifeq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X), $(IS_GCC_14_X) , $(IS_GCC_15_X) )" ""
+ifeq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X), $(IS_GCC_14_X), $(IS_GCC_15_X), $(IS_GCC_16_X) )" ""
   $(error Unsupported GCC version)
 endif
 
