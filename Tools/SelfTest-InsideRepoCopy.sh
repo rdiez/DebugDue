@@ -329,7 +329,7 @@ test_building_toolchain ()
            "$INSTALLATION_DIR" \
            "$BUILD_DIR"
 
-    run_cmd "Testing building the toolchain..." \
+    run_cmd "Building the toolchain..." \
             "$L_CMD" \
             both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-build-all.txt"
 
@@ -338,7 +338,7 @@ test_building_toolchain ()
     # because we will be searching for an English text later on in the output.
     #   L_CMD="LANG=\"C\"  $L_CMD"
 
-    run_cmd "Testing running the toolchain building makefile a second time..." \
+    run_cmd "Running the toolchain makefile a second time..." \
             "$L_CMD" \
             both  "${TOOLCHAIN_LOG_FILE_PREFIX}make-build-all-2nd-time.txt"
 
@@ -731,8 +731,8 @@ if $SHOULD_BUILD_FIRMWARES; then
 
   if (( ${#TOOLCHAIN_BIN_DIR_ARRAY[@]} == 0 )); then
 
-    # Environment variable DEBUGDUE_TOOLCHAIN_PATHS should contain a space-separated list of
-    # paths to the toolchain bin directories.
+    # If we did not build the toolchains, the caller must have passed environment variable
+    # DEBUGDUE_TOOLCHAIN_PATHS with a space-separated list of paths to the toolchain bin directories.
     declare -r TOOLCHAIN_PATHS="${DEBUGDUE_TOOLCHAIN_PATHS:-}"
 
     read -r -a TOOLCHAIN_PATHS_ARRAY <<< "$TOOLCHAIN_PATHS"

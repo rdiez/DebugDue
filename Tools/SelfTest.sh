@@ -105,6 +105,7 @@ export DEBUGDUE_TOOLCHAIN_VERSION_SET
 
 if $DEBUGDUE_SHOULD_BUILD_TOOLCHAINS; then
 
+  # The caller should have already downloaded the tarballs with makefile target 'download-tarballs-from-internet'.
   echo "Copying all toolchain tarballs..."
 
   mkdir -- "$ROTATED_DIR/TarballsSource"

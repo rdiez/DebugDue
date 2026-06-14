@@ -62,6 +62,7 @@ $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
+# VersionSet20 is available, but it uses GCC 16.1, which is probably too new to be considered stable.
 VERSION_SET := VersionSet19
 
 ifeq ($(VERSION_SET),VersionSet8)
@@ -168,6 +169,23 @@ else ifeq ($(VERSION_SET),VersionSet19)
 
   BINUTILS_VERSION := 2.46.1
   GCC_VERSION      := 15.3.0
+  GDB_VERSION      := 17.2
+
+else ifeq ($(VERSION_SET),VersionSet20)
+
+  # These versions are only taken into consideration if BUILD_GMP_MPFR_MPC == 1.
+  GMP_VERSION  := 6.3.0
+  MPFR_VERSION := 4.2.2
+  MPC_VERSION  := 1.4.1
+
+  # This version is only taken into consideration if TARGET_LIBC == newlib.
+  NEWLIB_VERSION := 4.6.0.20260123
+
+  # This version is only taken into consideration if TARGET_LIBC == picolibc.
+  PICOLIBC_VERSION := 1.8.10
+
+  BINUTILS_VERSION := 2.46.1
+  GCC_VERSION      := 16.1.0
   GDB_VERSION      := 17.2
 
 else
@@ -301,6 +319,16 @@ DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER := 1
 BUILD_GMP_MPFR_MPC := 1
 
 SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE := 1
+
+# A toolchain can be used by many projects, and should be protected from inadvertent changes.
+# This is not an uncommon scenario. If you install a compiler on your Linux system
+# with your distribution's package manager, you normally use it with a user account
+# which has no write permissions on the compiler files.
+# Alternatively, we could use "chattr +i" to mark the files and directories as immutable.
+# There is a drawback: If the user wants to delete the toolchain installation directory,
+# he/she must remove the write protection beforehand, for example with the following command:
+#   chmod --recursive  a+w  ToolchainInstallationDir/
+SHOULD_WRITE_PROTECT_INSTALLATION := 1
 
 
 # ------- Miscellaneous definitions -------
@@ -2004,8 +2032,12 @@ $(TARGET_ALL_SENTINEL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
 	@echo && \
 	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." && \
 	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." >"$(TARGET_ALL_SENTINEL)" && \
+	if [ $(SHOULD_WRITE_PROTECT_INSTALLATION) -ne 0 ]; then \
+	  echo "Write-protecting the installation directory..." && \
+	  chmod --recursive a-w -- "$(CROSS_TOOLCHAIN_DIR)"/ ; \
+	fi && \
 	if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
-	echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
+	  echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
 	fi
 
 .PHONY: AllHelpFiles
