@@ -1,7 +1,7 @@
 
 # Run "make help" for information about how to use this makefile.
 #
-# Copyright (c) 2013-2025 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2026 - R. Diez - Licensed under the GNU AGPLv3.
 
 
 # ------- Standard Configuration -------
@@ -291,6 +291,8 @@ TARGET_ARCH := arm-none-eabi
 
 PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
 
+CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
+
 
 # ------- MAKEFLAGS filtering -------
 
@@ -521,7 +523,18 @@ MPFR_CHECK_SENTINEL   := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrCheck)
 
 MPC_SRC_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)
 MPC_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/mpc-$(MPC_VERSION)-obj
-MPC_TAR_FILE := mpc-$(MPC_VERSION).tar.gz
+
+# From version 1.4.0 the MPC releases are only available as .xz files.
+
+IS_MPC_1_4_0_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "MPC" "$(MPC_VERSION)" ">=" "1.4.0")
+
+ifeq "$(IS_MPC_1_4_0_OR_LATER)" "true"
+  MPC_TARBALL_FILE_EXTENSION := tar.xz
+else
+  MPC_TARBALL_FILE_EXTENSION := tar.gz
+endif
+
+MPC_TAR_FILE := mpc-$(MPC_VERSION).$(MPC_TARBALL_FILE_EXTENSION)
 
 MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(call sentinel_filename,MpcDecompress)
 MPC_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,MpcHelp)
@@ -876,8 +889,6 @@ ifeq ($(TARGET_LIBC), picolibc)
   # Convert a Picolibc version number like 1.8.10-2 to 1.8.10.2 ,
   # because that is the format which CheckVersion.sh understands.
   PICOLIBC_VERSION_DOTS := $(subst -,.,$(PICOLIBC_VERSION))
-
-  CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
 
   IS_PICOLIB_1_8_9_OR_LATER  := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.9")
   IS_PICOLIB_1_8_10_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.10")
