@@ -244,7 +244,7 @@ test_building_toolchain ()
 {
   local -r L_LIBC_NAME="$1"
 
-  echo "Toolchain build tests for $L_LIBC_NAME"
+  echo "Toolchain for $L_LIBC_NAME"
 
   local -r TOOLCHAIN_LOG_FILE_PREFIX="$LOG_FILES_DIRNAME/toolchain-$L_LIBC_NAME-"
   local -r TOOLCHAIN_DEST_DIR="$ROTATED_DIR/${TOOLCHAIN_LIBC_DIR_PREFIX}$L_LIBC_NAME"
@@ -255,7 +255,7 @@ test_building_toolchain ()
          "$L_LIBC_NAME"
 
   # The calling script always passes DEBUGDUE_TOOLCHAIN_VERSION_SET in the environment,
-  # but it may be empty.
+  # but it may be empty. In that case, do not pass VERSION_SET, so that the default in the makefile is used.
   if [ -n "$DEBUGDUE_TOOLCHAIN_VERSION_SET" ]; then
     local L_TMP
     printf -v L_TMP \
@@ -267,6 +267,8 @@ test_building_toolchain ()
 
   local L_CMD
 
+  # DEBUGDUE_SKIP_TARBALL_DOWNLOAD_TEST only tests target 'download-tarballs-from-file-server'.
+  # The caller must download the tarballs beforehand with target 'download-tarballs-from-internet'.
   local -r SHOULD_SKIP_TARBALL_DOWNLOAD_TEST="${DEBUGDUE_SKIP_TARBALL_DOWNLOAD_TEST:-false}"
 
   if $SHOULD_SKIP_TARBALL_DOWNLOAD_TEST; then

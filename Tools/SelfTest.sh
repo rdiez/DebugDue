@@ -105,7 +105,7 @@ export DEBUGDUE_TOOLCHAIN_VERSION_SET
 
 if $DEBUGDUE_SHOULD_BUILD_TOOLCHAINS; then
 
-  echo "Copying all tarballs..."
+  echo "Copying all toolchain tarballs..."
 
   mkdir -- "$ROTATED_DIR/TarballsSource"
 
