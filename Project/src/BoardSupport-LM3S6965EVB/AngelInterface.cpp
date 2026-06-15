@@ -4,9 +4,6 @@
 #include <Misc/AssertionUtils.h>
 
 
-static const int UNUSED_ARG = 0;
-
-
   // __attribute__ ((noinline))  // Not inlining can be helpful while debugging this routine.
 static int CallAngel ( const int operation, const int arg1, const int arg2 ) throw()
 {
@@ -38,14 +35,47 @@ static int CallAngel ( const int operation, const int arg1, const int arg2 ) thr
 }
 
 
+// About the exit code, according to some documentation I found in some source code:
+//
+//   The A64 version of SYS_EXIT takes a parameter block,
+//   so the application-exit type can return a subcode which
+//   is the exit status code from the application.
+//   SYS_EXIT_EXTENDED is an a new-in-v2.0 optional function
+//   which allows A32/T32 guests to also provide a status code.
+//
+//   The A32/T32 version of SYS_EXIT specifies only
+//   Stopped_ApplicationExit as normal exit, but does not
+//   allow the guest to specify the exit status code.
+//   Everything else is considered an error.
+//
+static const int ADP_Stopped_ApplicationExit = 0x20026;
+static const int EXIT_CODE_SUCCESS = 0;
+static const int EXIT_CODE_FAILURE = 1;
+
 void Angel_ExitApp ( void ) throw()
 {
   // See also TARGET_SYS_EXIT_EXTENDED (0x20), which allows an 8-bit exit status code.
   const int TARGET_SYS_EXIT = 0x18;
 
-  const int ADP_Stopped_ApplicationExit = 0x20026;
+  const int exitCodeForA64 = EXIT_CODE_SUCCESS;  // Ignored for A32/T32.
 
-  CallAngel( TARGET_SYS_EXIT, ADP_Stopped_ApplicationExit, UNUSED_ARG );
+  CallAngel( TARGET_SYS_EXIT, ADP_Stopped_ApplicationExit, exitCodeForA64 );
+
+  Panic( "Unexpected." );
+}
+
+void Angel_ExitAppWithFailureIndication ( void ) throw()
+{
+  const int TARGET_SYS_EXIT_EXTENDED = 0x20;
+
+  // I could not get this to work properly with QEMU 6.2.0, the exit code is not honoured.
+  // Perhaps TARGET_SYS_EXIT_EXTENDED is not supported at all by that QEMU version.
+  // In any case, the exit code happens to always be 1, which helps us signal an error.
+  //
+  // Alternatively, the combination TARGET_SYS_EXIT with something other
+  // than ADP_Stopped_ApplicationExit should also cause an exit code of 1.
+
+  CallAngel( TARGET_SYS_EXIT_EXTENDED, ADP_Stopped_ApplicationExit, EXIT_CODE_FAILURE );
 
   Panic( "Unexpected." );
 }

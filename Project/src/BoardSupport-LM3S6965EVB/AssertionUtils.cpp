@@ -16,6 +16,8 @@
 
 #include <Misc/AssertionUtils.h>  // Include file for this module comes first.
 
+#include "AngelInterface.h"
+
 
 // When the firmware starts, it will probably be too early to print an assertion message to
 // the debug console. After the serial port has been initialised and so on,
@@ -42,7 +44,18 @@ void Panic ( const char * const msg ) throw()
   // There is an ARM Angel / semihosting command TARGET_SYS_EXIT, with argument ADP_Stopped_BreakPoint,
   // but that makes Qemu quit.
 
-  ForeverHangAfterPanic();
+  if ( false )
+  {
+    // Hanging is not a good idea: if an automated test panics, then the whole test suite hangs.
+    ForeverHangAfterPanic();
+  }
+  else
+  {
+    // When debugging, pass the following command-line argument to DebugDueBuilder.sh
+    // in order to comfortably debug the panic cause:
+    //   --add-breakpoint=Angel_ExitAppWithFailureIndication
+    Angel_ExitAppWithFailureIndication();
+  }
 }
 
 
