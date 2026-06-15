@@ -284,6 +284,8 @@ HOST_FLAGS_WITH_OPT_AND_LTO := CFLAGS="$(HF_COMMON) $(HF_OPT) $(HF_LTO)" CXXFLAG
 
 # Setting ENABLE_DEBUG_TOOLCHAIN to '1' builds the toolchain with -DDEBUG in CFLAGS_FOR_TARGET and CXXFLAGS_FOR_TARGET,
 # which enables debug code at least in Newlib's malloc implementation, and probably in other places too.
+# Compiler optimisations are also disabled with -O0. This way, debugging any problems in Newlib, libgcc, etc.
+# should be much easier.
 #
 # It would be best to build both the debug and non-debug library versions, and that's probably what
 # GCC's "multilib" support is all about, but I haven't figured it out yet.
@@ -425,7 +427,10 @@ ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 0)
   COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -g -Os
   TOOLCHAIN_KIND := Release (non-debug) toolchain.
 else ifeq ($(ENABLE_DEBUG_TOOLCHAIN), 1)
-  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -g -Og -DDEBUG
+  # An alternative to -O0 is -Og, but even small amounts of optimisation make debugging harder.
+  # Switch -fmerge-constants helps reduce the code size without impacting debuggability.
+  # For example, assert messages are often duplicated.
+  COMMON_C_AND_CXX_FLAGS_FOR_TARGET += -g -O0 -fmerge-constants -DDEBUG
   TOOLCHAIN_KIND := Debug toolchain.
 else
   $(error Variable ENABLE_DEBUG_TOOLCHAIN has invalid value "$(ENABLE_DEBUG_TOOLCHAIN)")

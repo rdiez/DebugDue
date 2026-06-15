@@ -205,8 +205,10 @@ void abort ( void )
 
 // The toolchain was built with flag HAVE_ASSERT_FUNC, so provide our own __assert_func() here,
 // in case the user happens to include newlib's assert.h .
-
-#ifndef NDEBUG
+//
+// Normally, we would only need to provide __assert_func() if we are generating a debug build,
+// that is, under "#ifndef NDEBUG". However, if the toolchain itself was built with assertions
+// (see ENABLE_DEBUG_TOOLCHAIN in the toolchain makefile), then we need __assert_func() in release builds too.
 
 extern "C" void __assert_func ( const char * const filename,
                                 const int line,
@@ -229,34 +231,36 @@ extern "C" void __assert_func ( const char * const filename,
 }
 
 
-// I haven't written support for ASSERT_TYPE for Picolibc yet.
-#ifndef __PICOLIBC__
+#ifndef NDEBUG
 
-#ifndef INCLUDE_USER_IMPLEMENTATION_OF_ASSERT
-  #error "INCLUDE_USER_IMPLEMENTATION_OF_ASSERT should be defined at this point."
-#endif
+  // I haven't written support for ASSERT_TYPE for Picolibc yet.
+  #ifndef __PICOLIBC__
 
-extern "C" void __assert_func_only_file_and_line ( const char * const filename,
-                                                   const int line )
-{
-  char buffer[ ASSERT_MSG_BUFSIZE ];
+    #ifndef INCLUDE_USER_IMPLEMENTATION_OF_ASSERT
+      #error "INCLUDE_USER_IMPLEMENTATION_OF_ASSERT should be defined at this point."
+    #endif
 
-  // Panic() automatically adds a new-line character at the end.
+    extern "C" void __assert_func_only_file_and_line ( const char * const filename,
+                                                       const int line )
+    {
+      char buffer[ ASSERT_MSG_BUFSIZE ];
 
-  snprintf( buffer, sizeof(buffer),
-            "Assertion failed at file %s, line %d.",
-            filename,
-            line );
+      // Panic() automatically adds a new-line character at the end.
 
-  Panic( buffer );
-}
+      snprintf( buffer, sizeof(buffer),
+                "Assertion failed at file %s, line %d.",
+                filename,
+                line );
+
+      Panic( buffer );
+    }
 
 
-extern "C" void __assert_func_generic_err_msg ( void )
-{
-  Panic( "Assertion failed." );
-}
+    extern "C" void __assert_func_generic_err_msg ( void )
+    {
+      Panic( "Assertion failed." );
+    }
+
+  #endif  // #ifndef __PICOLIBC__
 
 #endif  // #ifndef NDEBUG
-
-#endif  // #ifndef __PICOLIBC__
