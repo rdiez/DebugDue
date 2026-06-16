@@ -748,7 +748,7 @@ ifeq ($(DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER),1)
   ifneq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X) )" ""
     # The patch for GCC version 5.1.0 works up to GCC version 12.x .
     GCC_DISABLE_CPP_EXCEPTION_EMERGENCY_BUFFER_PATCH_FILENAME := GccDisableCppExceptionEmergencyBuffer-GCC-5.3.0.patch
-  else ifneq "$(or $(IS_GCC_13_X), $(IS_GCC_14_X), $(IS_GCC_15_X) )" ""
+  else
     # Without --enable-libstdcxx-static-eh-pool, libstdc++ calls getenv() on start-up to query
     # an eventual environment variable named GLIBCXX_TUNABLES, in case the configured pool size
     # is overridden to a non-zero amount and the pool must be allocated with malloc().
