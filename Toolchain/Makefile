@@ -724,7 +724,8 @@ COMMON_GCC_OPTIONS += --disable-multilib
 COMMON_GCC_OPTIONS += --disable-decimal-float  # May not be necessary.
 COMMON_GCC_OPTIONS += --disable-fixed-point    # May not be necessary.
 COMMON_GCC_OPTIONS += --enable-threads=single
-
+COMMON_GCC_OPTIONS += --disable-tm-clone-registry  # See compiler option -fgnu-tm. We are not using the Transactional Memory feature,
+                                                   # which, by the way, is still marked as experimental as of 2026.
 COMMON_GCC_OPTIONS += --with-newlib
 
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
