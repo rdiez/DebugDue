@@ -182,7 +182,7 @@ else ifeq ($(VERSION_SET),VersionSet20)
   NEWLIB_VERSION := 4.6.0.20260123
 
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
-  PICOLIBC_VERSION := 1.8.10
+  PICOLIBC_VERSION := 1.8.11
 
   BINUTILS_VERSION := 2.46.1
   GCC_VERSION      := 16.1.0
@@ -944,6 +944,7 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   IS_PICOLIB_1_8_9_OR_LATER  := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.9")
   IS_PICOLIB_1_8_10_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.10")
+  IS_PICOLIB_1_8_11_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.11")
 
   PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
   PICOLIBC_SRC_DIR   := $(PICOLIBC_UNTAR_DIR)
@@ -1006,7 +1007,11 @@ ifeq ($(TARGET_LIBC), picolibc)
   #
   # Another shortcoming is the lack of locale support, so routines like strfmon() are not really useful anymore.
   # There aren't even thousands separators as in printf( "%'d" ), as of Picolib 1.7.6 (March 2022).
-  PICOLIBC_CFG_FLAGS += -Dtinystdio=true
+  #
+  # Note that Picolibc 1.8.11 has removed the Newlib stdio library.
+  ifeq "$(IS_PICOLIB_1_8_11_OR_LATER)" "false"
+    PICOLIBC_CFG_FLAGS += -Dtinystdio=true
+  endif
 
   # Our bare-metal firmware does not use anything like fopen/fdopen, so this option does not matter much.
   # Picolibc version 1.8.2 has a bug and does not build with 'posix-io=false'.
@@ -1056,8 +1061,10 @@ ifeq ($(TARGET_LIBC), picolibc)
   # But we do not have threading, and we will not be using FILE routines anyway.
   PICOLIBC_CFG_FLAGS += -Datomic-ungetc=false
 
-  # See --enable-newlib-nano-malloc in the Newlib section for more information.
-  PICOLIBC_CFG_FLAGS += -Dnewlib-nano-malloc=true
+  ifeq "$(IS_PICOLIB_1_8_11_OR_LATER)" "false"
+    # See --enable-newlib-nano-malloc in the Newlib section for more information.
+    PICOLIBC_CFG_FLAGS += -Dnewlib-nano-malloc=true
+  endif
 
   # Semihosting is useful when running under a debugger or a simulator.
   # Picolibc offers semihosting support, but this project has its own simplified semihost routines.
@@ -1097,17 +1104,23 @@ ifeq ($(TARGET_LIBC), picolibc)
 
   # We will be calling __libc_init_array() and __libc_fini_array() ourselves.
   # Therefore, we do not want Picolibc automatically registering a call to __libc_fini_array() with atexit().
-  PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
+  ifeq "$(IS_PICOLIB_1_8_11_OR_LATER)" "false"
+    PICOLIBC_CFG_FLAGS += -Dnewlib-register-fini=false
+  endif
 
   # We are trying to completely eliminate the need for atexit(), so we will not need dynamic allocation for it anyway.
   # We are using newlib-global-atexit=true below, the project is building with -fno-use-cxa-atexit
   # and the firmware is checking on start-up that there are no atexit entries,
   # so much of the atexit() support shold be optimised away in any case.
-  PICOLIBC_CFG_FLAGS += -Dnewlib-atexit-dynamic-alloc=false
+  ifeq "$(IS_PICOLIB_1_8_11_OR_LATER)" "false"
+    PICOLIBC_CFG_FLAGS += -Dnewlib-atexit-dynamic-alloc=false
+  endif
 
   # Without thread support, this option does not really matter. Picolibc does not have a struct _reent,
   # so the atexit() data will be global anyway.
-  PICOLIBC_CFG_FLAGS += -Dnewlib-global-atexit=true
+  ifeq "$(IS_PICOLIB_1_8_11_OR_LATER)" "false"
+    PICOLIBC_CFG_FLAGS += -Dnewlib-global-atexit=true
+  endif
 
   # The Meson build system documents all supported CPU family names.
   PICOLIBC_CPU_FAMILY := arm
