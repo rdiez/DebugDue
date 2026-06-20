@@ -68,6 +68,8 @@ basic support for I<< FILE >>-based stdout for logging purposes, but it is usual
 Note that you can get a long way without such file features. With a library like S<< L<< lwIP|https://www.nongnu.org/lwip/ >> , >>
 you can build a device with TCP/IP support and even with an embedded web server and still not miss those syscalls.
 
+=item * Many automatic checks to make sure the compiler its libraries are correctly configured for embedded development.
+
 =item * Assertions.
 
 Assertions can increase the binary size considerably. There is a way to make debug binaries smaller
