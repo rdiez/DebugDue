@@ -156,7 +156,10 @@ void CCommandProcessor::HexDump ( const void * const ptr,
   Printf( "%s", endOfLineChars );
   actualOutputLen += eolLen;
 
-  assert( actualOutputLen == expectedOutputLen );
+  if ( actualOutputLen != expectedOutputLen )
+  {
+    assert( false );
+  }
 }
 
 
