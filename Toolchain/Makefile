@@ -40,6 +40,8 @@ PATH_TO_TARBALLS_ON_FILE_SERVER:=
 $(call poison_variable_if_empty_or_contains_whitespace,CROSS_TOOLCHAIN_DIR)
 $(call poison_variable_if_empty_or_contains_whitespace,PATH_TO_TARBALLS_ON_FILE_SERVER)
 
+CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
+
 
 # ------- User Configuration -------
 
@@ -214,6 +216,8 @@ ifeq "$(or $(IS_GCC_10_X), $(IS_GCC_11_X), $(IS_GCC_12_X), $(IS_GCC_13_X), $(IS_
   $(error Unsupported GCC version)
 endif
 
+IS_GCC_16_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "GCC" "$(GCC_VERSION)" ">=" "16")
+
 
 # Use the 'install-strip' target, instead of the usual 'install', in order to reduce the size
 # of the installed binaries. For example, when building Binutils 2.30 with GCC 5.4.0,
@@ -338,8 +342,6 @@ SHOULD_WRITE_PROTECT_INSTALLATION := 1
 TARGET_ARCH := arm-none-eabi
 
 PATH_DIR = $(CROSS_TOOLCHAIN_DIR)/bin
-
-CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
 
 
 # ------- MAKEFLAGS filtering -------
@@ -726,7 +728,20 @@ COMMON_GCC_OPTIONS += --disable-fixed-point    # May not be necessary.
 COMMON_GCC_OPTIONS += --enable-threads=single
 COMMON_GCC_OPTIONS += --disable-tm-clone-registry  # See compiler option -fgnu-tm. We are not using the Transactional Memory feature,
                                                    # which, by the way, is still marked as experimental as of 2026.
-COMMON_GCC_OPTIONS += --with-newlib
+ifeq ($(TARGET_LIBC), newlib)
+  COMMON_GCC_OPTIONS += --with-newlib
+endif
+
+ifeq ($(TARGET_LIBC), picolibc)
+  ifeq "$(IS_GCC_16_OR_LATER)" "true"
+    # I tried this new flag in GCC 16.1, but it did not work,
+    # the resulting toolchain could not link the firmware properly:
+    # COMMON_GCC_OPTIONS += --with-picolibc
+    COMMON_GCC_OPTIONS += --with-newlib
+  else
+    COMMON_GCC_OPTIONS += --with-newlib
+  endif
+endif
 
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
   COMMON_GCC_OPTIONS += --with-gmp="$(CROSS_TOOLCHAIN_DIR)"
