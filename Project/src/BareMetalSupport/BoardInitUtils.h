@@ -14,6 +14,9 @@ void RunUserCode ( void ) throw() __attribute__ ((noinline));
 
 void InitDataSegments ( void ) throw();
 
+void InitLibc ( void ) throw();
+void TerminateLibc ( void ) throw();
+
 void PrintFirmwareSegmentSizesSync  ( void ) throw();
 void PrintFirmwareSegmentSizesAsync ( void ) throw();
 void RuntimeStartupChecks ( void ) throw();

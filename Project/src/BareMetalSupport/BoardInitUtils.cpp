@@ -99,6 +99,72 @@ void InitDataSegments ( void ) throw()
 }
 
 
+extern "C" void __libc_init_array ( void );  // Provided by Newlib or Picolibc.
+extern "C" void __libc_fini_array ( void );  // Provided by Newlib or Picolibc.
+
+
+#ifndef NDEBUG
+
+  // This is for testing that __init_array_start or related has been handled properly,
+  // see __libc_init_array().
+  static bool s_wasInitCalled = false;
+  static bool s_wasFiniCalled = false;
+
+  // All objects with an init_priority attribute are constructed before any
+  // object with no init_priority attribute.
+  #define WAS_INIT_CALLED_INIT_PRIORITY  200  // Priority range [101, 65535].
+
+  static __attribute__ ((constructor (WAS_INIT_CALLED_INIT_PRIORITY))) void WasInitCalled ( void ) throw()
+  {
+    s_wasInitCalled = true;
+  }
+
+  static __attribute__ ((destructor (WAS_INIT_CALLED_INIT_PRIORITY))) void WasFiniCalled ( void ) throw()
+  {
+    s_wasFiniCalled = true;
+  }
+
+#endif  // #ifndef NDEBUG
+
+
+void InitLibc ( void ) throw()
+{
+  #ifdef __PICOLIBC__
+
+    #ifndef NDEBUG
+      extern void (*__preinit_array_end []) ( void );
+      extern void (*__init_array_start  []) ( void );
+    #endif
+
+    // Picolibc 1.8.10 requires that these 2 arrays are together.
+    assert( & __preinit_array_end == & __init_array_start );
+
+  #endif // #ifdef __PICOLIBC__
+
+  assert( ! s_wasInitCalled );
+
+  // Initialize the C/C++ support by calling all registered constructors.
+  __libc_init_array();
+
+  assert( s_wasInitCalled );
+}
+
+
+void TerminateLibc ( void ) throw()
+{
+  assert( ! s_wasFiniCalled );
+
+  // If your firmware never terminates, you can remove this call and save some program space.
+  // But at some point in time, you may want to implement memory leak detection,
+  // so it probably is a good idea to implement proper termination from the beginning.
+  __libc_fini_array();
+
+  assert( s_wasFiniCalled );
+
+  // Here you could check for memory leaks.
+}
+
+
 // This "sync" variant should not be used if the firmware uses the "Serial Port Tx Buffer".
 
 void PrintFirmwareSegmentSizesSync ( void ) throw()
@@ -137,7 +203,7 @@ void PrintFirmwareSegmentSizesAsync ( void ) throw()
 }
 
 
-// This routine may call Panic(), so call it after SetUserPanicMsgFunction(),
+// This routine may call Panic(), therefore call it after SetUserPanicMsgFunction(),
 // so that you can see the panic message on the console.
 
 #define UNEXPECTED_ENTRIES_IN_THE_ATEXIT_TABLE_ERR_MSG  "Unexpected entries in the atexit table."

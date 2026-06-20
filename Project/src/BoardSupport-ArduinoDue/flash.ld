@@ -68,9 +68,14 @@ SECTIONS
 
 
     . = ALIGN(4);
-    __preinit_array_start = .;
+    __preinit_array_start  = .;
+    __bothinit_array_start = .;  /* Picolibc 1.8.10 uses '__bothinit_array_start instead' of '__preinit_array_start'. */
+
     KEEP(*(.preinit_array))
     __preinit_array_end = .;
+
+    /* NOTE: Picoblic 1.8.10 requires that preinit_array above and init_array are together,
+             so do not place anything else here. */
 
     . = ALIGN(4);
     /* We are not using .ctors/.dtors, but the alternative .init_array/.fini_array.
@@ -83,7 +88,8 @@ SECTIONS
     KEEP(*(SORT(.init_array.*)))
     /* Objects with a priority are constructed before objects without priority. */
     KEEP(*(.init_array))
-    __init_array_end = .;
+    __init_array_end     = .;
+    __bothinit_array_end = .;
 
     . = ALIGN(4);
     __fini_array_start = .;

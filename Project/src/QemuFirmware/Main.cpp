@@ -25,7 +25,6 @@
 
 #include <Misc/AssertionUtils.h>
 
-#include <BoardSupport-LM3S6965EVB/AngelInterface.h>
 #include <BoardSupport-LM3S6965EVB/ExceptionHandlers.h>
 
 
@@ -128,7 +127,6 @@ void StartOfUserCode ( void )
   else
   {
     SerialSyncWriteStr( "The firmware finished running. Exiting the simulation." EOL );
-    Angel_ExitApp();
   }
 }
 

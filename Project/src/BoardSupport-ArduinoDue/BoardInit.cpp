@@ -148,9 +148,6 @@ static void SetupCpuClock ( void )
 }
 
 
-extern "C" void __libc_init_array ( void );  // Provided by Newlib or Picolibc.
-extern "C" void __libc_fini_array ( void );  // Provided by Newlib or Picolibc.
-
 extern "C" void BareMetalSupport_Reset_Handler ( void );  // Prevent "no previous declaration" warning.
 
 void BareMetalSupport_Reset_Handler ( void )
@@ -184,7 +181,6 @@ void BareMetalSupport_Reset_Handler ( void )
     }
 
 
-
     InitDataSegments();
 
 
@@ -212,19 +208,13 @@ void BareMetalSupport_Reset_Handler ( void )
     #endif
 
 
-    // Initialize the C/C++ support by calling all registered constructors.
-    __libc_init_array();
+    InitLibc();
 
     // From this point on, all C/C++ support has been initialised, and the user code can run.
 
     RunUserCode();
 
-    // If your firmware never terminates, you can remove this call and save some program space.
-    // But at some point in time, you may want to implement memory leak detection,
-    // so it probably is a good idea to implement proper termination from the beginning.
-    __libc_fini_array();
-
-    // Here you could check for memory leaks, or restart your firmware.
+    TerminateLibc();
 
     Panic("RunUserCode() returned unexpectedly.");
 }

@@ -20,10 +20,7 @@
 #include <Misc/AssertionUtils.h>
 
 #include <BoardSupport-LM3S6965EVB/ExceptionHandlers.h>
-
-
-extern "C" void __libc_init_array ( void );  // Provided by Newlib or Picolibc.
-extern "C" void __libc_fini_array ( void );  // Provided by Newlib or Picolibc.
+#include <BoardSupport-LM3S6965EVB/AngelInterface.h>
 
 
 extern "C" void BareMetalSupport_Reset_Handler ( void );  // Prevent "no previous declaration" warning.
@@ -32,9 +29,7 @@ void BareMetalSupport_Reset_Handler ( void )
 {
   InitDataSegments();
 
-  // Initialize the C/C++ support by calling all registered constructors.
-  __libc_init_array();
-
+  InitLibc();
 
   // From this point on, all C/C++ support has been initialised, and the user code can run.
 
@@ -50,14 +45,9 @@ void BareMetalSupport_Reset_Handler ( void )
 
   RunUserCode();
 
-  // If your firmware never terminates, you can remove this call and save some program space.
-  // But at some point in time, you may want to implement memory leak detection,
-  // so it probably is a good idea to implement proper termination from the beginning.
-  __libc_fini_array();
+  TerminateLibc();
 
-  // Here you could check for memory leaks, or restart your firmware.
-
-  Panic("RunUserCode() returned unexpectedly.");
+  Angel_ExitApp();
 }
 
 
