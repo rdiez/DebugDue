@@ -60,6 +60,9 @@ mkdir --parents -- "$OUTPUT_BASE_DIR"
 
 echo "Rotating test output directories..."
 
+# Note that some subdirectories will be read-only, see SHOULD_WRITE_PROTECT_INSTALLATION
+# in the Toolchain Makefile, but RotateDir.pl will automatically make then writable in order to delete them.
+
 ROTATED_DIR="$(perl "$TOOLS_DIR/RotateDir.pl" --slot-count "$ROTATE_DIR_SLOT_COUNT" --dir-name-prefix "DebugDueSelfTest-" --dir-naming-scheme="date" --output-only-new-dir-name "$OUTPUT_BASE_DIR")"
 
 echo "Test output directory rotated. The output directory is:"
