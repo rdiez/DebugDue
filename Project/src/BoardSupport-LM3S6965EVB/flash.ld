@@ -60,9 +60,15 @@ SECTIONS
          mov     lr, r3
          bx      lr
          That code needs 12 bytes.
+
+       With GCC 16.1 and --with-picolic, I have seen that these routines were missing the first half:
+         push    {r3, r4, r5, r6, r7, lr}
+         nop
+       The resulting length was then 8 bytes. Therefore, I have changed
+       the condition below from "== 12" to "<= 12".
     */
-    ASSERT( _section_init_end - _section_init_start == 12, "The .init section is not (almost) empty." );
-    ASSERT( _section_fini_end - _section_fini_start == 12, "The .fini section is not (almost) empty." );
+    ASSERT( _section_init_end - _section_init_start <= 12, "The .init section is not (almost) empty." );
+    ASSERT( _section_fini_end - _section_fini_start <= 12, "The .fini section is not (almost) empty." );
 
 
     . = ALIGN(4);
