@@ -257,7 +257,10 @@ firmware_elf_LDADD += $(CRT0_O_FILENAME)
 
 firmware_elf_LDFLAGS := $(AM_LDFLAGS)
 
-firmware_elf_LDFLAGS += -Wl,-T$(LINKER_SCRIPT_FILENAME)
+# You would normally expect to use "-Wl,-T$(LINKER_SCRIPT_FILENAME)" here,
+# but that sometimes breaks linking in some non-obvious ways.
+# The solution is to use -T instead.
+firmware_elf_LDFLAGS += -T $(LINKER_SCRIPT_FILENAME)
 
 firmware_elf_LDFLAGS += -Wl,--gc-sections
 firmware_elf_LDFLAGS += -Wl,--warn-common
