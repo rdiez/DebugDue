@@ -730,17 +730,14 @@ COMMON_GCC_OPTIONS += --disable-tm-clone-registry  # See compiler option -fgnu-t
                                                    # which, by the way, is still marked as experimental as of 2026.
 COMMON_GCC_OPTIONS += --with-newlib
 
-# Disabled, as I tried this new flag in GCC 16.1, but it did not work,
-# the resulting toolchain could not link the firmware properly.
-# For more information, see:
-#   Trouble with --with-picolibc
-#   https://github.com/picolibc/picolibc/issues/1295
-ifeq "Disabled as --with-picolibc does not seem to work." ""
-  ifeq ($(TARGET_LIBC), picolibc)
-    ifeq "$(IS_GCC_16_OR_LATER)" "true"
-      # This is in addition to '--with-newlib'.
-      COMMON_GCC_OPTIONS += --with-picolibc
-    endif
+ifeq ($(TARGET_LIBC), picolibc)
+  ifeq "$(IS_GCC_16_OR_LATER)" "true"
+    # Flag '--with-picolibc' is in addition to '--with-newlib', but actually,
+    # flag '--with-newlib' does not seem necessary if '--with-picolibc' is present.
+    # For more information, see:
+    #   Trouble with --with-picolibc
+    #   https://github.com/picolibc/picolibc/issues/1295
+    COMMON_GCC_OPTIONS += --with-picolibc
   endif
 endif
 
