@@ -728,18 +728,19 @@ COMMON_GCC_OPTIONS += --disable-fixed-point    # May not be necessary.
 COMMON_GCC_OPTIONS += --enable-threads=single
 COMMON_GCC_OPTIONS += --disable-tm-clone-registry  # See compiler option -fgnu-tm. We are not using the Transactional Memory feature,
                                                    # which, by the way, is still marked as experimental as of 2026.
-ifeq ($(TARGET_LIBC), newlib)
-  COMMON_GCC_OPTIONS += --with-newlib
-endif
+COMMON_GCC_OPTIONS += --with-newlib
 
-ifeq ($(TARGET_LIBC), picolibc)
-  ifeq "$(IS_GCC_16_OR_LATER)" "true"
-    # I tried this new flag in GCC 16.1, but it did not work,
-    # the resulting toolchain could not link the firmware properly:
-    # COMMON_GCC_OPTIONS += --with-picolibc
-    COMMON_GCC_OPTIONS += --with-newlib
-  else
-    COMMON_GCC_OPTIONS += --with-newlib
+# Disabled, as I tried this new flag in GCC 16.1, but it did not work,
+# the resulting toolchain could not link the firmware properly.
+# For more information, see:
+#   Trouble with --with-picolibc
+#   https://github.com/picolibc/picolibc/issues/1295
+ifeq "Disabled as --with-picolibc does not seem to work." ""
+  ifeq ($(TARGET_LIBC), picolibc)
+    ifeq "$(IS_GCC_16_OR_LATER)" "true"
+      # This is in addition to '--with-newlib'.
+      COMMON_GCC_OPTIONS += --with-picolibc
+    endif
   endif
 endif
 
