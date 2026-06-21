@@ -210,6 +210,19 @@ void PrintFirmwareSegmentSizesAsync ( void ) throw()
 
 void RuntimeStartupChecks ( void ) throw()
 {
+  #ifndef NDEBUG
+
+    // We shouldn't be using _init() and _fini(), see "*(.init)" and "*(.fini)"
+    // in the linker script file for more information.
+    extern void _init ( void ) __attribute__((__weak__));
+    extern void _fini ( void ) __attribute__((__weak__));
+
+    assert( & _init == nullptr );
+    assert( & _fini == nullptr );
+
+  #endif
+
+
   const struct mallinfo mi = mallinfo();
 
   if ( mi.uordblks != 0 )
