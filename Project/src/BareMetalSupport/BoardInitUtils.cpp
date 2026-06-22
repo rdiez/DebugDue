@@ -132,12 +132,30 @@ void InitLibc ( void ) throw()
   #ifdef __PICOLIBC__
 
     #ifndef NDEBUG
-      extern void (*__preinit_array_end []) ( void );
-      extern void (*__init_array_start  []) ( void );
+
+      extern void (*__preinit_array_start  []) ( void );
+      extern void (*__preinit_array_end    []) ( void );
+
+      extern void (*__init_array_start     []) ( void );
+      extern void (*__init_array_end       []) ( void );
+
+      extern void (*__bothinit_array_start []) ( void );
+      extern void (*__bothinit_array_end   []) ( void );
+
     #endif
 
     // Picolibc 1.8.10 requires that these 2 arrays are together.
     assert( & __preinit_array_end == & __init_array_start );
+
+    // Picolibc 1.8.10 requires __bothinit_array_start and __bothinit_array_end,
+    // but declares them as weak symbols, so it will silently fail
+    // if the linker script file does not define them.
+    // This problem was discussed here:
+    //   __bothinit_array_start is now required, breaking compatibility
+    //   https://github.com/picolibc/picolibc/issues/1294
+    // So use them here to catch their absence.
+    assert( & __bothinit_array_start == & __preinit_array_start );
+    assert( & __bothinit_array_end   == & __init_array_end      );
 
   #endif // #ifdef __PICOLIBC__
 
