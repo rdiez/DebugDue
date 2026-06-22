@@ -258,7 +258,12 @@ firmware_elf_LDADD += $(CRT0_O_FILENAME)
 firmware_elf_LDFLAGS := $(AM_LDFLAGS)
 
 # You would normally expect to use "-Wl,-T$(LINKER_SCRIPT_FILENAME)" here,
-# but that sometimes breaks linking in some non-obvious ways.
+# but if GCC is built with '--with-picolibc', then it will add its own linker script file
+# if it does not see a bare -T option. If you also specify "-Wl,-T", then you
+# will end up with 2 linker script files, which breaks linking in an non-obvious way.
+# This issue was discussed here:
+#   Trouble with --with-picolibc
+#   https://github.com/picolibc/picolibc/issues/1295
 # The solution is to use -T instead.
 firmware_elf_LDFLAGS += -T $(LINKER_SCRIPT_FILENAME)
 
