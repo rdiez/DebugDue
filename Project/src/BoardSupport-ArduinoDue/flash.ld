@@ -72,6 +72,14 @@ SECTIONS
     ASSERT( _section_init_end - _section_init_start <= 12, "The .init section is not (almost) empty." );
     ASSERT( _section_fini_end - _section_fini_start <= 12, "The .fini section is not (almost) empty." );
 
+    /* If you remove the KEEP() from  KEEP(*(.init)) and KEEP(*(.fini)), you save up to 12 bytes,
+       because the sections are discarded. But then the calculated size is always 0,
+       and the ASSERTs above do not really check the maximum size anymore.
+       Therefore, the following ASSERTs should check the size is at least > 0,
+       so that we know that the sections were not discarded and the calculated size is real. */
+    ASSERT( _section_init_end - _section_init_start >= 8, "The .init section is too small." );
+    ASSERT( _section_fini_end - _section_fini_start >= 8, "The .fini section is too small." );
+
 
     . = ALIGN(4);
     __preinit_array_start  = .;
