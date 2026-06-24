@@ -1528,6 +1528,8 @@ sub delete_folder ( $ $ $ )
   }
 
   # If you believe that Perl's File::Path::rmtree is too slow, you can switch to "rm -rf" under Unix:
+  # Beware though that the behaviour is not the same, as 'rm' will not attempt to make directories writable
+  # before deleting them.
   use constant USE_RM_RF_UNDER_UNIX => FALSE;
 
   # Always trace the deletion operation, so that you can see how long File::Path::rmtree or "rm -rf" takes

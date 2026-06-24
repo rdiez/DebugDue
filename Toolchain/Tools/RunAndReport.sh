@@ -8,13 +8,19 @@ declare -r -i EXIT_CODE_SUCCESS=0
 declare -r -i EXIT_CODE_ERROR=1
 
 declare -r SCRIPT_NAME="${BASH_SOURCE[0]##*/}"  # This script's filename only, without any path components.
-declare -r VERSION_NUMBER="1.08"
+declare -r VERSION_NUMBER="1.09"
 
 
 abort ()
 {
   echo >&2 && echo "Error in script \"$SCRIPT_NAME\": $*" >&2
   exit $EXIT_CODE_ERROR
+}
+
+
+is_var_set ()
+{
+  if [ "${!1-first}" == "${!1-second}" ]; then return 0; else return 1; fi
 }
 
 
@@ -265,12 +271,17 @@ self_test_format_human_friendly_duration ()
   LC_NUMERIC="$SAVED_LC_NUMERIC"
 }
 
+declare -r RUN_AND_REPORT_LOG_COMPRESSION_TYPE_ENV_VAR_NAME="RUN_AND_REPORT_LOG_COMPRESSION_TYPE"
+declare -r LOG_COMPRESSION_TYPE_ZSTD="zstd"
+# Note that GenerateHtmlReport.pl also knows the compressed file extensions.
+declare -r ZST_FILE_EXTENSION=".zst"
+declare -r ZSTD_TOOL="zstd"
 
 display_help ()
 {
   echo
   echo "$SCRIPT_NAME version $VERSION_NUMBER"
-  echo "Copyright (c) 2011-2023 R. Diez - Licensed under the GNU AGPLv3"
+  echo "Copyright (c) 2011-2026 R. Diez - Licensed under the GNU AGPLv3"
   echo
   echo "This tool runs a command with Bash, saves its stdout and stderr output and generates a report file."
   echo
@@ -306,6 +317,15 @@ display_help ()
   echo "Usage example:"
   echo "  ./$SCRIPT_NAME --id=test1 -- echo \"Test 1 output.\""
   echo
+  echo "Environment variable $RUN_AND_REPORT_LOG_COMPRESSION_TYPE_ENV_VAR_NAME:"
+  echo "  Set environment variable $RUN_AND_REPORT_LOG_COMPRESSION_TYPE_ENV_VAR_NAME to \"$LOG_COMPRESSION_TYPE_ZSTD\""
+  echo "  in order to compress the log files. That is the only compression type supported at the moment."
+  echo "  Tool $ZSTD_TOOL must be installed on the system."
+  echo "  Use environment variables ZSTD_CLEVEL and ZSTD_NBTHREADS to control the zstd compression,"
+  echo "  as documented for the $ZSTD_TOOL tool."
+  echo "  The file extension $ZST_FILE_EXTENSION is automatically appended to the --logFilename."
+  echo "  Compressing an eventual --copy-stderr file is not supported yet."
+  echo
   echo "Exit status:"
   echo "  If an error occurs inside this script, it yields a non-zero exit code."
   echo "  Otherwise, the exit status is the same as the command executed."
@@ -325,7 +345,7 @@ display_license ()
 {
 cat - <<EOF
 
-Copyright (c) 2011-2023 R. Diez
+Copyright (c) 2011-2026 R. Diez
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU Affero General Public License version 3 as published by
@@ -565,6 +585,65 @@ printf  -v USER_CMD  " %q"  "${ARGS[@]}"
 USER_CMD="${USER_CMD:1}"  # Remove the leading space.
 
 
+if is_var_set "$RUN_AND_REPORT_LOG_COMPRESSION_TYPE_ENV_VAR_NAME"; then
+
+  declare -r COMPRESS_TYPE="${!RUN_AND_REPORT_LOG_COMPRESSION_TYPE_ENV_VAR_NAME}"
+
+  if [[ $COMPRESS_TYPE != "$LOG_COMPRESSION_TYPE_ZSTD" ]]; then
+    abort "Unsupported log compression type \"$COMPRESS_TYPE\" in environment variable $RUN_AND_REPORT_LOG_COMPRESSION_TYPE_ENV_VAR_NAME."
+  fi
+
+  declare -r COMPRESS_FIFO_FILENAME="${LOG_FILENAME}.fifo"
+
+  # Append the .zst extension to the log filename.
+  LOG_FILENAME="${LOG_FILENAME}${ZST_FILE_EXTENSION}"
+
+  # 600 = only the owner can read and write to the FIFO.
+  declare -r COMPRESS_FIFO_FILE_MODE="600"
+
+  # Delete the FIFO if it already exists. It may have left behind
+  # if the previous run failed to delete the FIFO before aborting.
+
+  if [ -p "$COMPRESS_FIFO_FILENAME" ]; then
+    rm -- "$COMPRESS_FIFO_FILENAME"
+  fi
+
+  mkfifo --mode="$COMPRESS_FIFO_FILE_MODE" -- "$COMPRESS_FIFO_FILENAME"
+
+
+  # The 'exec' removes the unnecesary interposed Bash instance (the subshell).
+  declare -r COMPRESS_CMD="exec ${ZSTD_TOOL@Q} --quiet --format=zstd -o ${LOG_FILENAME@Q} --force -"
+
+  if false; then
+    echo "COMPRESS_CMD: $COMPRESS_CMD"
+  fi
+
+  eval "$COMPRESS_CMD"  <"$COMPRESS_FIFO_FILENAME"  &
+
+  COMPRESS_PID="$(jobs -p %+)"
+
+  # Attach a file descriptor to the FIFO. Open it after creating the compression
+  # process, so that the child process does not inherit the file descriptor.
+  # Keep the file descriptor open while other operations open and close the FIFO.
+  # Otherwise, the background job will exit when the FIFO is closed the first time.
+  # This file descriptor will be closed last.
+  exec {COMPRESS_FIFO_FD}>"$COMPRESS_FIFO_FILENAME"
+
+  declare -r COMPRESS_LOG=true
+
+  declare -r LOG_DESTINATION="$COMPRESS_FIFO_FILENAME"
+
+else
+
+  declare -r COMPRESS_LOG=false
+
+  declare -r LOG_DESTINATION="$LOG_FILENAME"
+
+fi
+
+readonly LOG_FILENAME
+
+
 read_uptime_as_integer
 declare -r START_UPTIME="$UPTIME"
 
@@ -592,11 +671,13 @@ START_TIME_UTC="$(date --date=@"$START_TIME" '+%Y-%m-%d %T %z' --utc)"
   echo
   echo "Start of log for \"$USER_FRIENDLY_NAME\""
   echo
-} >"$LOG_FILENAME"
+} >"$LOG_DESTINATION"
 
 if ! $QUIET; then
   printf 'Running command: %s\n\n' "$USER_CMD"
 fi
+
+declare -r TEE_CMD="tee --append --output-error=exit -- ${LOG_DESTINATION@Q}"
 
 set +o errexit
 
@@ -604,7 +685,7 @@ if [ -z "$STDERR_COPY_FILENAME" ]; then
 
   {
     eval "$USER_CMD"
-  } 2>&1 | tee --append -- "$LOG_FILENAME"
+  } 2>&1 | eval "$TEE_CMD"
 
 else
 
@@ -616,7 +697,7 @@ else
 
   {
     eval "$USER_CMD"
-  } 2> >(tee -- "$STDERR_COPY_FILENAME") | tee --append -- "$LOG_FILENAME"
+  } 2> >(tee --output-error=exit -- "$STDERR_COPY_FILENAME") | eval "$TEE_CMD"
 
 fi
 
@@ -659,7 +740,44 @@ fi
   echo "Finish time: Local: $FINISH_TIME_LOCAL, UTC: $FINISH_TIME_UTC"
   echo "Elapsed time: $ELAPSED_TIME_STR"
   echo "$FINISHED_MSG"
-} >>"$LOG_FILENAME"
+} >>"$LOG_DESTINATION"
+
+
+if $COMPRESS_LOG; then
+
+  # Close the FIFO file descriptor. This should be the last descriptor open
+  # on the FIFO. Closing it should make the child process exit.
+  exec {COMPRESS_FIFO_FD}>&-
+
+  # If there are reliability issues again, you can turn on tracing here:
+  declare -r TRACE_LOG_COMPRESSION_PROCESS_WAITING=false
+
+  if $TRACE_LOG_COMPRESSION_PROCESS_WAITING; then
+    echo "Waiting for the log compression process to finish..."
+  fi
+
+  set +o errexit
+  wait "$COMPRESS_PID"
+  declare -i -r COMPRESS_WAIT_EXIT_CODE="$?"
+  set -o errexit
+
+  if $TRACE_LOG_COMPRESSION_PROCESS_WAITING; then
+    echo "Finished waiting for the log compression process to finish."
+  fi
+
+  # It is actually rather late to check for errors in the compression process.
+  # We should actually do it before checking any other pipeline errors from the user command,
+  # because any failure in the compression process will make the others fail, or even hang.
+  # However, checking for errors in a different order is hard to implement.
+
+  if (( COMPRESS_WAIT_EXIT_CODE != 0 )); then
+    echo "ERROR: The log compression process failed with exit code $COMPRESS_WAIT_EXIT_CODE."
+  fi
+
+  rm -- "$COMPRESS_FIFO_FILENAME"
+
+fi
+
 
 {
   echo "ReportFormatVersion=1"
