@@ -357,6 +357,7 @@ ASF_INCLUDE_COMMON=""
 NEEDS_BARE_METAL_1=false
 NEEDS_BARE_METAL_2=false
 NEEDS_STACK_CHECK_CPP=false
+NEEDS_SYS_TICK_UTILS=false  # None of the projects need SysTickUtils.cpp at the moment, the .h file suffices.
 
 case "$PROJECT_NAME_LOWERCASE" in
   emptyfirmware) IS_EMPTY_FIRMWARE=true
@@ -772,6 +773,7 @@ PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL_1)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL_2)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_STACK_CHECK_CPP)
+PUBLISH_BOOLEAN_VARIABLE(NEEDS_SYS_TICK_UTILS)
 
 
 USE_GOLD_LINKER=false  # The newer Gold Linker does not seem compatible yet with the linker script files for the traditional linker,

@@ -89,7 +89,6 @@ if NEEDS_BARE_METAL_2
     src/BareMetalSupport/TextParsingUtils.cpp \
     src/BareMetalSupport/GenericSerialConsole.cpp \
     src/BareMetalSupport/Uptime.cpp \
-    src/BareMetalSupport/SysTickUtils.cpp \
     src/BareMetalSupport/BusyWait.cpp \
     src/BareMetalSupport/MainLoopSleep.cpp
 
@@ -105,6 +104,10 @@ firmware_elf_SOURCES += src/BareMetalSupport/IntegerPrintUtils.cpp
 
 if NEEDS_STACK_CHECK_CPP
   firmware_elf_SOURCES += src/BareMetalSupport/StackCheck.cpp
+endif
+
+if NEEDS_SYS_TICK_UTILS
+  firmware_elf_SOURCES += src/BareMetalSupport/SysTickUtils.cpp
 endif
 
 
