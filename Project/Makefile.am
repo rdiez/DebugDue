@@ -69,23 +69,29 @@ if IS_QEMU_FIRMWARE
 
 endif
 
-if NEEDS_BARE_METAL
+if NEEDS_BARE_METAL_1
+
+  firmware_elf_SOURCES += \
+    src/BareMetalSupport/MiscellaneousAsm.S \
+    src/BareMetalSupport/IoUtils.cpp \
+    src/BareMetalSupport/SerialPortAsyncTx.cpp
+
+  firmware_elf_SOURCES += \
+    src/ArduinoDueUtils/ArduinoDueUtils.cpp
+
+endif
+
+if NEEDS_BARE_METAL_2
 
   firmware_elf_SOURCES += \
     src/BareMetalSupport/Miscellaneous.cpp \
-    src/BareMetalSupport/MiscellaneousAsm.S \
-    src/BareMetalSupport/IoUtils.cpp \
     src/BareMetalSupport/SerialPrint.cpp \
-    src/BareMetalSupport/SerialPortAsyncTx.cpp \
     src/BareMetalSupport/TextParsingUtils.cpp \
     src/BareMetalSupport/GenericSerialConsole.cpp \
     src/BareMetalSupport/Uptime.cpp \
     src/BareMetalSupport/SysTickUtils.cpp \
     src/BareMetalSupport/BusyWait.cpp \
     src/BareMetalSupport/MainLoopSleep.cpp
-
-  firmware_elf_SOURCES += \
-    src/ArduinoDueUtils/ArduinoDueUtils.cpp
 
 endif
 
@@ -95,8 +101,11 @@ firmware_elf_SOURCES += src/$(BOARD_SUPPORT_DIR)/DebugConsoleSupport.cpp
 
 firmware_elf_SOURCES += src/BareMetalSupport/BoardInitUtils.cpp
 firmware_elf_SOURCES += src/BareMetalSupport/DebugConsoleSerialSyncCommon.cpp
-firmware_elf_SOURCES += src/BareMetalSupport/StackCheck.cpp
 firmware_elf_SOURCES += src/BareMetalSupport/IntegerPrintUtils.cpp
+
+if NEEDS_STACK_CHECK_CPP
+  firmware_elf_SOURCES += src/BareMetalSupport/StackCheck.cpp
+endif
 
 
 if NEEDS_ATMEL_SOFTWARE_FRAMEWORK

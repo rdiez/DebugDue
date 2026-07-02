@@ -354,12 +354,14 @@ IS_QEMU_FIRMWARE=false
 IS_DEBUG_DUE=false
 NEEDS_ATMEL_SOFTWARE_FRAMEWORK=false
 ASF_INCLUDE_COMMON=""
-NEEDS_BARE_METAL=false
+NEEDS_BARE_METAL_1=false
+NEEDS_BARE_METAL_2=false
+NEEDS_STACK_CHECK_CPP=false
 
 case "$PROJECT_NAME_LOWERCASE" in
   emptyfirmware) IS_EMPTY_FIRMWARE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
-                 NEEDS_BARE_METAL=true
+                 NEEDS_BARE_METAL_1=true
                  NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
                  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/src/EmptyFirmware/ConfigFilesForAsf"
                  ;;
@@ -368,10 +370,12 @@ case "$PROJECT_NAME_LOWERCASE" in
                  ;;
   debugdue)      IS_DEBUG_DUE=true
                  BOARD_SUPPORT_DIR="BoardSupport-ArduinoDue"
-                 NEEDS_BARE_METAL=true
+                 NEEDS_BARE_METAL_1=true
+                 NEEDS_BARE_METAL_2=true
                  NEEDS_ATMEL_SOFTWARE_FRAMEWORK=true
                  AppendIncludeDir ASF_INCLUDE_COMMON "$srcdir/src/JtagFirmware/ConfigFilesForAsf"
                  AppendIncludeDir EXTRA_CPP_FLAGS "$srcdir/src/JtagFirmware"
+                 NEEDS_STACK_CHECK_CPP=true
                  ;;
 
   *) AC_MSG_ERROR([Invalid project name "$with_project".]) ;;
@@ -764,8 +768,10 @@ EXTRA_CXX_FLAGS+=" -Wvolatile"  # Enabled by default with '-std=c++20'.
 PUBLISH_BOOLEAN_VARIABLE(IS_EMPTY_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_QEMU_FIRMWARE)
 PUBLISH_BOOLEAN_VARIABLE(IS_DEBUG_DUE)
-PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL)
+PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL_1)
+PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL_2)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
+PUBLISH_BOOLEAN_VARIABLE(NEEDS_STACK_CHECK_CPP)
 
 
 USE_GOLD_LINKER=false  # The newer Gold Linker does not seem compatible yet with the linker script files for the traditional linker,
