@@ -1026,6 +1026,11 @@ do_build ()
 
   # After all 'make' options, append any targets the user requested.
 
+  # After building, we expect the .bin file to have been generated.
+  # Therefore, always specify the default target 'all'. Otherwise,
+  # specifying a particular target may not build the .bin file.
+  quote_and_append_args MAKE_CMD "all"
+
   if $DISASSEMBLE_SPECIFIED; then
     quote_and_append_args MAKE_CMD "disassemble"
   fi
