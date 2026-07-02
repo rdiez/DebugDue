@@ -87,6 +87,7 @@ AM_PROG_AS
 AC_PROG_RANLIB
 
 AM_EXTRA_RECURSIVE_TARGETS([disassemble])
+AM_EXTRA_RECURSIVE_TARGETS([check-discarded-objects])
 
 
 ABS_SRCDIR_SRC="$(readlink --verbose --canonicalize -- "$srcdir/src")"

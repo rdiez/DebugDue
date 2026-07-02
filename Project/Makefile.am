@@ -1,5 +1,5 @@
 
-# Copyright (C) 2012-2024 R. Diez - see the DebugDue project for licensing information.
+# Copyright (C) 2012-2026 R. Diez - see the DebugDue project for licensing information.
 
 AUTOMAKE_OPTIONS := foreign subdir-objects
 
@@ -339,7 +339,7 @@ dist_data_DATA += $(ELF_BASENAME).bin
 
 $(ELF_BASENAME).bin: $(ELF_FILENAME)
 	echo "Generating binary file \"$(abspath $@)\"..." && \
-	$(TARGET_ARCH)-objcopy -O binary "$<" "$@"
+        $(TARGET_ARCH)-objcopy -O binary "$<" "$@"
 
 
 # ------------------------------------
@@ -377,3 +377,56 @@ $(ELF_BASENAME)-sorted-strings.txt: $(ELF_BASENAME).bin
 	echo "Extracting strings to \"$(abspath $@)\"..." && \
         $(TARGET_ARCH)-strings "$<" >"$(ELF_BASENAME)-unsorted-strings.txt" && \
         sort "$(ELF_BASENAME)-unsorted-strings.txt" >"$@"
+
+
+# ------------------------------------
+# Optionally detect object files which have been compiled but were completely discarded when linking.
+# If you then avoid compiling those files, your build process will be faster.
+
+OBJ_FN_PREFIX := object-filenames
+
+FILENAME_WITH_UNSORTED_LIST      := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-passed-to-linker-unsorted.txt
+FILENAME_WITH_SORTED_LIST        := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-passed-to-linker-sorted.txt
+FILENAME_WITH_DUPLICATES         := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-passed-to-linker-duplicated.txt
+FILENAME_WITH_MAP_OBJECTS        := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-in-map-file.txt
+FILENAME_WITH_DISCARDED_OBJECTS  := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-discarded.txt
+DISCARDED_OBJECTS_CHECK_SENTINEL := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-discarded-check-sentinel.txt
+
+check-discarded-objects-local: $(DISCARDED_OBJECTS_CHECK_SENTINEL)
+
+# Sorting the filenames passed to the linker takes some time, but has the following advantages:
+# - Sorting allows detection of duplicates.
+#   Duplicates are a sign of an improperly-written build configuration,
+#   and they could cause confusion in the checks for discarded objects.
+# - A sorted list is easier to read when troubleshooting.
+# - We can use later tool 'comm' to compare lists.
+$(FILENAME_WITH_SORTED_LIST):
+	echo "Generating the list of filenames passed to the linker..." && \
+        set -o errexit && set -o nounset && set -o pipefail && \
+        printf '%s\n' $(OBJECTS_USED_FOR_LINKING) >"$(FILENAME_WITH_UNSORTED_LIST)" && \
+        echo "Sorting the list of filenames passed to the linker..." && \
+        LC_ALL=C sort -- "$(FILENAME_WITH_UNSORTED_LIST)" >"$(FILENAME_WITH_SORTED_LIST).tmp" && \
+        echo "Detecting duplicates in the list of filenames passed to the linker..." && \
+        uniq --repeated -- "$(FILENAME_WITH_SORTED_LIST).tmp" >"$(FILENAME_WITH_DUPLICATES)" && \
+        if ! [ -f "$(FILENAME_WITH_DUPLICATES)" ]; then echo "Error: Expected output file does not exist: $(FILENAME_WITH_DUPLICATES)" >&2 && exit 1; fi && \
+        if [ -s "$(FILENAME_WITH_DUPLICATES)" ]; then echo "Error: Duplicated object filenames detected, see the list in file: $(FILENAME_WITH_DUPLICATES)" >&2 && exit 1; fi && \
+        mv -- "$(FILENAME_WITH_SORTED_LIST).tmp" "$(FILENAME_WITH_SORTED_LIST)" && \
+        echo "Finished processing the list of filenames passed to the linker."
+
+# Note that LTO erases the object file origin information, breaking the detection of completely-discarded objects.
+$(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME)
+	echo "Extracting the object filenames from the linker map file..." && \
+        set -o errexit && set -o nounset && set -o pipefail && \
+        if $(IS_LTO_ENABLED); then echo "Error: Extracting the object filenames from the linker map file is incompatible with LTO." >&2 && exit 1; fi && \
+        LC_ALL=C "$(srcdir)/../Tools/RDMapFile.pl" "$(MAP_FILENAME)" >"$(FILENAME_WITH_MAP_OBJECTS).tmp" && \
+        mv -- "$(FILENAME_WITH_MAP_OBJECTS).tmp" "$(FILENAME_WITH_MAP_OBJECTS)" && \
+        echo "Finished extracting the object filenames from the linker map file."
+
+$(DISCARDED_OBJECTS_CHECK_SENTINEL): $(FILENAME_WITH_MAP_OBJECTS) $(FILENAME_WITH_SORTED_LIST)
+	echo "Comparing the lists of object filenames used for linking..." && \
+        set -o errexit && set -o nounset && set -o pipefail && \
+        LC_ALL=C comm -23 -- $(FILENAME_WITH_SORTED_LIST) $(FILENAME_WITH_MAP_OBJECTS) >"$(FILENAME_WITH_DISCARDED_OBJECTS)" && \
+        if ! [ -f "$(FILENAME_WITH_DISCARDED_OBJECTS)" ]; then echo "Error: Expected output file does not exist: $(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && exit 1; fi && \
+        if [ -s "$(FILENAME_WITH_DISCARDED_OBJECTS)" ]; then echo "Error: Some object files were completely discarded during linking, so they were compiled for nothing, wasting time. The list below is also in file: $(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && cat -- "$(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && exit 1; fi && \
+        echo "Check performed successfully." >"$(DISCARDED_OBJECTS_CHECK_SENTINEL)" && \
+        echo "Finished comparing the lists of object filenames used for linking."
