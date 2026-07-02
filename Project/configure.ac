@@ -242,6 +242,8 @@ AC_ARG_ENABLE([debug],
                esac],
               debug_build=false)
 
+IS_LTO_ENABLED=false
+
 if [ test x$debug_build = xtrue ]
 then
     AC_MSG_RESULT(yes)
@@ -290,6 +292,8 @@ else
       # but the option and this comment acts as a reminder, so that I do not have to think about it again.
       # Note that you cannot perform a regular, non-LTO link with non-fat object files.
       BUILD_FLAGS+=" -fno-fat-lto-objects"
+
+      IS_LTO_ENABLED=true
     fi
 
     IS_DEBUG_BUILD=false
@@ -774,6 +778,7 @@ PUBLISH_BOOLEAN_VARIABLE(NEEDS_BARE_METAL_2)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_ATMEL_SOFTWARE_FRAMEWORK)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_STACK_CHECK_CPP)
 PUBLISH_BOOLEAN_VARIABLE(NEEDS_SYS_TICK_UTILS)
+PUBLISH_BOOLEAN_VARIABLE(IS_LTO_ENABLED)
 
 
 USE_GOLD_LINKER=false  # The newer Gold Linker does not seem compatible yet with the linker script files for the traditional linker,
