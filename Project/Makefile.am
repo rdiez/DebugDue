@@ -15,6 +15,8 @@ ELF_FILENAME := firmware.elf  # Here substitution $(ELF_BASENAME) does not work 
 
 MAP_FILENAME := $(ELF_BASENAME).map
 
+OBJECTS_USED_FOR_LINKING :=
+
 firmware_elf_LDADD :=
 
 
@@ -131,6 +133,9 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   libAtmelSoftwareFramework_a_AR := $(AR) cr
 
   firmware_elf_LDADD += libAtmelSoftwareFramework.a
+
+  # The linker map file discards the path from library object filenames.
+  OBJECTS_USED_FOR_LINKING += $($(notdir $(libAtmelSoftwareFramework_a_OBJECTS))
 
   libAtmelSoftwareFramework_a_CFLAGS := $(AM_CFLAGS)
 
@@ -259,6 +264,8 @@ firmware_elf_SOURCES += src/BareMetalSupport/NewlibSyscalls.cpp
 # ------------------------------------
 
 $(firmware_elf_OBJECTS): $(MANUAL_MAKEFILE_DEPENDENCY)
+
+OBJECTS_USED_FOR_LINKING += $(firmware_elf_OBJECTS)
 
 LINKER_SCRIPT_FILENAME := $(abs_srcdir)/src/$(BOARD_SUPPORT_DIR)/flash.ld
 
