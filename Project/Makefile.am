@@ -161,15 +161,15 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
      src/AsfSrc/sam/drivers/pmc/pmc.c \
      src/AsfSrc/sam/drivers/pio/pio.c \
      src/AsfSrc/sam/drivers/wdt/wdt.c \
-     src/AsfSrc/sam/drivers/rstc/rstc.c \
-     src/AsfSrc/sam/drivers/uart/uart.c \
-     src/AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
-     src/AsfSrc/common/services/clock/sam3x/sysclk.c
+     src/AsfSrc/sam/drivers/uart/uart.c
 
 if IS_DEBUG_DUE
   libAtmelSoftwareFramework_a_SOURCES += \
      src/AsfSrc/sam/drivers/pmc/sleep.c \
+     src/AsfSrc/sam/drivers/rstc/rstc.c \
      src/AsfSrc/sam/drivers/uotghs/uotghs_device.c \
+     src/AsfSrc/common/utils/interrupt/interrupt_sam_nvic.c \
+     src/AsfSrc/common/services/clock/sam3x/sysclk.c \
      src/AsfSrc/common/services/usb/class/cdc/device/udi_cdc.c \
      src/AsfSrc/common/services/usb/class/cdc/device/udi_cdc_desc.c \
      src/AsfSrc/common/services/usb/udc/udc.c
