@@ -135,7 +135,7 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
   firmware_elf_LDADD += libAtmelSoftwareFramework.a
 
   # The linker map file discards the path from library object filenames.
-  OBJECTS_USED_FOR_LINKING += $($(notdir $(libAtmelSoftwareFramework_a_OBJECTS))
+  OBJECTS_USED_FOR_LINKING += $(notdir $(libAtmelSoftwareFramework_a_OBJECTS))
 
   libAtmelSoftwareFramework_a_CFLAGS := $(AM_CFLAGS)
 
@@ -400,7 +400,7 @@ check-discarded-objects-local: $(DISCARDED_OBJECTS_CHECK_SENTINEL)
 #   and they could cause confusion in the checks for discarded objects.
 # - A sorted list is easier to read when troubleshooting.
 # - We can use later tool 'comm' to compare lists.
-$(FILENAME_WITH_SORTED_LIST):
+$(FILENAME_WITH_SORTED_LIST): $(MANUAL_MAKEFILE_DEPENDENCY)
 	echo "Generating the list of filenames passed to the linker..." && \
         set -o errexit && set -o nounset && set -o pipefail && \
         printf '%s\n' $(OBJECTS_USED_FOR_LINKING) >"$(FILENAME_WITH_UNSORTED_LIST)" && \
@@ -418,7 +418,10 @@ $(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME)
 	echo "Extracting the object filenames from the linker map file..." && \
         set -o errexit && set -o nounset && set -o pipefail && \
         if $(IS_LTO_ENABLED); then echo "Error: Extracting the object filenames from the linker map file is incompatible with LTO." >&2 && exit 1; fi && \
-        LC_ALL=C "$(srcdir)/../Tools/RDMapFile.pl" "$(MAP_FILENAME)" >"$(FILENAME_WITH_MAP_OBJECTS).tmp" && \
+        LC_ALL=C "$(srcdir)/../Tools/RDMapFile.pl" \
+                 --extract-object-filenames \
+                 --capture-sections=".text, .ARM.exidx, .stackArea, .relocate, .bss" \
+                 -- "$(MAP_FILENAME)" >"$(FILENAME_WITH_MAP_OBJECTS).tmp" && \
         mv -- "$(FILENAME_WITH_MAP_OBJECTS).tmp" "$(FILENAME_WITH_MAP_OBJECTS)" && \
         echo "Finished extracting the object filenames from the linker map file."
 
