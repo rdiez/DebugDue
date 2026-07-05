@@ -169,11 +169,14 @@ if NEEDS_ATMEL_SOFTWARE_FRAMEWORK
 if IS_DEBUG_DUE
   libAtmelSoftwareFramework_a_SOURCES += \
      src/AsfSrc/sam/drivers/pmc/sleep.c \
-     src/AsfSrc/sam/drivers/adc/adc.c \
      src/AsfSrc/sam/drivers/uotghs/uotghs_device.c \
      src/AsfSrc/common/services/usb/class/cdc/device/udi_cdc.c \
      src/AsfSrc/common/services/usb/class/cdc/device/udi_cdc_desc.c \
      src/AsfSrc/common/services/usb/udc/udc.c
+endif
+
+if NEEDS_ASF_ADC_C
+  libAtmelSoftwareFramework_a_SOURCES += src/AsfSrc/sam/drivers/adc/adc.c
 endif
 
 endif
