@@ -359,10 +359,10 @@ dist_data_DATA += $(MAP_FILENAME)
 
 # POSSIBLE IMPROVEMENT: Automatically delete these files when recursive target "disassemble" is not specified.
 # Otherwise, the contents of these files may be stale.
-disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.map  $(ELF_BASENAME)-objdump-with-disassemble.asm  $(ELF_BASENAME)-sorted-strings.txt $(ELF_BASENAME)-readelf-dump.txt
+disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.txt  $(ELF_BASENAME)-objdump-with-disassemble.asm  $(ELF_BASENAME)-sorted-strings.txt $(ELF_BASENAME)-readelf-dump.txt
 
 # Create a list of objects in the ELF file sorted by size, which helps when trying to optimise the bin size.
-$(ELF_BASENAME)-objects-sorted-by-size.map: $(ELF_FILENAME)
+$(ELF_BASENAME)-objects-sorted-by-size.txt: $(ELF_FILENAME)
 	echo "Generating object list sorted by size to \"$(abspath $@)\"..." && \
         $(TARGET_ARCH)-nm --radix=d --demangle --size-sort "$<" >"$@"
 
