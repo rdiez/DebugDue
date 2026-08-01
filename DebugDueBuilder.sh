@@ -325,10 +325,11 @@ Step 2, build operations:
   --disassemble  Generate extra information files from the just-built ELF file:
                  complete disassembly, list of objects sorted by size,
                  sorted list of strings (with 'strings' command), readelf dump.
-  --check-discarded-objects  Check that no object files were completely discarded
-                             during linking. Compilation of such files can then
-                             be skipped in order to reduce build time.
-                             Incompatible with LTO builds (most release builds).
+  --check-discarded-objects=type  Check whether object files were completely discarded
+                                  during linking. Compilation of such files can then
+                                  be skipped in order to reduce build time.
+                                  The check type can be 'list' or 'error'.
+                                  Incompatible with LTO builds (most release builds).
   --make-arg=ARG  Pass an extra argument to 'make'. This is primarily intended
                   for make variables. For example: --make-arg CPPFLAGS=-Dmysymbol=1
                   You can specify --make-arg several times.
@@ -697,7 +698,14 @@ process_command_line_argument ()
     build) BUILD_SPECIFIED=true;;
     enable-ccache) ENABLE_CCACHE_SPECIFIED=true;;
     disassemble) DISASSEMBLE_SPECIFIED=true;;
-    check-discarded-objects) CHECK_DISCARDED_OBJECTS=true;;
+
+    check-discarded-objects)
+      if [[ $OPTARG = "" ]]; then
+        abort "Option --check-discarded-objects has an empty value."
+      fi
+      CHECK_DISCARDED_OBJECTS="$OPTARG"
+      ;;
+
     program-over-jtag) PROGRAM_OVER_JTAG_SPECIFIED=true;;
     program-with-bossac) PROGRAM_WITH_BOSSAC_SPECIFIED=true;;
     cache-programmed-file) CACHE_PROGRAMMED_FILE_SPECIFIED=true;;
@@ -1035,9 +1043,12 @@ do_build ()
     quote_and_append_args MAKE_CMD "disassemble"
   fi
 
-  if $CHECK_DISCARDED_OBJECTS; then
-    quote_and_append_args MAKE_CMD "check-discarded-objects"
-  fi
+  case "$CHECK_DISCARDED_OBJECTS" in
+    "")      : ;;  # Nothing to do here.
+    "list")  MAKE_CMD+=" list-discarded-objects";;
+    "error") MAKE_CMD+=" check-discarded-objects";;
+    *) abort "Option '--check-discarded-objects' has invalid value \"$CHECK_DISCARDED_OBJECTS\"."
+  esac
 
   echo "$MAKE_CMD"
   eval "$MAKE_CMD"
@@ -1987,7 +1998,7 @@ USER_LONG_OPTIONS_SPEC+=( [autogen]=0 )
 USER_LONG_OPTIONS_SPEC+=( [build]=0 )
 USER_LONG_OPTIONS_SPEC+=( [enable-ccache]=0 )
 USER_LONG_OPTIONS_SPEC+=( [disassemble]=0 )
-USER_LONG_OPTIONS_SPEC+=( [check-discarded-objects]=0 )
+USER_LONG_OPTIONS_SPEC+=( [check-discarded-objects]=1 )
 USER_LONG_OPTIONS_SPEC+=( [program-over-jtag]=0 )
 USER_LONG_OPTIONS_SPEC+=( [program-with-bossac]=0 )
 USER_LONG_OPTIONS_SPEC+=( [verify]=0 )
@@ -2019,7 +2030,7 @@ AUTOGEN_SPECIFIED=false
 BUILD_SPECIFIED=false
 ENABLE_CCACHE_SPECIFIED=false
 DISASSEMBLE_SPECIFIED=false
-CHECK_DISCARDED_OBJECTS=false
+CHECK_DISCARDED_OBJECTS=""
 PROGRAM_OVER_JTAG_SPECIFIED=false
 PROGRAM_WITH_BOSSAC_SPECIFIED=false
 CACHE_PROGRAMMED_FILE_SPECIFIED=false

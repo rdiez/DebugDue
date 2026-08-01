@@ -50,6 +50,36 @@ noinst_LIBRARIES :=
 MANUAL_MAKEFILE_DEPENDENCY := Makefile
 
 
+# An empty "sentinel" file is an easy, fast and reliable way to mark a target
+# as successfully finished.
+#
+# Without it, you need to create the target file with a temporary name first,
+# and then rename it to its final name only on success. Otherwise, a transient failure
+# which creates an incomplete target file will permanently break the build.
+# Filesystems are not usually transactional, so the incomplete target will remain
+# and will be considered as finished the next time around.
+# Furthermore, the rename operation may be relatively expensive,
+# as the Bash shell, for example, has no built-in mv command.
+#
+# A sentinel file also helps simplify the makefile, as it makes the target files
+# independent from the recipes. This is not normally an issue if you are compiling
+# just one file, but if the recipe is a complex software installation step,
+# a sentinel file makes the makefile independent from the names of the installed files.
+# And it is also robust against a partially-failed installation,
+# where the chosen target file was installed but other companions weren't,
+# so you do not have to worry about the file installation order.
+#
+# The only drawback of an empty sentinel file is the little extra space
+# it consumes in the disk directory structure.
+#
+# Create or overwrite the sentinel file as the very last recipe operation.
+# Otherwise, if a command afterwards fails, it will go unnoticed.
+# Even 'echo' commands may fail, for example, if the disk is full,
+# so place even 'echo' commands before the setinel file creation too,
+# or the log text after resuming from a transient failure will look different.
+create_sentinel_file = : > "$(1)"
+
+
 # ------------------------------------
 # Include paths.
 
@@ -395,6 +425,7 @@ FILENAME_WITH_MAP_OBJECTS        := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-in-map-file
 FILENAME_WITH_DISCARDED_OBJECTS  := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-discarded.txt
 DISCARDED_OBJECTS_CHECK_SENTINEL := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-discarded-check-sentinel.txt
 
+list-discarded-objects-local: $(FILENAME_WITH_DISCARDED_OBJECTS)
 check-discarded-objects-local: $(DISCARDED_OBJECTS_CHECK_SENTINEL)
 
 # Sorting the filenames passed to the linker takes some time, but has the following advantages:
@@ -409,30 +440,37 @@ $(FILENAME_WITH_SORTED_LIST): $(MANUAL_MAKEFILE_DEPENDENCY)
         printf '%s\n' $(OBJECTS_USED_FOR_LINKING) >"$(FILENAME_WITH_UNSORTED_LIST)" && \
         echo "Sorting the list of filenames passed to the linker..." && \
         LC_ALL=C sort -- "$(FILENAME_WITH_UNSORTED_LIST)" >"$(FILENAME_WITH_SORTED_LIST).tmp" && \
-        echo "Detecting duplicates in the list of filenames passed to the linker..." && \
+        echo "Detecting eventual duplicates in the list of filenames passed to the linker..." && \
         uniq --repeated -- "$(FILENAME_WITH_SORTED_LIST).tmp" >"$(FILENAME_WITH_DUPLICATES)" && \
-        if ! [ -f "$(FILENAME_WITH_DUPLICATES)" ]; then echo "Error: Expected output file does not exist: $(FILENAME_WITH_DUPLICATES)" >&2 && exit 1; fi && \
         if [ -s "$(FILENAME_WITH_DUPLICATES)" ]; then echo "Error: Duplicated object filenames detected, see the list in file: $(FILENAME_WITH_DUPLICATES)" >&2 && exit 1; fi && \
-        mv -- "$(FILENAME_WITH_SORTED_LIST).tmp" "$(FILENAME_WITH_SORTED_LIST)" && \
-        echo "Finished processing the list of filenames passed to the linker."
+        mv -- "$(FILENAME_WITH_SORTED_LIST).tmp" "$(FILENAME_WITH_SORTED_LIST)"
 
 # Note that LTO erases the object file origin information, breaking the detection of completely-discarded objects.
 $(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME)
 	echo "Extracting the object filenames from the linker map file..." && \
-        set -o errexit && set -o nounset && set -o pipefail && \
         if $(IS_LTO_ENABLED); then echo "Error: Extracting the object filenames from the linker map file is incompatible with LTO." >&2 && exit 1; fi && \
         LC_ALL=C "$(srcdir)/../Tools/RDMapFile.pl" \
                  --extract-object-filenames \
                  --capture-sections=".text, .ARM.exidx, .stackArea, .relocate, .bss" \
                  -- "$(MAP_FILENAME)" >"$(FILENAME_WITH_MAP_OBJECTS).tmp" && \
-        mv -- "$(FILENAME_WITH_MAP_OBJECTS).tmp" "$(FILENAME_WITH_MAP_OBJECTS)" && \
-        echo "Finished extracting the object filenames from the linker map file."
+        mv -- "$(FILENAME_WITH_MAP_OBJECTS).tmp" "$(FILENAME_WITH_MAP_OBJECTS)"
 
-$(DISCARDED_OBJECTS_CHECK_SENTINEL): $(FILENAME_WITH_MAP_OBJECTS) $(FILENAME_WITH_SORTED_LIST)
-	echo "Comparing the lists of object filenames used for linking..." && \
-        set -o errexit && set -o nounset && set -o pipefail && \
-        LC_ALL=C comm -23 -- $(FILENAME_WITH_SORTED_LIST) $(FILENAME_WITH_MAP_OBJECTS) >"$(FILENAME_WITH_DISCARDED_OBJECTS)" && \
-        if ! [ -f "$(FILENAME_WITH_DISCARDED_OBJECTS)" ]; then echo "Error: Expected output file does not exist: $(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && exit 1; fi && \
-        if [ -s "$(FILENAME_WITH_DISCARDED_OBJECTS)" ]; then echo "Error: Some object files were completely discarded during linking, so they were compiled for nothing, wasting time. The list below is also in file: $(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && cat -- "$(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && exit 1; fi && \
-        echo "Check performed successfully." >"$(DISCARDED_OBJECTS_CHECK_SENTINEL)" && \
-        echo "Finished comparing the lists of object filenames used for linking."
+$(FILENAME_WITH_DISCARDED_OBJECTS): $(FILENAME_WITH_MAP_OBJECTS) $(FILENAME_WITH_SORTED_LIST)
+	echo "Generating the list of object files which were completely discarded during linking..." && \
+        LC_ALL=C comm -23 -- $(FILENAME_WITH_SORTED_LIST) $(FILENAME_WITH_MAP_OBJECTS) >"$(FILENAME_WITH_DISCARDED_OBJECTS).tmp" && \
+        if [ -s "$(FILENAME_WITH_DISCARDED_OBJECTS).tmp" ]; then \
+          echo "The list has been placed in file: $(FILENAME_WITH_DISCARDED_OBJECTS)"; \
+        else \
+          echo "No object files were completely discarded."; \
+        fi && \
+        mv -- "$(FILENAME_WITH_DISCARDED_OBJECTS).tmp" "$(FILENAME_WITH_DISCARDED_OBJECTS)"
+
+$(DISCARDED_OBJECTS_CHECK_SENTINEL): $(FILENAME_WITH_DISCARDED_OBJECTS)
+	if [ -s "$(FILENAME_WITH_DISCARDED_OBJECTS)" ]; then \
+          echo "Error: The following object files were completely discarded during linking, so they were compiled for nothing, wasting time:" >&2 && \
+          cat -- "$(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && \
+          echo "The list of object files above is also in file: $(FILENAME_WITH_DISCARDED_OBJECTS)" >&2 && \
+          exit 1; \
+        fi && \
+        echo "Discarded object files check passed." && \
+        $(call create_sentinel_file,$(DISCARDED_OBJECTS_CHECK_SENTINEL))
