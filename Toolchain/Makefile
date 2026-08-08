@@ -1226,7 +1226,7 @@ $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL):
 	mkdir -- "$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)" && \
 	mkdir -- "$(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)" && \
 	{ echo "Target CPU: $(TOOLCHAIN_TARGET_CPU)" && echo "Toolchain kind: $(TOOLCHAIN_KIND)"; } >"$(CROSS_TOOLCHAIN_BUILD_DIR)/ToolchainInfo.txt" && \
-	echo "Creation of directory \"$(CROSS_TOOLCHAIN_BUILD_DIR)\" finished." >"$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)"
+	$(call create_sentinel_file,$(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL))
 
 
 # ----------------- Build Binutils -----------------
@@ -1238,8 +1238,8 @@ $(BINUTILS_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(BINUTILS_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking Binutils finished." >"$(BINUTILS_UNTAR_SENTINEL)" && \
-	echo "Unpacking Binutils finished."
+	echo "Unpacking Binutils finished." && \
+	$(call create_sentinel_file,$(BINUTILS_UNTAR_SENTINEL))
 
 $(BINUTILS_HELP_SENTINEL): $(BINUTILS_UNTAR_SENTINEL)
 	$(call store_recursive_help,BINUTILS_SRC_DIR,BinUtils)
@@ -1275,8 +1275,8 @@ $(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsMake.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsMake.report" \
 	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" && \
-	echo "The Binutils build has finished." >"$(BINUTILS_MAKE_SENTINEL)" && \
-	echo "The Binutils build has finished."
+	echo "The Binutils build has finished." && \
+	$(call create_sentinel_file,$(BINUTILS_MAKE_SENTINEL))
 
 # Note that Binutils' 'install' makefile target has a race condition bug at least up to version 2.43.1,
 # so that, if you run it in parallel, you get sporadic errors like this:
@@ -1296,8 +1296,8 @@ $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsInstall.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsInstall.report" \
 	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The Binutils installation has finished." >"$(BINUTILS_INSTALL_SENTINEL)" && \
-	echo "The Binutils installation has finished."
+	echo "The Binutils installation has finished." && \
+	$(call create_sentinel_file,$(BINUTILS_INSTALL_SENTINEL))
 
 $(BINUTILS_INSTALL_SENTINEL_PHASE_1): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
@@ -1309,8 +1309,8 @@ $(BINUTILS_INSTALL_SENTINEL_PHASE_1): $(BINUTILS_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsPhase1Install.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsPhase1Install.report" \
 	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" DESTDIR="$(PHASE_1_DESTDIR)" "$(INSTALL_TARGET)" && \
-	echo "The Binutils phase 1 installation has finished." >"$(BINUTILS_INSTALL_SENTINEL_PHASE_1)" && \
-	echo "The Binutils phase 1 installation has finished."
+	echo "The Binutils phase 1 installation has finished." && \
+	$(call create_sentinel_file,$(BINUTILS_INSTALL_SENTINEL_PHASE_1))
 
 $(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	echo && \
@@ -1322,8 +1322,8 @@ $(BINUTILS_CHECK_SENTINEL): $(BINUTILS_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsCheck.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/BinUtilsCheck.report" \
 	  $(MAKE) -C "$(BINUTILS_OBJ_DIR)" check && \
-	echo "The Binutils check has finished." >"$(BINUTILS_CHECK_SENTINEL)" && \
-	echo "The Binutils check has finished."
+	echo "The Binutils check has finished." && \
+	$(call create_sentinel_file,$(BINUTILS_CHECK_SENTINEL))
 
 
 # ----------------- Build GMP -----------------
@@ -1335,8 +1335,8 @@ $(GMP_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GMP_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking GMP finished." >"$(GMP_UNTAR_SENTINEL)" && \
-	echo "Unpacking GMP finished."
+	echo "Unpacking GMP finished." && \
+	$(call create_sentinel_file,$(GMP_UNTAR_SENTINEL))
 
 $(GMP_HELP_SENTINEL): $(GMP_UNTAR_SENTINEL)
 	$(call store_recursive_help,GMP_SRC_DIR,Gmp)
@@ -1370,8 +1370,8 @@ $(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpMake.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpMake.report" \
 	  $(MAKE) -C "$(GMP_OBJ_DIR)" && \
-	echo "The GMP build has finished." >"$(GMP_MAKE_SENTINEL)" && \
-	echo "The GMP build has finished."
+	echo "The GMP build has finished." && \
+	$(call create_sentinel_file,$(GMP_MAKE_SENTINEL))
 
 $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo && \
@@ -1383,8 +1383,8 @@ $(GMP_INSTALL_SENTINEL): $(GMP_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpInstall.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpInstall.report" \
 	  $(MAKE) -C "$(GMP_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The GMP installation has finished." >"$(GMP_INSTALL_SENTINEL)" && \
-	echo "The GMP installation has finished."
+	echo "The GMP installation has finished." && \
+	$(call create_sentinel_file,$(GMP_INSTALL_SENTINEL))
 
 $(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
 	echo && \
@@ -1396,8 +1396,8 @@ $(GMP_CHECK_SENTINEL): $(GMP_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpCheck.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GmpCheck.report" \
 	  $(MAKE) -C "$(GMP_OBJ_DIR)" check && \
-	echo "The GMP check has finished." >"$(GMP_CHECK_SENTINEL)" && \
-	echo "The GMP check has finished."
+	echo "The GMP check has finished." && \
+	$(call create_sentinel_file,$(GMP_CHECK_SENTINEL))
 
 
 # ----------------- Build MPFR -----------------
@@ -1409,8 +1409,8 @@ $(MPFR_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPFR_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking MPFR finished." >"$(MPFR_UNTAR_SENTINEL)" && \
-	echo "Unpacking MPFR finished."
+	echo "Unpacking MPFR finished." && \
+	$(call create_sentinel_file,$(MPFR_UNTAR_SENTINEL))
 
 $(MPFR_HELP_SENTINEL): $(MPFR_UNTAR_SENTINEL)
 	$(call store_recursive_help,MPFR_SRC_DIR,Mpfr)
@@ -1445,8 +1445,8 @@ $(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrMake.report" \
 	  $(MAKE) -C "$(MPFR_OBJ_DIR)" && \
-	echo "The MPFR build has finished." >"$(MPFR_MAKE_SENTINEL)" && \
-	echo "The MPFR build has finished."
+	echo "The MPFR build has finished." && \
+	$(call create_sentinel_file,$(MPFR_MAKE_SENTINEL))
 
 $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo && \
@@ -1458,8 +1458,8 @@ $(MPFR_INSTALL_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrInstall.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrInstall.report" \
 	  $(MAKE) -C "$(MPFR_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The MPFR installation has finished." >"$(MPFR_INSTALL_SENTINEL)" && \
-	echo "The MPFR installation has finished."
+	echo "The MPFR installation has finished." && \
+	$(call create_sentinel_file,$(MPFR_INSTALL_SENTINEL))
 
 $(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	echo && \
@@ -1471,8 +1471,8 @@ $(MPFR_CHECK_SENTINEL): $(MPFR_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrCheck.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpfrCheck.report" \
 	  $(MAKE) -C "$(MPFR_OBJ_DIR)" check && \
-	echo "The MPFR check has finished." >"$(MPFR_CHECK_SENTINEL)" && \
-	echo "The MPFR check has finished."
+	echo "The MPFR check has finished." && \
+	$(call create_sentinel_file,$(MPFR_CHECK_SENTINEL))
 
 
 # ----------------- Build MPC -----------------
@@ -1484,8 +1484,8 @@ $(MPC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(MPC_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking MPC finished." >"$(MPC_UNTAR_SENTINEL)" && \
-	echo "Unpacking MPC finished."
+	echo "Unpacking MPC finished." && \
+	$(call create_sentinel_file,$(MPC_UNTAR_SENTINEL))
 
 $(MPC_HELP_SENTINEL): $(MPC_UNTAR_SENTINEL)
 	$(call store_recursive_help,MPC_SRC_DIR,Mpc)
@@ -1521,8 +1521,8 @@ $(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcMake.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcMake.report" \
 	  $(MAKE) -C "$(MPC_OBJ_DIR)" && \
-	echo "The MPC build has finished." >"$(MPC_MAKE_SENTINEL)" && \
-	echo "The MPC build has finished."
+	echo "The MPC build has finished." && \
+	$(call create_sentinel_file,$(MPC_MAKE_SENTINEL))
 
 $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo && \
@@ -1534,8 +1534,8 @@ $(MPC_INSTALL_SENTINEL): $(MPC_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcInstall.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcInstall.report" \
 	  $(MAKE) -C "$(MPC_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The MPC installation has finished." >"$(MPC_INSTALL_SENTINEL)" && \
-	echo "The MPC installation has finished."
+	echo "The MPC installation has finished." && \
+	$(call create_sentinel_file,$(MPC_INSTALL_SENTINEL))
 
 $(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
 	echo && \
@@ -1547,8 +1547,8 @@ $(MPC_CHECK_SENTINEL): $(MPC_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcCheck.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/MpcCheck.report" \
 	  $(MAKE) -C "$(MPC_OBJ_DIR)" check && \
-	echo "The MPC check has finished." >"$(MPC_CHECK_SENTINEL)" && \
-	echo "The MPC check has finished."
+	echo "The MPC check has finished." && \
+	$(call create_sentinel_file,$(MPC_CHECK_SENTINEL))
 
 
 # ----------------- GCC phase 1 -----------------
@@ -1570,8 +1570,8 @@ $(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	  patch -p0 --fuzz=0 --forward <"$(MAKEFILE_PATCHES_DIR)/$(GCC_12_EH_GLOBALS_ATEXIT_PATCH_FILENAME)"; \
 	fi && \
 	popd >/dev/null && \
-	echo "Unpacking GCC finished." >"$(GCC_UNTAR_SENTINEL)" && \
-	echo "Unpacking GCC finished."
+	echo "Unpacking GCC finished." && \
+	$(call create_sentinel_file,$(GCC_UNTAR_SENTINEL))
 
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
   $(GCC1_MAKEFILE): $(MPC_INSTALL_SENTINEL)
@@ -1617,8 +1617,8 @@ $(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Make.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Make.report" \
 	  $(MAKE) -C "$(GCC1_OBJ_DIR)" all-gcc && \
-	echo "The GCC phase 1 build has finished." >"$(GCC1_MAKE_SENTINEL)" && \
-	echo "The GCC phase 1 build has finished."
+	echo "The GCC phase 1 build has finished." && \
+	$(call create_sentinel_file,$(GCC1_MAKE_SENTINEL))
 
 # We can use here targets 'install-gcc' or 'install-strip-gcc'.
 
@@ -1632,8 +1632,8 @@ $(GCC1_INSTALL_SENTINEL): $(GCC1_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Install.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase1Install.report" \
 	  $(MAKE) -C "$(GCC1_OBJ_DIR)" $(INSTALL_TARGET)-gcc && \
-	echo "The GCC phase 1 installation has finished." >"$(GCC1_INSTALL_SENTINEL)" && \
-	echo "The GCC phase 1 installation has finished."
+	echo "The GCC phase 1 installation has finished." && \
+	$(call create_sentinel_file,$(GCC1_INSTALL_SENTINEL))
 
 
 # ----------------- Build Newlib -----------------
@@ -1655,8 +1655,8 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	  patch -p0 --fuzz=0 --forward <"$(NEWLIB_REMOVE_STRERROR_MESSAGES_PATCH_FILENAME)"; \
 	fi && \
 	popd >/dev/null && \
-	echo "Unpacking Newlib finished." >"$(NEWLIB_UNTAR_SENTINEL)" && \
-	echo "Unpacking Newlib finished."
+	echo "Unpacking Newlib finished." && \
+	$(call create_sentinel_file,$(NEWLIB_UNTAR_SENTINEL))
 
 # Note that we are getting the help only for subdir newlib/ , and not for example libgloss/ .
 $(NEWLIB_HELP_SENTINEL): $(NEWLIB_UNTAR_SENTINEL)
@@ -1693,8 +1693,8 @@ $(NEWLIB_MAKE_SENTINEL): $(NEWLIB_MAKEFILE)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibMake.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibMake.report" \
 	    $(MAKE) -C "$(NEWLIB_OBJ_DIR)"  && \
-	echo "The Newlib build has finished." >"$(NEWLIB_MAKE_SENTINEL)" && \
-	echo "The Newlib build has finished."
+	echo "The Newlib build has finished." && \
+	$(call create_sentinel_file,$(NEWLIB_MAKE_SENTINEL))
 
 $(NEWLIB_INSTALL_SENTINEL): $(NEWLIB_MAKE_SENTINEL)
 	echo && \
@@ -1707,8 +1707,8 @@ $(NEWLIB_INSTALL_SENTINEL): $(NEWLIB_MAKE_SENTINEL)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibInstall.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/NewlibInstall.report" \
 	    $(MAKE) -C "$(NEWLIB_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The Newlib installation has finished." >"$(NEWLIB_INSTALL_SENTINEL)" && \
-	echo "The Newlib installation has finished."
+	echo "The Newlib installation has finished." && \
+	$(call create_sentinel_file,$(NEWLIB_INSTALL_SENTINEL))
 
 # This target provides a friendly name useful when testing this makefile.
 libc-install: $(NEWLIB_INSTALL_SENTINEL)
@@ -1727,8 +1727,8 @@ $(PICOLIBC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(PICOLIBC_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking Picolibc finished." >"$(PICOLIBC_UNTAR_SENTINEL)" && \
-	echo "Unpacking Picolibc finished."
+	echo "Unpacking Picolibc finished." && \
+	$(call create_sentinel_file,$(PICOLIBC_UNTAR_SENTINEL))
 
 $(PICOLIBC_CONFIGURE_SENTINEL): $(PICOLIBC_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
@@ -1759,8 +1759,8 @@ $(PICOLIBC_CONFIGURE_SENTINEL): $(PICOLIBC_UNTAR_SENTINEL) $(GCC1_INSTALL_SENTIN
 	      "$(PICOLIBC_SRC_DIR)" \
 	      "$(PICOLIBC_OBJ_DIR)" && \
 	popd >/dev/null && \
-	echo "The Picolibc installation has finished." >"$(PICOLIBC_CONFIGURE_SENTINEL)" && \
-	echo "The Picolibc configuration has finished."
+	echo "The Picolibc installation has finished." && \
+	$(call create_sentinel_file,$(PICOLIBC_CONFIGURE_SENTINEL))
 
 $(PICOLIBC_MAKE_SENTINEL): $(PICOLIBC_CONFIGURE_SENTINEL)
 	echo && \
@@ -1773,8 +1773,8 @@ $(PICOLIBC_MAKE_SENTINEL): $(PICOLIBC_CONFIGURE_SENTINEL)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcMake.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcMake.report" \
 	    meson compile --verbose  -C "$(PICOLIBC_OBJ_DIR)"  && \
-	echo "The Picolibc build has finished." >"$(PICOLIBC_MAKE_SENTINEL)" && \
-	echo "The Picolibc build has finished."
+	echo "The Picolibc build has finished." && \
+	$(call create_sentinel_file,$(PICOLIBC_MAKE_SENTINEL))
 
 # CLEAR_MAKEFLAGS_FOR_INSTALL_TARGETS below is actually intended for GNU Make,
 # not for Meson, but other such build tools could also use GNU Make's job server.
@@ -1790,8 +1790,8 @@ $(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/PicolibcInstall.report" \
 	    meson install  -C "$(PICOLIBC_OBJ_DIR)"  && \
-	echo "The Picolibc installation has finished." >"$(PICOLIBC_INSTALL_SENTINEL)" && \
-	echo "The Picolibc installation has finished."
+	echo "The Picolibc installation has finished." && \
+	$(call create_sentinel_file,$(PICOLIBC_INSTALL_SENTINEL))
 
 # This target provides a friendly name useful when testing this makefile.
 libc-install: $(PICOLIBC_INSTALL_SENTINEL)
@@ -1851,8 +1851,8 @@ $(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" \
 	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
 	      CXXFLAGS_FOR_TARGET="$(GCC_CXXFLAGS_FOR_TARGET)" && \
-	echo "The GCC phase 2 build has finished." >"$(GCC2_MAKE_SENTINEL)" && \
-	echo "The GCC phase 2 build has finished."
+	echo "The GCC phase 2 build has finished." && \
+	$(call create_sentinel_file,$(GCC2_MAKE_SENTINEL))
 
 # The "make install" step needs the PATH set because it uses Binutils tools like 'arm-none-eabi-ranlib',
 # and it does not seem able to find them via the configured '--prefix' directory.
@@ -1868,8 +1868,8 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	      --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Install.log" \
 	      --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GccPhase2Install.report" \
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" "$(INSTALL_TARGET)" && \
-	echo "The GCC phase 2 installation has finished." >"$(GCC2_INSTALL_SENTINEL)" && \
-	echo "The GCC phase 2 installation has finished."
+	echo "The GCC phase 2 installation has finished." && \
+	$(call create_sentinel_file,$(GCC2_INSTALL_SENTINEL))
 
 # Short target name for building and installing GCC without GDB. Sometimes useful when testing this makefile.
 gcc: $(GCC2_INSTALL_SENTINEL)
@@ -1887,8 +1887,8 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	    $(MAKE) -C "$(GCC2_OBJ_DIR)" check \
 	      CFLAGS_FOR_TARGET="$(GCC_CFLAGS_FOR_TARGET)" \
 	      CXXFLAGS_FOR_TARGET="$(GCC_CXXFLAGS_FOR_TARGET)" && \
-	echo "The GCC phase 2 check has finished." >"$(GCC2_CHECK_SENTINEL)" && \
-	echo "The GCC phase 2 check has finished."
+	echo "The GCC phase 2 check has finished." && \
+	$(call create_sentinel_file,$(GCC2_CHECK_SENTINEL))
 
 
 # ----------------- Build GDB -----------------
@@ -1902,8 +1902,8 @@ $(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	pushd "$(CROSS_TOOLCHAIN_BUILD_DIR)" >/dev/null && \
 	tar xfa "$(TARBALLS_DOWNLOAD_DIR)/$(GDB_TAR_FILE)" && \
 	popd >/dev/null && \
-	echo "Unpacking GDB finished." >"$(GDB_UNTAR_SENTINEL)" && \
-	echo "Unpacking GDB finished."
+	echo "Unpacking GDB finished." && \
+	$(call create_sentinel_file,$(GDB_UNTAR_SENTINEL))
 
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
   # GDB version 11.1 is the first one to require the GMP library.
@@ -1943,8 +1943,8 @@ $(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbMake.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbMake.report" \
 	  $(MAKE) -C "$(GDB_OBJ_DIR)" && \
-	echo "The GDB build has finished." >"$(GDB_MAKE_SENTINEL)" && \
-	echo "The GDB build has finished."
+	echo "The GDB build has finished." && \
+	$(call create_sentinel_file,$(GDB_MAKE_SENTINEL))
 
 $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo && \
@@ -1956,8 +1956,8 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	    --logFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbInstall.log" \
 	    --reportFilename="$(CROSS_TOOLCHAIN_BUILD_DIR_LOG_FILES)/GdbInstall.report" \
 	  $(MAKE) -C "$(GDB_OBJ_DIR)" "$(GDB_INSTALL_TARGET)" && \
-	echo "The GDB installation has finished." >"$(GDB_INSTALL_SENTINEL)" && \
-	echo "The GDB installation has finished."
+	echo "The GDB installation has finished." && \
+	$(call create_sentinel_file,$(GDB_INSTALL_SENTINEL))
 
 # Short target name for building and installing GDB. Sometimes useful when testing this makefile.
 gdb: $(GDB_INSTALL_SENTINEL)
@@ -2063,14 +2063,14 @@ TARGET_ALL_SENTINEL := $(CROSS_TOOLCHAIN_BUILD_DIR)/$(call sentinel_filename,Tar
 $(TARGET_ALL_SENTINEL): $(GDB_INSTALL_SENTINEL)  $(GCC2_INSTALL_SENTINEL)
 	@echo && \
 	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." && \
-	echo "Toolchain installed in \"$(CROSS_TOOLCHAIN_DIR)\"." >"$(TARGET_ALL_SENTINEL)" && \
 	if [ $(SHOULD_WRITE_PROTECT_INSTALLATION) -ne 0 ]; then \
 	  echo "Write-protecting the installation directory..." && \
 	  chmod --recursive a-w -- "$(CROSS_TOOLCHAIN_DIR)"/ ; \
 	fi && \
 	if [ $(SHOULD_WARN_ABOUT_REBUILDING_SOFTWARE) -ne 0 ]; then \
 	  echo "WARNING: After a toolchain change you should rebuild all software built with it from scratch." ; \
-	fi
+	fi && \
+	$(call create_sentinel_file,$(TARGET_ALL_SENTINEL))
 
 .PHONY: AllHelpFiles
 

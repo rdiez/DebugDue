@@ -125,7 +125,40 @@ endef
 
 poison_variable_if_empty_or_contains_whitespace = $(eval $(call poison_variable_if_empty_or_contains_whitespace_needs_eval,$(1)))
 
+
 sentinel_filename = ToolchainBuilder-sentinel-$(1)
+
+# An empty "sentinel" file is an easy, fast and reliable way to mark a target
+# as successfully finished.
+#
+# Without it, you need to create the target file with a temporary name first,
+# and then rename it to its final name only on success. Otherwise, a transient failure
+# which creates an incomplete target file will permanently break the build.
+# Filesystems are not usually transactional, so the incomplete target will remain
+# and will be considered as finished the next time around.
+# Furthermore, the rename operation may be relatively expensive,
+# as the Bash shell, for example, has no built-in mv command.
+#
+# A sentinel file also helps simplify the makefile, as it makes the target files
+# independent from the recipes. This is not normally an issue if you are compiling
+# just one file, but if the recipe is a complex software installation step,
+# a sentinel file makes the makefile independent from the names of the installed files.
+# And it is also robust against a partially-failed installation,
+# where the chosen target file was installed but other companions weren't,
+# so you do not have to worry about the file installation order.
+#
+# The only drawback of an empty sentinel file is the little extra space
+# it consumes in the disk directory structure.
+#
+# Create or overwrite the sentinel file as the very last recipe operation.
+# Otherwise, if a command afterwards fails, it will go unnoticed.
+# Even 'echo' commands may fail, for example, if the disk is full,
+# so place even 'echo' commands before the setinel file creation too,
+# or the log text after resuming from a transient failure will look different.
+#
+# The Bash shell does not actually need the ':' below, as "> filename" is enough,
+# but other shells do.
+create_sentinel_file = : > "$(1)"
 
 
 # Request and store the configuration help text for each component we are building.
@@ -149,13 +182,13 @@ store_recursive_help = \
 	echo && \
 	echo "Help text from the $(2) 'configure' script:" && \
 	$($(1))/configure --help=recursive | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(2)ConfigHelp.txt" && \
-	echo "The $(2) help generation has finished." >"$@" && \
-	echo "The $(2) help generation has finished."
+	echo "The $(2) help generation has finished." && \
+	$(call create_sentinel_file,$@)
 
 # Option --help=recursive failed partially with Newlib versions before 2022.
 store_recursive_help_ignore_error = \
 	echo && \
 	echo "Help text from the $(2) 'configure' script:" && \
 	{ $($(1))/configure --help=recursive | tee "$(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(2)ConfigHelp.txt"; true; } && \
-	echo "The $(2) help generation has finished." >"$@" && \
-	echo "The $(2) help generation has finished."
+	echo "The $(2) help generation has finished." && \
+	$(call create_sentinel_file,$@)
