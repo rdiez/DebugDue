@@ -64,8 +64,7 @@ CHECK_VERSION_TOOL := $(MAKEFILE_TOOLS_DIR)/CheckVersion.sh
 #
 # If you want to use Picolibc, you need Meson version 0.56 or later.
 
-# VersionSet20 is available, but it uses GCC 16.1, which is probably too new to be considered stable.
-VERSION_SET := VersionSet19
+VERSION_SET := VersionSet20
 
 ifeq ($(VERSION_SET),VersionSet8)
 
@@ -186,8 +185,10 @@ else ifeq ($(VERSION_SET),VersionSet20)
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
   PICOLIBC_VERSION := 1.8.11
 
+  # The newer Binutils 2.47 generates a compilation warning which makes the build fail
+  # because of "all warnings being treated as errors".
   BINUTILS_VERSION := 2.46.1
-  GCC_VERSION      := 16.1.0
+  GCC_VERSION      := 16.2.0
   GDB_VERSION      := 17.2
 
 else
