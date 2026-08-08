@@ -40,7 +40,7 @@ The developer must manually call every library function and has therefore full c
 
 There are no OS background tasks or threads to worry about.
 
-=item * L<< C++17|https://en.wikipedia.org/wiki/C%2B%2B17 >> support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
+=item * L<< Modern C++17|https://en.wikipedia.org/wiki/C%2B%2B17 >> and higher support, including the L<< STL library|https://en.wikipedia.org/wiki/Standard_Template_Library >>.
 
 I regularly use the L<< Standard Template Library|https://en.wikipedia.org/wiki/Standard_Template_Library >>, which is small and fast.
 I wouldn't recommend using the huge I<< iostream >> library though.
@@ -117,6 +117,10 @@ The build script can also start Qemu and attach GDB in order to debug the emulat
 =item * The build script can skip reprogramming the target if the binary has not changed.
 
 Restarting the same firmware under the debugger is almost instantaneous.
+
+=item * The build script can tell which C and C++ modules were needlessly compiled, because they were completely discarded during linking.
+
+This information helps optimise compilation times in big projects.
 
 =back
 
