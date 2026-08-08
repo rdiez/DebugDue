@@ -521,7 +521,7 @@ BINUTILS_CONFIGURE_OPTIONS := --enable-plugins
 
 BINUTILS_UNTAR_SENTINEL := $(BINUTILS_SRC_DIR)/$(call sentinel_filename,BinutilsDecompress)
 BINUTILS_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,BinutilsHelp)
-BINUTILS_MAKEFILE                 := $(BINUTILS_OBJ_DIR)/Makefile
+BINUTILS_CONFIGURE_SENTINEL       := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsConfigure)
 BINUTILS_MAKE_SENTINEL            := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsMake)
 BINUTILS_INSTALL_SENTINEL         := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsInstall)
 BINUTILS_INSTALL_SENTINEL_PHASE_1 := $(BINUTILS_OBJ_DIR)/$(call sentinel_filename,BinutilsInstallPhase1)
@@ -536,10 +536,10 @@ GMP_TAR_FILE := gmp-$(GMP_VERSION).tar.bz2
 
 GMP_UNTAR_SENTINEL := $(GMP_SRC_DIR)/$(call sentinel_filename,GmpDecompress)
 GMP_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,GmpHelp)
-GMP_MAKEFILE         := $(GMP_OBJ_DIR)/Makefile
-GMP_MAKE_SENTINEL    := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpMake)
-GMP_INSTALL_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpInstall)
-GMP_CHECK_SENTINEL   := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpCheck)
+GMP_CONFIGURE_SENTINEL := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpConfigure)
+GMP_MAKE_SENTINEL      := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpMake)
+GMP_INSTALL_SENTINEL   := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpInstall)
+GMP_CHECK_SENTINEL     := $(GMP_OBJ_DIR)/$(call sentinel_filename,GmpCheck)
 
 
 # According to GMP's documentation, when building for Windows:
@@ -563,10 +563,10 @@ MPFR_TAR_FILE := mpfr-$(MPFR_VERSION).tar.xz
 
 MPFR_UNTAR_SENTINEL := $(MPFR_SRC_DIR)/$(call sentinel_filename,MpfrDecompress)
 MPFR_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,MpfrHelp)
-MPFR_MAKEFILE         := $(MPFR_OBJ_DIR)/Makefile
-MPFR_MAKE_SENTINEL    := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrMake)
-MPFR_INSTALL_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrInstall)
-MPFR_CHECK_SENTINEL   := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrCheck)
+MPFR_CONFIGURE_SENTINEL := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrConfigure)
+MPFR_MAKE_SENTINEL      := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrMake)
+MPFR_INSTALL_SENTINEL   := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrInstall)
+MPFR_CHECK_SENTINEL     := $(MPFR_OBJ_DIR)/$(call sentinel_filename,MpfrCheck)
 
 
 # ------- MPC lib configuration -------
@@ -591,10 +591,10 @@ MPC_TAR_FILE := mpc-$(MPC_VERSION).$(MPC_TARBALL_FILE_EXTENSION)
 
 MPC_UNTAR_SENTINEL := $(MPC_SRC_DIR)/$(call sentinel_filename,MpcDecompress)
 MPC_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,MpcHelp)
-MPC_MAKEFILE         := $(MPC_OBJ_DIR)/Makefile
-MPC_MAKE_SENTINEL    := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcMake)
-MPC_INSTALL_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcInstall)
-MPC_CHECK_SENTINEL   := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcCheck)
+MPC_CONFIGURE_SENTINEL := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcConfigure)
+MPC_MAKE_SENTINEL      := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcMake)
+MPC_INSTALL_SENTINEL   := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcInstall)
+MPC_CHECK_SENTINEL     := $(MPC_OBJ_DIR)/$(call sentinel_filename,MpcCheck)
 
 
 # ------- GCC configuration -------
@@ -692,15 +692,15 @@ GCC_UNTAR_SENTINEL := $(GCC_SRC_DIR)/$(call sentinel_filename,GccDecompress)
 GCC_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,GccHelp)
 
 GCC1_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase1
-GCC1_MAKEFILE         := $(GCC1_OBJ_DIR)/Makefile
-GCC1_MAKE_SENTINEL    := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Make)
-GCC1_INSTALL_SENTINEL := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Install)
+GCC1_CONFIGURE_SENTINEL := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Configure)
+GCC1_MAKE_SENTINEL      := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Make)
+GCC1_INSTALL_SENTINEL   := $(GCC1_OBJ_DIR)/$(call sentinel_filename,GccPhase1Install)
 
 GCC2_OBJ_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/gcc-$(GCC_VERSION)-obj-phase2
-GCC2_MAKEFILE         := $(GCC2_OBJ_DIR)/Makefile
-GCC2_MAKE_SENTINEL    := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Make)
-GCC2_INSTALL_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Install)
-GCC2_CHECK_SENTINEL   := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Check)
+GCC2_CONFIGURE_SENTINEL := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Configure)
+GCC2_MAKE_SENTINEL      := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Make)
+GCC2_INSTALL_SENTINEL   := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Install)
+GCC2_CHECK_SENTINEL     := $(GCC2_OBJ_DIR)/$(call sentinel_filename,GccPhase2Check)
 
 GCC_C_AND_CXX_FLAGS_FOR_TARGET := $(COMMON_C_AND_CXX_FLAGS_FOR_TARGET)
 
@@ -801,9 +801,9 @@ ifeq ($(TARGET_LIBC), newlib)
 
   NEWLIB_UNTAR_SENTINEL := $(NEWLIB_SRC_DIR)/$(call sentinel_filename,NewlibDecompress)
   NEWLIB_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,NewlibHelp)
-  NEWLIB_MAKEFILE         := $(NEWLIB_OBJ_DIR)/Makefile
-  NEWLIB_MAKE_SENTINEL    := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
-  NEWLIB_INSTALL_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
+  NEWLIB_CONFIGURE_SENTINEL := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibConfigure)
+  NEWLIB_MAKE_SENTINEL      := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibMake)
+  NEWLIB_INSTALL_SENTINEL   := $(NEWLIB_OBJ_DIR)/$(call sentinel_filename,NewlibInstall)
 
   NEWLIB_USER_IMPLEMENTATION_OF_ASSERT_PATCH_FILENAME := $(MAKEFILE_PATCHES_DIR)/NewlibUserImplementationOfAssert.patch
 
@@ -1182,9 +1182,9 @@ GDB_TAR_FILE := gdb-$(GDB_VERSION).tar.xz
 
 GDB_UNTAR_SENTINEL := $(GDB_SRC_DIR)/$(call sentinel_filename,GdbDecompress)
 GDB_HELP_SENTINEL  := $(CROSS_TOOLCHAIN_BUILD_DIR_HELP_FILES)/$(call sentinel_filename,GdbHelp)
-GDB_MAKEFILE         := $(GDB_OBJ_DIR)/Makefile
-GDB_MAKE_SENTINEL    := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbMake)
-GDB_INSTALL_SENTINEL := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbInstall)
+GDB_CONFIGURE_SENTINEL := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbConfigure)
+GDB_MAKE_SENTINEL      := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbMake)
+GDB_INSTALL_SENTINEL   := $(GDB_OBJ_DIR)/$(call sentinel_filename,GdbInstall)
 
 
 # This enables building a debug version of GDB, instead of a release version,
@@ -1244,7 +1244,7 @@ $(BINUTILS_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(BINUTILS_HELP_SENTINEL): $(BINUTILS_UNTAR_SENTINEL)
 	$(call store_recursive_help,BINUTILS_SRC_DIR,BinUtils)
 
-$(BINUTILS_MAKEFILE): $(BINUTILS_HELP_SENTINEL)
+$(BINUTILS_CONFIGURE_SENTINEL): $(BINUTILS_HELP_SENTINEL)
 	echo && \
 	echo "Configuring Binutils from $(BINUTILS_SRC_DIR)/ to $(BINUTILS_OBJ_DIR)/" && \
 	if [ -d "$(BINUTILS_OBJ_DIR)" ]; then rm -rf -- "$(BINUTILS_OBJ_DIR)"; fi && \
@@ -1263,9 +1263,10 @@ $(BINUTILS_MAKEFILE): $(BINUTILS_HELP_SENTINEL)
 	    $(BINUTILS_CONFIGURE_OPTIONS) \
 	    --disable-nls && \
 	popd >/dev/null && \
-	echo "The Binutils configuration has finished."
+	echo "The Binutils configuration has finished." && \
+	$(call create_sentinel_file,$(BINUTILS_CONFIGURE_SENTINEL))
 
-$(BINUTILS_MAKE_SENTINEL): $(BINUTILS_MAKEFILE)
+$(BINUTILS_MAKE_SENTINEL): $(BINUTILS_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building Binutils ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1341,7 +1342,7 @@ $(GMP_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(GMP_HELP_SENTINEL): $(GMP_UNTAR_SENTINEL)
 	$(call store_recursive_help,GMP_SRC_DIR,Gmp)
 
-$(GMP_MAKEFILE): $(GMP_HELP_SENTINEL)
+$(GMP_CONFIGURE_SENTINEL): $(GMP_HELP_SENTINEL)
 	echo && \
 	echo "Configuring GMP from $(GMP_SRC_DIR)/ to $(GMP_OBJ_DIR)/" && \
 	if [ -d "$(GMP_OBJ_DIR)" ]; then rm -rf -- "$(GMP_OBJ_DIR)"; fi && \
@@ -1358,9 +1359,10 @@ $(GMP_MAKEFILE): $(GMP_HELP_SENTINEL)
 	    $(FLAGS_TO_BUILD_GMP_ETC_AS_STATIC_ONLY_LIBS) \
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
-	echo "The GMP configuration has finished."
+	echo "The GMP configuration has finished." && \
+	$(call create_sentinel_file,$(GMP_CONFIGURE_SENTINEL))
 
-$(GMP_MAKE_SENTINEL): $(GMP_MAKEFILE)
+$(GMP_MAKE_SENTINEL): $(GMP_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building GMP ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1415,7 +1417,7 @@ $(MPFR_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(MPFR_HELP_SENTINEL): $(MPFR_UNTAR_SENTINEL)
 	$(call store_recursive_help,MPFR_SRC_DIR,Mpfr)
 
-$(MPFR_MAKEFILE): $(MPFR_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)
+$(MPFR_CONFIGURE_SENTINEL): $(MPFR_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring MPFR from $(MPFR_SRC_DIR)/ to $(MPFR_OBJ_DIR)/" && \
 	if [ -d "$(MPFR_OBJ_DIR)" ]; then rm -rf -- "$(MPFR_OBJ_DIR)"; fi && \
@@ -1433,9 +1435,10 @@ $(MPFR_MAKEFILE): $(MPFR_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
-	echo "The MPFR configuration has finished."
+	echo "The MPFR configuration has finished." && \
+	$(call create_sentinel_file,$(MPFR_CONFIGURE_SENTINEL))
 
-$(MPFR_MAKE_SENTINEL): $(MPFR_MAKEFILE)
+$(MPFR_MAKE_SENTINEL): $(MPFR_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building MPFR ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1490,7 +1493,7 @@ $(MPC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(MPC_HELP_SENTINEL): $(MPC_UNTAR_SENTINEL)
 	$(call store_recursive_help,MPC_SRC_DIR,Mpc)
 
-$(MPC_MAKEFILE): $(MPC_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
+$(MPC_CONFIGURE_SENTINEL): $(MPC_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring MPC from $(MPC_SRC_DIR)/ to $(MPC_OBJ_DIR)/" && \
 	if [ -d "$(MPC_OBJ_DIR)" ]; then rm -rf -- "$(MPC_OBJ_DIR)"; fi && \
@@ -1509,9 +1512,10 @@ $(MPC_MAKEFILE): $(MPC_HELP_SENTINEL)  $(GMP_INSTALL_SENTINEL)  $(MPFR_INSTALL_S
 	    --with-gmp="$(CROSS_TOOLCHAIN_DIR)" \
 	    --with-mpfr="$(CROSS_TOOLCHAIN_DIR)" && \
 	popd >/dev/null && \
-	echo "The MPC configuration has finished."
+	echo "The MPC configuration has finished." && \
+	$(call create_sentinel_file,$(MPC_CONFIGURE_SENTINEL))
 
-$(MPC_MAKE_SENTINEL): $(MPC_MAKEFILE)
+$(MPC_MAKE_SENTINEL): $(MPC_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building MPC ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1574,21 +1578,21 @@ $(GCC_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	$(call create_sentinel_file,$(GCC_UNTAR_SENTINEL))
 
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
-  $(GCC1_MAKEFILE): $(MPC_INSTALL_SENTINEL)
+  $(GCC1_CONFIGURE_SENTINEL): $(MPC_INSTALL_SENTINEL)
 endif
 
 ifeq ($(INSTALL_GCC_PHASE_1_TO_SEPARATE_DIR),1)
-  $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL_PHASE_1)
+  $(GCC1_CONFIGURE_SENTINEL): $(BINUTILS_INSTALL_SENTINEL_PHASE_1)
   # Serialise the execution of Binutils' makefile, in order to prevent concurrency problems.
   $(BINUTILS_INSTALL_SENTINEL): $(BINUTILS_INSTALL_SENTINEL_PHASE_1)
 else
-  $(GCC1_MAKEFILE): $(BINUTILS_INSTALL_SENTINEL)
+  $(GCC1_CONFIGURE_SENTINEL): $(BINUTILS_INSTALL_SENTINEL)
 endif
 
 $(GCC_HELP_SENTINEL): $(GCC_UNTAR_SENTINEL)
 	$(call store_recursive_help,GCC_SRC_DIR,Gcc)
 
-$(GCC1_MAKEFILE): $(GCC_HELP_SENTINEL)
+$(GCC1_CONFIGURE_SENTINEL): $(GCC_HELP_SENTINEL)
 	echo && \
 	echo "Configuring GCC phase 1 from $(GCC_SRC_DIR)/ to $(GCC1_OBJ_DIR)/" && \
 	if [ -d "$(GCC1_OBJ_DIR)" ]; then rm -rf -- "$(GCC1_OBJ_DIR)"; fi && \
@@ -1605,9 +1609,10 @@ $(GCC1_MAKEFILE): $(GCC_HELP_SENTINEL)
 	    --prefix="$(PHASE_1_INSTALL_DIR)" \
 	    $(HOST_FLAGS_WITHOUT_OPT) $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
-	echo "The GCC phase 1 configuration has finished."
+	echo "The GCC phase 1 configuration has finished." && \
+	$(call create_sentinel_file,$(GCC1_CONFIGURE_SENTINEL))
 
-$(GCC1_MAKE_SENTINEL): $(GCC1_MAKEFILE)
+$(GCC1_MAKE_SENTINEL): $(GCC1_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building GCC phase 1 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1662,7 +1667,7 @@ $(NEWLIB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 $(NEWLIB_HELP_SENTINEL): $(NEWLIB_UNTAR_SENTINEL)
 	$(call store_recursive_help_ignore_error,NEWLIB_HELP_DIR,Newlib)
 
-$(NEWLIB_MAKEFILE): $(NEWLIB_HELP_SENTINEL) $(GCC1_INSTALL_SENTINEL)
+$(NEWLIB_CONFIGURE_SENTINEL): $(NEWLIB_HELP_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	echo && \
 	echo "About to configure Newlib from $(NEWLIB_SRC_DIR)/ to $(NEWLIB_OBJ_DIR)/" && \
 	if [ -d "$(NEWLIB_OBJ_DIR)" ]; then rm -rf -- "$(NEWLIB_OBJ_DIR)"; fi && \
@@ -1680,9 +1685,10 @@ $(NEWLIB_MAKEFILE): $(NEWLIB_HELP_SENTINEL) $(GCC1_INSTALL_SENTINEL)
 	    $(NEWLIB_SRC_DIR)/configure \
 	      $(NEWLIB_CFG_FLAGS) && \
 	popd >/dev/null && \
-	echo "The Newlib configuration has finished."
+	echo "The Newlib configuration has finished." && \
+	$(call create_sentinel_file,$(NEWLIB_CONFIGURE_SENTINEL))
 
-$(NEWLIB_MAKE_SENTINEL): $(NEWLIB_MAKEFILE)
+$(NEWLIB_MAKE_SENTINEL): $(NEWLIB_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building Newlib ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1812,14 +1818,14 @@ endif
 # once over the '--prefix' directory, and one over PATH. But both instances are identical anyway.
 
 ifeq ($(TARGET_LIBC), newlib)
-  $(GCC2_MAKEFILE): $(NEWLIB_INSTALL_SENTINEL)
+  $(GCC2_CONFIGURE_SENTINEL): $(NEWLIB_INSTALL_SENTINEL)
 endif
 
 ifeq ($(TARGET_LIBC), picolibc)
-  $(GCC2_MAKEFILE): $(PICOLIBC_INSTALL_SENTINEL)
+  $(GCC2_CONFIGURE_SENTINEL): $(PICOLIBC_INSTALL_SENTINEL)
 endif
 
-$(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
+$(GCC2_CONFIGURE_SENTINEL): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	echo && \
 	echo "Configuring GCC phase 2 from $(GCC_SRC_DIR)/ to $(GCC2_OBJ_DIR)/" && \
 	if [ -d "$(GCC2_OBJ_DIR)" ]; then rm -rf -- "$(GCC2_OBJ_DIR)"; fi && \
@@ -1836,9 +1842,10 @@ $(GCC2_MAKEFILE): $(GCC_UNTAR_SENTINEL) $(BINUTILS_INSTALL_SENTINEL)
 	      --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	      $(GCC_PHASE_2_BUILD_FLAGS) $(COMMON_GCC_OPTIONS) && \
 	popd >/dev/null && \
-	echo "The GCC phase 2 configuration has finished."
+	echo "The GCC phase 2 configuration has finished." && \
+	$(call create_sentinel_file,$(GCC2_CONFIGURE_SENTINEL))
 
-$(GCC2_MAKE_SENTINEL): $(GCC2_MAKEFILE)
+$(GCC2_MAKE_SENTINEL): $(GCC2_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building GCC phase 2 ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
@@ -1908,13 +1915,13 @@ $(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 ifeq ($(BUILD_GMP_MPFR_MPC),1)
   # GDB version 11.1 is the first one to require the GMP library.
   # This makefile could drop the dependency when building older GDB versions.
-  $(GDB_MAKEFILE): $(GMP_INSTALL_SENTINEL) $(MPFR_INSTALL_SENTINEL)
+  $(GDB_CONFIGURE_SENTINEL): $(GMP_INSTALL_SENTINEL) $(MPFR_INSTALL_SENTINEL)
 endif
 
 $(GDB_HELP_SENTINEL): $(GDB_UNTAR_SENTINEL)
 	$(call store_recursive_help,GDB_SRC_DIR,Gdb)
 
-$(GDB_MAKEFILE): $(GDB_HELP_SENTINEL)
+$(GDB_CONFIGURE_SENTINEL): $(GDB_HELP_SENTINEL)
 	echo && \
 	echo "Configuring GDB from $(GDB_SRC_DIR)/ to $(GDB_OBJ_DIR)/" && \
 	if [ -d "$(GDB_OBJ_DIR)" ]; then rm -rf -- "$(GDB_OBJ_DIR)"; fi && \
@@ -1931,9 +1938,10 @@ $(GDB_MAKEFILE): $(GDB_HELP_SENTINEL)
 	    --prefix="$(CROSS_TOOLCHAIN_DIR)" \
 	    --target=$(TARGET_ARCH) && \
 	popd >/dev/null && \
-	echo "The GDB configuration has finished."
+	echo "The GDB configuration has finished." && \
+	$(call create_sentinel_file,$(GDB_CONFIGURE_SENTINEL))
 
-$(GDB_MAKE_SENTINEL): $(GDB_MAKEFILE)
+$(GDB_MAKE_SENTINEL): $(GDB_CONFIGURE_SENTINEL)
 	echo && \
 	echo "Building GDB ..." && \
 	$(EXPORT_SELECTED_FLAGS_IN_MAKEFLAGS) && \
