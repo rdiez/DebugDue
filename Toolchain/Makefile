@@ -183,7 +183,7 @@ else ifeq ($(VERSION_SET),VersionSet20)
   NEWLIB_VERSION := 4.6.0.20260123
 
   # This version is only taken into consideration if TARGET_LIBC == picolibc.
-  PICOLIBC_VERSION := 1.8.11
+  PICOLIBC_VERSION := 1.8.12
 
   # The newer Binutils 2.47 generates a compilation warning which makes the build fail
   # because of "all warnings being treated as errors".
@@ -959,6 +959,7 @@ ifeq ($(TARGET_LIBC), picolibc)
   IS_PICOLIB_1_8_9_OR_LATER  := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.9")
   IS_PICOLIB_1_8_10_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.10")
   IS_PICOLIB_1_8_11_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.11")
+  IS_PICOLIB_1_8_12_OR_LATER := $(shell "$(CHECK_VERSION_TOOL)" --result-as-text -- "Picolibc" "$(PICOLIBC_VERSION_DOTS)" ">=" "1.8.12")
 
   PICOLIBC_UNTAR_DIR := $(CROSS_TOOLCHAIN_BUILD_DIR)/picolibc-$(PICOLIBC_VERSION)
   PICOLIBC_SRC_DIR   := $(PICOLIBC_UNTAR_DIR)
@@ -1008,7 +1009,9 @@ ifeq ($(TARGET_LIBC), picolibc)
   # 'picolib' provides startup helpers like the ARM interrupt vector, TLS support and sbrk.
   # Our embedded application will provide its own interrupt vector, its own sbrk,
   # and has no threading, so it does not need TLS.
-  PICOLIBC_CFG_FLAGS += -Dpicolib=false
+  ifeq "$(IS_PICOLIB_1_8_12_OR_LATER)" "false"
+    PICOLIBC_CFG_FLAGS += -Dpicolib=false
+  endif
 
   # The tinystdio library has a much smaller memory footprint than Newlib's stdio library.
   #
