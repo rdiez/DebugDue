@@ -2,7 +2,7 @@
 #
 # See companion script SelfTest.sh for more information.
 #
-# Copyright (c) 2013-2022 - R. Diez - Licensed under the GNU AGPLv3.
+# Copyright (c) 2013-2026 - R. Diez - Licensed under the GNU AGPLv3.
 
 set -o errexit
 set -o nounset
@@ -526,21 +526,21 @@ build_firmwares ()
           "$BUILD_BASE_ASF_CMD  --build-type=debug --build --disassemble" \
           both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-build-debug-disassemble.txt"
 
-  # This time with '--check-discarded-objects'.
+  # This time with '--check-discarded-objects=error'.
   run_cmd "Building DebugDue, debug build checking discarded objects..." \
-          "$BUILD_BASE_ASF_CMD  --build-type=debug --build --check-discarded-objects" \
+          "$BUILD_BASE_ASF_CMD  --build-type=debug --build --check-discarded-objects=error" \
           both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-build-debug-check-discarded-objects.txt"
 
   # Build all other firmwares with '--disassemble', so that it is easy to compare
   # the performance of different toolchains variants (like the firmware section sizes).
-  # Pass also '--check-discarded-objects', but only to debug builds.
+  # Pass also '--check-discarded-objects=error', but only to debug builds.
 
   run_cmd "Building DebugDue, release build..." \
           "$BUILD_BASE_ASF_CMD  --build-type=release --build --disassemble" \
           both  "${FW_BUILD_LOG_FILE_PREFIX}DebugDue-build-release.txt"
 
   run_cmd "Building EmptyFirmware, debug build..." \
-          "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build --disassemble --check-discarded-objects" \
+          "$BUILD_BASE_ASF_CMD  --project=EmptyFirmware --build-type=debug --build --disassemble --check-discarded-objects=error" \
           both  "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-build-debug.txt"
 
   run_cmd "Building EmptyFirmware, release build..." \
@@ -548,7 +548,7 @@ build_firmwares ()
           both "${FW_BUILD_LOG_FILE_PREFIX}EmptyFirmware-build-release.txt"
 
   run_cmd "Building QemuFirmware, debug build..." \
-          "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build --disassemble --check-discarded-objects" \
+          "$BUILD_BASE_CMD  --project=QemuFirmware --build-type=debug --build --disassemble --check-discarded-objects=error" \
           both  "${FW_BUILD_LOG_FILE_PREFIX}QemuFirmware-build-debug.txt"
 
   run_cmd "Building QemuFirmware, release build..." \
