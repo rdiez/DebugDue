@@ -187,6 +187,10 @@ else ifeq ($(VERSION_SET),VersionSet20)
 
   # The newer Binutils 2.47 generates a compilation warning which makes the build fail
   # because of "all warnings being treated as errors".
+  # I reported it here:
+  #   Binutils 2.47 fails to build with warning 'exp.X_op' may be used uninitialized
+  #   https://sourceware.org/pipermail/binutils/2026-August/150708.html
+  # It turns out that was a real error in Binutils.
   BINUTILS_VERSION := 2.46.1
   GCC_VERSION      := 16.2.0
   GDB_VERSION      := 17.2
