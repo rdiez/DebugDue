@@ -1724,8 +1724,9 @@ $(NEWLIB_INSTALL_SENTINEL): $(NEWLIB_MAKE_SENTINEL)
 	echo "The Newlib installation has finished." && \
 	$(call create_sentinel_file,$(NEWLIB_INSTALL_SENTINEL))
 
-# This target provides a friendly name useful when testing this makefile.
+# This target provides a user-friendly name, sometimes useful when testing this makefile.
 libc-install: $(NEWLIB_INSTALL_SENTINEL)
+.PHONY: libc-install
 
 endif
 
@@ -1807,8 +1808,9 @@ $(PICOLIBC_INSTALL_SENTINEL): $(PICOLIBC_MAKE_SENTINEL)
 	echo "The Picolibc installation has finished." && \
 	$(call create_sentinel_file,$(PICOLIBC_INSTALL_SENTINEL))
 
-# This target provides a friendly name useful when testing this makefile.
+# This target provides a user-friendly name, sometimes useful when testing this makefile.
 libc-install: $(PICOLIBC_INSTALL_SENTINEL)
+.PHONY: libc-install
 
 endif
 
@@ -1886,8 +1888,10 @@ $(GCC2_INSTALL_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo "The GCC phase 2 installation has finished." && \
 	$(call create_sentinel_file,$(GCC2_INSTALL_SENTINEL))
 
-# Short target name for building and installing GCC without GDB. Sometimes useful when testing this makefile.
+# Short target name to build and install GCC without GDB.
+# This target provides a user-friendly name, sometimes useful when testing this makefile.
 gcc: $(GCC2_INSTALL_SENTINEL)
+.PHONY: gcc
 
 $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 	echo && \
@@ -1977,8 +1981,9 @@ $(GDB_INSTALL_SENTINEL): $(GDB_MAKE_SENTINEL)
 	echo "The GDB installation has finished." && \
 	$(call create_sentinel_file,$(GDB_INSTALL_SENTINEL))
 
-# Short target name for building and installing GDB. Sometimes useful when testing this makefile.
+# This target provides a user-friendly name, sometimes useful when testing this makefile.
 gdb: $(GDB_INSTALL_SENTINEL)
+.PHONY: gdb
 
 
 # --------------- Top-level rules ---------------
