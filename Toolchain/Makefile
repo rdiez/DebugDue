@@ -1909,6 +1909,8 @@ $(GCC2_CHECK_SENTINEL): $(GCC2_MAKE_SENTINEL)
 # ----------------- Build GDB -----------------
 
 # Note that GDB runs on the host and does not need Binutils or the GCC cross-compiler.
+# Building GDB is not a must, so we could make it optional.
+# Alternatively, you can always install gdb-multiarch with your OS package manager.
 
 $(GDB_UNTAR_SENTINEL): $(CROSS_TOOLCHAIN_BUILD_DIR_SENTINEL)
 	echo && \
