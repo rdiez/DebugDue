@@ -372,7 +372,7 @@ dist_data_DATA += $(ELF_BASENAME).bin
 
 $(ELF_BASENAME).bin: $(ELF_FILENAME)
 	echo "Generating binary file \"$(abspath $@)\"..." && \
-        $(TARGET_ARCH)-objcopy -O binary "$<" "$@"
+        "$(TARGET_ARCH)-objcopy" -O binary "$<" "$@"
 
 
 # ------------------------------------
@@ -394,22 +394,20 @@ disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.txt  $(ELF_BASENAME)-o
 # Create a list of objects in the ELF file sorted by size, which helps when trying to optimise the bin size.
 $(ELF_BASENAME)-objects-sorted-by-size.txt: $(ELF_FILENAME)
 	echo "Generating object list sorted by size to \"$(abspath $@)\"..." && \
-        $(TARGET_ARCH)-nm --radix=d --demangle --size-sort "$<" >"$@"
+        "$(TARGET_ARCH)-nm" --radix=d --demangle --size-sort "$<" >"$@"
 
 $(ELF_BASENAME)-objdump-with-disassemble.asm: $(ELF_FILENAME)
 	echo "Dumping with disassemble to \"$(abspath $@)\"..." && \
-        $(TARGET_ARCH)-objdump --demangle --all-headers --disassemble --source --wide  "$<" >"$@"
+        "$(TARGET_ARCH)-objdump" --demangle --all-headers --disassemble --source --wide  "$<" >"$@"
 
 $(ELF_BASENAME)-readelf-dump.txt: $(ELF_FILENAME)
 	echo "Generating readelf dump to \"$(abspath $@)\"..." && \
-        $(TARGET_ARCH)-readelf --file-header --program-headers --section-headers --section-groups --section-details --symbols --version-info --arch-specific --wide  "$<" >"$@"
+        "$(TARGET_ARCH)-readelf" --file-header --program-headers --section-headers --section-groups --section-details --symbols --version-info --arch-specific --wide  "$<" >"$@"
 
-# Avoid using a pipe in the call to 'sort' below. Otherwise, we would have to enable bash option "set -o pipefail",
-# assuming that the shell is Bash.
 $(ELF_BASENAME)-sorted-strings.txt: $(ELF_BASENAME).bin
 	echo "Extracting strings to \"$(abspath $@)\"..." && \
-        $(TARGET_ARCH)-strings "$<" >"$(ELF_BASENAME)-unsorted-strings.txt" && \
-        sort "$(ELF_BASENAME)-unsorted-strings.txt" >"$@"
+        set -o errexit && set -o nounset && set -o pipefail && \
+        "$(TARGET_ARCH)-strings" "$<" | sort - >"$@"
 
 
 # ------------------------------------
