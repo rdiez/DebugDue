@@ -445,11 +445,13 @@ $(FILENAME_WITH_SORTED_LIST): $(MANUAL_MAKEFILE_DEPENDENCY)
         if [ -s "$(FILENAME_WITH_DUPLICATES)" ]; then echo "Error: Duplicated object filenames detected, see the list in file: $(FILENAME_WITH_DUPLICATES)" >&2 && exit 1; fi && \
         mv -- "$@.tmp" "$@"
 
+RDMAPFILE := $(srcdir)/../Tools/RDMapFile.pl
+
 # Note that LTO erases the object file origin information, breaking the detection of completely-discarded objects.
-$(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME)
+$(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME) $(RDMAPFILE)
 	echo "Extracting the object filenames from the linker map file..." && \
         if $(IS_LTO_ENABLED); then echo "Error: Extracting the object filenames from the linker map file is incompatible with LTO." >&2 && exit 1; fi && \
-        LC_ALL=C "$(srcdir)/../Tools/RDMapFile.pl" \
+        LC_ALL=C "$(RDMAPFILE)" \
                  --extract-object-filenames \
                  --capture-sections=".text, .ARM.exidx, .stackArea, .relocate, .bss" \
                  -- "$(MAP_FILENAME)" >"$@.tmp" && \
