@@ -264,8 +264,8 @@ endif
 CRT0_SRC_FILENAME := $(BARE_METAL_SUPPORT_DIR)/crt0.cpp
 CRT0_O_FILENAME := crt0.o
 $(CRT0_O_FILENAME):
-	echo "Compiling $(CRT0_SRC_FILENAME) to $(CRT0_O_FILENAME)..." && \
-        $(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) $(CRT0_SRC_FILENAME) -c -o $(CRT0_O_FILENAME)
+	echo "Compiling $(CRT0_SRC_FILENAME) to $@..." && \
+        $(CXX) $(AM_CPPFLAGS) $(AM_CXXFLAGS) $(CRT0_SRC_FILENAME) -c -o "$@"
 
 
 # ------------------------------------
@@ -439,11 +439,11 @@ $(FILENAME_WITH_SORTED_LIST): $(MANUAL_MAKEFILE_DEPENDENCY)
         set -o errexit && set -o nounset && set -o pipefail && \
         printf '%s\n' $(OBJECTS_USED_FOR_LINKING) >"$(FILENAME_WITH_UNSORTED_LIST)" && \
         echo "Sorting the list of filenames passed to the linker..." && \
-        LC_ALL=C sort -- "$(FILENAME_WITH_UNSORTED_LIST)" >"$(FILENAME_WITH_SORTED_LIST).tmp" && \
+        LC_ALL=C sort -- "$(FILENAME_WITH_UNSORTED_LIST)" >"$@.tmp" && \
         echo "Detecting eventual duplicates in the list of filenames passed to the linker..." && \
-        uniq --repeated -- "$(FILENAME_WITH_SORTED_LIST).tmp" >"$(FILENAME_WITH_DUPLICATES)" && \
+        uniq --repeated -- "$@.tmp" >"$(FILENAME_WITH_DUPLICATES)" && \
         if [ -s "$(FILENAME_WITH_DUPLICATES)" ]; then echo "Error: Duplicated object filenames detected, see the list in file: $(FILENAME_WITH_DUPLICATES)" >&2 && exit 1; fi && \
-        mv -- "$(FILENAME_WITH_SORTED_LIST).tmp" "$(FILENAME_WITH_SORTED_LIST)"
+        mv -- "$@.tmp" "$@"
 
 # Note that LTO erases the object file origin information, breaking the detection of completely-discarded objects.
 $(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME)
@@ -452,18 +452,18 @@ $(FILENAME_WITH_MAP_OBJECTS): $(MAP_FILENAME)
         LC_ALL=C "$(srcdir)/../Tools/RDMapFile.pl" \
                  --extract-object-filenames \
                  --capture-sections=".text, .ARM.exidx, .stackArea, .relocate, .bss" \
-                 -- "$(MAP_FILENAME)" >"$(FILENAME_WITH_MAP_OBJECTS).tmp" && \
-        mv -- "$(FILENAME_WITH_MAP_OBJECTS).tmp" "$(FILENAME_WITH_MAP_OBJECTS)"
+                 -- "$(MAP_FILENAME)" >"$@.tmp" && \
+        mv -- "$@.tmp" "$@"
 
 $(FILENAME_WITH_DISCARDED_OBJECTS): $(FILENAME_WITH_MAP_OBJECTS) $(FILENAME_WITH_SORTED_LIST)
 	echo "Generating the list of object files which were completely discarded during linking..." && \
-        LC_ALL=C comm -23 -- $(FILENAME_WITH_SORTED_LIST) $(FILENAME_WITH_MAP_OBJECTS) >"$(FILENAME_WITH_DISCARDED_OBJECTS).tmp" && \
-        if [ -s "$(FILENAME_WITH_DISCARDED_OBJECTS).tmp" ]; then \
-          echo "The list has been placed in file: $(FILENAME_WITH_DISCARDED_OBJECTS)"; \
+        LC_ALL=C comm -23 -- $(FILENAME_WITH_SORTED_LIST) $(FILENAME_WITH_MAP_OBJECTS) >"$@.tmp" && \
+        if [ -s "$@.tmp" ]; then \
+          echo "The list has been placed in file: $@"; \
         else \
           echo "No object files were completely discarded."; \
         fi && \
-        mv -- "$(FILENAME_WITH_DISCARDED_OBJECTS).tmp" "$(FILENAME_WITH_DISCARDED_OBJECTS)"
+        mv -- "$@.tmp" "$@"
 
 $(DISCARDED_OBJECTS_CHECK_SENTINEL): $(FILENAME_WITH_DISCARDED_OBJECTS)
 	if [ -s "$(FILENAME_WITH_DISCARDED_OBJECTS)" ]; then \
@@ -473,4 +473,4 @@ $(DISCARDED_OBJECTS_CHECK_SENTINEL): $(FILENAME_WITH_DISCARDED_OBJECTS)
           exit 1; \
         fi && \
         echo "Discarded object files check passed." && \
-        $(call create_sentinel_file,$(DISCARDED_OBJECTS_CHECK_SENTINEL))
+        $(call create_sentinel_file,$@)
