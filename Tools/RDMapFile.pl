@@ -135,7 +135,7 @@ use FindBin qw( $Bin $Script );
 use Getopt::Long;
 use Pod::Usage;
 
-use constant SCRIPT_VERSION => "1.00";
+use constant SCRIPT_VERSION => "1.01";
 
 use constant EXIT_CODE_SUCCESS => 0;
 use constant EXIT_CODE_FAILURE => 1;  # Beware that other errors, like those from die(), can yield other exit codes.
@@ -1466,7 +1466,7 @@ sub main ()
   my $arg_extractObjectFilenames = 0;
   my $arg_captureSections;
 
-  Getopt::Long::Configure( "no_auto_abbrev",  "prefix_pattern=(--|-)", "no_ignore_case", "require_order" );
+  Getopt::Long::Configure( "no_auto_abbrev", "prefix_pattern=--|-", "no_ignore_case", "require_order" );
 
   my $result = GetOptions(
                  'help'      =>  \$arg_help,
