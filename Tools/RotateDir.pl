@@ -280,7 +280,7 @@ use Class::Struct qw();
 
 use constant PROGRAM_NAME => "RotateDir.pl";
 
-use constant SCRIPT_VERSION => "2.16";
+use constant SCRIPT_VERSION => "2.17";
 
 use constant EXIT_CODE_SUCCESS       => 0;
 use constant EXIT_CODE_FAILURE_ARGS  => 1;
@@ -347,7 +347,7 @@ sub main ()
   my $arg_noSlotDeletion   = FALSE;
   my $arg_noSlotCreation   = FALSE;
 
-  Getopt::Long::Configure( "no_auto_abbrev", "prefix_pattern=(--|-)", "no_ignore_case", "require_order" );
+  Getopt::Long::Configure( "no_auto_abbrev", "prefix_pattern=--|-", "no_ignore_case", "require_order" );
 
   my $result = GetOptions(
                  OPT_NAME_HELP()       => \$arg_help,
@@ -1213,15 +1213,15 @@ use constant CLOSE_AFTER_WRITING => "writing to";
 
 sub close_file_handle_and_rethrow_eventual_error ( $ $ $ $ )
 {
-  my $fileHandle               = shift;
-  my $filename                 = shift;
-  my $errorMsgFromEval         = shift;
-  my $operationgForCloseErrMsg = shift;
+  my $fileHandle              = shift;
+  my $filename                = shift;
+  my $errorMsgFromEval        = shift;
+  my $operationForCloseErrMsg = shift;
 
   if_error_close_file_handle_and_rethrow( $fileHandle, $errorMsgFromEval );
 
   # Note that file buffering may delay a write error until the file descriptor is closed.
-  close( $fileHandle ) or die "Error $operationgForCloseErrMsg file " .
+  close( $fileHandle ) or die "Error $operationForCloseErrMsg file " .
                               format_str_for_message( $filename ) .
                               ", detected when closing its file descriptor: $!\n";
 }
@@ -1683,12 +1683,20 @@ sub sleep_seconds ( $ )
 # Security warning: Any eventual error message will contain the file path.
 #
 # Alternative: use Perl module File::Slurp
+# Alternative: my $fileContent = do { local $/; < $fileHandle > };
+#              That sets input record separator ('$/') to undef in order to read the whole file.
+#              We need to use a "do" block in order to localise '$/'.
 
 sub read_whole_binary_file ( $ )
 {
   my $filename = shift;
 
   # I believe that standard tool 'cat' uses a 128 KiB buffer size under Linux.
+  #
+  # If you use the -s function on the filehandle in oder to find out the file size in bytes upfront,
+  # and then read it at once, it is allegedly faster than even "local $/; < $fileHandle >".
+  # For example: read $fileHandle, my $fileContent, -s $fileHandle;
+  # I actually have an alternative implementation with this technique in the Tools repository.
   use constant SOME_ARBITRARY_BLOCK_SIZE_RWBF => 128 * 1024;
 
   my $fileContent;
