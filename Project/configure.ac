@@ -586,15 +586,14 @@ EXTRA_CPP_FLAGS+=" -D_PICOLIBC_CTYPE_SMALL=0"
 EXTRA_CPP_FLAGS+=" -DASSERT_MSG_BUFSIZE=300"
 
 
-# Sometimes, you want to set the C and C++ language standard.
-# For example, with -std=c++11 you do not get vsnprintf.
-# The defaults are:
-#  GCC  7:  gnu11, gnu++14
-#  GCC  8:  gnu18, gnu++14
-#  GCC  9:  gnu18, gnu++14
-#  GCC 10:  gnu18, gnu++14
-#  GCC 11:  gnu18, gnu++17
-if $IS_GCC_8_OR_LATER; then
+if false; then
+  # Sometimes, you want to set the C and C++ language standard.
+  # For example, with -std=c++11 you do not get vsnprintf.
+  # The defaults are:
+  #  GCC  8:  gnu18, gnu++14
+  #  GCC  9:  gnu18, gnu++14
+  #  GCC 10:  gnu18, gnu++14
+  #  GCC 11:  gnu18, gnu++17
   # Alternatively, use -std=c18 and -std=c++17 to prevent getting
   # inadvertently used to GCC-specific language extensions.
   EXTRA_C_FLAGS+=" -std=gnu18"
@@ -717,12 +716,6 @@ EXTRA_C_AND_CXX_FLAGS+=" -Wsign-conversion"  # This warning can bee too noisy. A
 EXTRA_C_AND_CXX_FLAGS+=" -Wconversion"       # Warn for implicit conversions that may alter a value.
                                              # This warning can bee too noisy. At the moment, I have managed to live with it.
 EXTRA_C_AND_CXX_FLAGS+=" -Wfloat-conversion"
-
-if $IS_GCC_8_OR_LATER; then
-  :
-else
-  EXTRA_C_AND_CXX_FLAGS+=" -Wabi"  # Avoid too many warnings with GCC 7.3.
-fi
 
 EXTRA_C_FLAGS+=" -Wc++-compat"
 EXTRA_C_FLAGS+=" -Wstrict-prototypes"
