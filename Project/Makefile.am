@@ -390,6 +390,7 @@ dist_data_DATA += $(MAP_FILENAME)
 # POSSIBLE IMPROVEMENT: Automatically delete these files when recursive target "disassemble" is not specified.
 # Otherwise, the contents of these files may be stale.
 disassemble-local: $(ELF_BASENAME)-objects-sorted-by-size.txt  $(ELF_BASENAME)-objdump-with-disassemble.asm  $(ELF_BASENAME)-sorted-strings.txt $(ELF_BASENAME)-readelf-dump.txt
+.PHONY: disassemble-local
 
 # Create a list of objects in the ELF file sorted by size, which helps when trying to optimise the bin size.
 $(ELF_BASENAME)-objects-sorted-by-size.txt: $(ELF_FILENAME)
@@ -424,7 +425,11 @@ FILENAME_WITH_DISCARDED_OBJECTS  := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-discarded.t
 DISCARDED_OBJECTS_CHECK_SENTINEL := $(ELF_BASENAME)-$(OBJ_FN_PREFIX)-discarded-check-sentinel.txt
 
 list-discarded-objects-local: $(FILENAME_WITH_DISCARDED_OBJECTS)
+.PHONY: list-discarded-objects-local
+
 check-discarded-objects-local: $(DISCARDED_OBJECTS_CHECK_SENTINEL)
+.PHONY: check-discarded-objects-local
+
 
 # Sorting the filenames passed to the linker takes some time, but has the following advantages:
 # - Sorting allows detection of duplicates.
