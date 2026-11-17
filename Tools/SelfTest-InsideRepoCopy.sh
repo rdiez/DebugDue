@@ -472,7 +472,7 @@ test_basic_functions_of_firmware_build_script ()
 
     # echo "DIR_MATCH: $DIR_MATCH"
 
-    DEBUGDUE_ASF_PATH="$(readlink --canonicalize --verbose -- "$DIR_MATCH/../..")"
+    DEBUGDUE_ASF_PATH="$(realpath -- "$DIR_MATCH/../..")"
 
   elif ! is_var_set "DEBUGDUE_ASF_PATH"; then
 

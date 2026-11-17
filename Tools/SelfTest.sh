@@ -41,7 +41,7 @@ if (( $# != 0 )); then
 fi
 
 
-GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "..")"
+GIT_REPOSITORY_BASE="$(realpath -- "..")"
 
 declare -r TOOLS_DIR="$GIT_REPOSITORY_BASE/Tools"
 

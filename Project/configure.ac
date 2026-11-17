@@ -91,7 +91,7 @@ AM_EXTRA_RECURSIVE_TARGETS([check-discarded-objects])
 AM_EXTRA_RECURSIVE_TARGETS([list-discarded-objects])
 
 
-ABS_SRCDIR_SRC="$(readlink --verbose --canonicalize -- "$srcdir/src")"
+ABS_SRCDIR_SRC="$(realpath -- "$srcdir/src")"
 
 
 AppendIncludeOrSystemIncludeDir ()
@@ -413,11 +413,11 @@ if $NEEDS_ATMEL_SOFTWARE_FRAMEWORK; then
     AC_MSG_ERROR([Please specify the --with-atmel-software-framework=PATH configuration switch])
   fi
 
-  ASF_BASEDIR="$(readlink --verbose --canonicalize -- "$with_atmel_software_framework")"
+  ASF_BASEDIR="$(realpath -- "$with_atmel_software_framework")"
   SAM_DIR="$ASF_BASEDIR/sam"
 
   if ! test -d "$SAM_DIR"; then
-    # If the path is completely wrong, 'readlink' can fail. Therefore, we must not use its result in the error message.
+    # If the path is completely wrong, 'realpath' can fail. Therefore, we must not use its result in the error message.
     AC_MSG_ERROR([The Atmel Software Framework does not seem to be installed at "$with_atmel_software_framework" (directory "$SAM_DIR" not found).])
   fi
 

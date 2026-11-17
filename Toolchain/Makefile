@@ -6,7 +6,7 @@
 
 # ------- Standard Configuration -------
 
-THIS_MAKEFILE_DIR := $(shell readlink --verbose --canonicalize -- "$(CURDIR)")
+THIS_MAKEFILE_DIR := $(shell realpath --canonicalize-existing -- "$(CURDIR)")
 
 MAKEFILE_TOOLS_DIR        := $(THIS_MAKEFILE_DIR)/Tools
 MAKEFILE_PATCHES_DIR      := $(THIS_MAKEFILE_DIR)/Patches

@@ -57,7 +57,7 @@ upgrade_script ()
 
 # ----- Entry point -----
 
-GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "..")"
+GIT_REPOSITORY_BASE="$(realpath -- "..")"
 
 if (( $# != 1 )); then
   abort "Invalid number of command-line arguments. Please specify the directory where the Tools repository is located."

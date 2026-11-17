@@ -409,7 +409,7 @@ fi
 
 declare -r NAME_ONLY="${URL##*/}"
 
-DESTINATION_DIR_ABS="$(readlink --verbose --canonicalize -- "$DESTINATION_DIR")"
+DESTINATION_DIR_ABS="$(realpath -- "$DESTINATION_DIR")"
 readonly DESTINATION_DIR_ABS
 
 declare -r FINAL_TARBALL_FILENAME_ABS="$DESTINATION_DIR_ABS/$NAME_ONLY"
@@ -420,7 +420,7 @@ if [[ $UNPACK_TO_DIR != "" ]]; then
     abort "Options '--$UNPACK_TO_NEW_DIR_OPT_NAME' and '--test-with-full-extraction' are incompatible."
   fi
 
-  UNPACK_TO_DIR_ABS="$(readlink --verbose --canonicalize -- "$UNPACK_TO_DIR")"
+  UNPACK_TO_DIR_ABS="$(realpath -- "$UNPACK_TO_DIR")"
   readonly UNPACK_TO_DIR_ABS
 
 else

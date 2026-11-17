@@ -189,7 +189,7 @@ parse_command_line_arguments ()
 
 # ------- Entry point -------
 
-GIT_REPOSITORY_BASE="$(readlink --canonicalize --verbose -- "../..")"
+GIT_REPOSITORY_BASE="$(realpath -- "../..")"
 
 USER_SHORT_OPTIONS_SPEC=""
 
